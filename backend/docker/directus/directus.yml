@@ -1,0 +1,62 @@
+services:
+  directus:
+    build:
+      context: ../../
+      dockerfile: ./docker/directus/Dockerfile
+    container_name: ${PROJECT_PREFIX}-directus
+    env_file:
+      - ../../.env
+    environment:
+      # Database connection settings that reuse PostgreSQL values
+      DB_HOST: "${PROJECT_PREFIX}-postgres"
+      DB_PORT: "${POSTGRES_PORT:-5432}"
+
+      # Reuse PostgreSQL variables with fallbacks
+      DB_DATABASE: "${DB_DATABASE:-${POSTGRES_DB}}"
+      DB_USER: "${DB_USER:-${POSTGRES_USER}}"
+      DB_PASSWORD: "${DB_PASSWORD:-${POSTGRES_PASSWORD}}"
+      
+      # Directus v9 Cache Configuration - Working configuration
+      CACHE_ENABLED: "true"
+      CACHE_STORE: "redis"
+      CACHE_REDIS_HOST: "${PROJECT_PREFIX}-keydb"
+      CACHE_REDIS_PORT: "${REDIS_PORT:-6379}"
+      CACHE_REDIS_PASSWORD: "${REDIS_PASSWORD:-${KEYDB_PASSWORD}}"
+
+      # Cache settings
+      CACHE_NAMESPACE: "${CACHE_NAMESPACE:-${PROJECT_PREFIX:+${PROJECT_PREFIX}_}directus_cache}"
+      
+      # Redis configuration for rate limiter and synchronization
+      REDIS_HOST: "${PROJECT_PREFIX}-keydb"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-${KEYDB_PASSWORD}}"
+      
+      # MinIO storage settings
+      STORAGE_MINIO_KEY: "${STORAGE_MINIO_KEY:-${MINIO_ACCESS_KEY}}"
+      STORAGE_MINIO_SECRET: "${STORAGE_MINIO_SECRET:-${MINIO_SECRET_KEY}}"
+      STORAGE_MINIO_BUCKET: "${STORAGE_MINIO_BUCKET:-${PROJECT_PREFIX}}"
+      STORAGE_MINIO_ENDPOINT: "${STORAGE_MINIO_ENDPOINT:-http://${PROJECT_PREFIX}-minio:9000}"
+      
+      # Email settings for MailHog
+      # EMAIL_SMTP_HOST: "${PROJECT_PREFIX}-mailhog"
+    ports:
+      - "${PORT:-8055}:8055"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keydb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8055/server/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

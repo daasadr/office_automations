@@ -1,0 +1,55 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: ${PROJECT_PREFIX}-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # This service will create the bucket and then exit
+  createbuckets:
+    image: minio/mc:latest
+    container_name: ${PROJECT_PREFIX}-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${PROJECT_PREFIX}
+    entrypoint: |
+      /bin/sh
+    command: |
+      -c '
+      # Wait for MinIO to be ready
+      sleep 5
+
+      # Add the MinIO server as an alias
+      mc alias set myminio http://minio:9000 "$${MINIO_ACCESS_KEY}" "$${MINIO_SECRET_KEY}"
+
+      # Create the bucket
+      mc mb myminio/"$${MINIO_BUCKET}"
+      echo "Bucket $${MINIO_BUCKET} created successfully"
+      '
+
+volumes:
+  minio-data:
+    name: ${PROJECT_PREFIX}-minio-data

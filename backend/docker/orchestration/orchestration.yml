@@ -1,0 +1,54 @@
+services:
+  orchestration-api:
+    build:
+      context: ../../orchestration-api
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_PREFIX}-orchestration-api
+    env_file:
+      - ../../.env
+    environment:
+      # Temporal connection
+      TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      
+      # Database connection
+      DB_HOST: ${PROJECT_PREFIX}-postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://${PROJECT_PREFIX}-directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # API settings
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Security
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+    ports:
+      - "${ORCHESTRATION_PORT:-3001}:3001"
+    depends_on:
+      temporal:
+        condition: service_healthy
+      directus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+

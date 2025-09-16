@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "directus": "11.x",
+  "vendor": "postgres",
+  "collections": [
+    { "collection": "documents", "meta": { "icon": "insert_drive_file", "display_template": "{{title}}" }, "schema": { "name": "documents" } },
+    { "collection": "email_messages", "meta": { "icon": "mail" }, "schema": { "name": "email_messages" } },
+    { "collection": "email_attachments", "meta": { "icon": "attach_file" }, "schema": { "name": "email_attachments" } },
+    { "collection": "extraction_jobs", "meta": { "icon": "hourglass" }, "schema": { "name": "extraction_jobs" } },
+    { "collection": "artifacts", "meta": { "icon": "imagesmode" }, "schema": { "name": "artifacts" } },
+    { "collection": "extractions", "meta": { "icon": "data_object" }, "schema": { "name": "extractions" } },
+    { "collection": "extraction_fields", "meta": { "icon": "view_column" }, "schema": { "name": "extraction_fields" } },
+    { "collection": "review_tasks", "meta": { "icon": "rule" }, "schema": { "name": "review_tasks" } },
+    { "collection": "exports", "meta": { "icon": "file_download" }, "schema": { "name": "exports" } },
+    { "collection": "deliveries", "meta": { "icon": "send" }, "schema": { "name": "deliveries" } },
+    { "collection": "integration_targets", "meta": { "icon": "hub" }, "schema": { "name": "integration_targets" } },
+    { "collection": "schema_definitions", "meta": { "icon": "schema" }, "schema": { "name": "schema_definitions" } },
+    { "collection": "master_vendors", "meta": { "icon": "store" }, "schema": { "name": "master_vendors" } },
+    { "collection": "activity_log", "meta": { "icon": "history" }, "schema": { "name": "activity_log" } }
+  ],
+  "fields": [
+    
+    { "collection": "documents", "field": "id", "type": "uuid", "schema": { "name": "id", "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": { "hidden": false } },
+    { "collection": "documents", "field": "title", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "documents", "field": "source", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": { "options": { "choices": [ {"text":"upload","value":"upload"}, {"text":"email","value":"email"}, {"text":"api","value":"api"} ] } } },
+    { "collection": "documents", "field": "file", "type": "uuid", "schema": { "data_type": "uuid", "is_nullable": true }, "meta": { "note": "FK to directus_files" } },
+    { "collection": "documents", "field": "hash_sha256", "type": "string", "schema": { "data_type": "varchar", "max_length": 128, "is_unique": true }, "meta": {} },
+    { "collection": "documents", "field": "mime_type", "type": "string", "schema": { "data_type": "varchar", "max_length": 150 }, "meta": {} },
+    { "collection": "documents", "field": "bytes", "type": "bigInteger", "schema": { "data_type": "bigint" }, "meta": {} },
+    { "collection": "documents", "field": "doc_type", "type": "string", "schema": { "data_type": "varchar", "max_length": 100 }, "meta": {} },
+    { "collection": "documents", "field": "schema_version", "type": "string", "schema": { "data_type": "varchar", "max_length": 50 }, "meta": {} },
+    { "collection": "documents", "field": "status", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": { "options": { "choices": [
+      {"text":"received","value":"received"},{"text":"processing","value":"processing"},{"text":"needs_review","value":"needs_review"},{"text":"approved","value":"approved"},{"text":"exported","value":"exported"},{"text":"delivered","value":"delivered"},{"text":"failed","value":"failed"}
+    ] } } },
+    { "collection": "documents", "field": "priority", "type": "integer", "schema": { "data_type": "integer", "default_value": 0 }, "meta": {} },
+    { "collection": "documents", "field": "notes", "type": "text", "schema": { "data_type": "text" }, "meta": {} },
+    { "collection": "documents", "field": "metadata_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+
+    
+    { "collection": "email_messages", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "email_messages", "field": "message_id", "type": "string", "schema": { "data_type": "varchar", "max_length": 255, "is_unique": true }, "meta": {} },
+    { "collection": "email_messages", "field": "from_address", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "email_messages", "field": "subject", "type": "string", "schema": { "data_type": "varchar", "max_length": 500 }, "meta": {} },
+    { "collection": "email_messages", "field": "received_at", "type": "dateTime", "schema": { "data_type": "timestamp" }, "meta": {} },
+    { "collection": "email_messages", "field": "raw_mime_file", "type": "uuid", "schema": { "data_type": "uuid", "is_nullable": true }, "meta": { "note": "FK to directus_files" } },
+    { "collection": "email_messages", "field": "processed", "type": "boolean", "schema": { "data_type": "boolean", "default_value": false }, "meta": {} },
+
+    
+    { "collection": "email_attachments", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "email_attachments", "field": "email_message", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "email_attachments", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "email_attachments", "field": "attachment_sha256", "type": "string", "schema": { "data_type": "varchar", "max_length": 128 }, "meta": {} },
+
+    
+    { "collection": "extraction_jobs", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "workflow_id", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "run_id", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "state", "type": "string", "schema": { "data_type": "varchar", "max_length": 40 }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "step", "type": "string", "schema": { "data_type": "varchar", "max_length": 60 }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "timings_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "costs_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "error_json", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "attempt", "type": "integer", "schema": { "data_type": "integer", "default_value": 1 }, "meta": {} },
+
+    
+    { "collection": "artifacts", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "artifacts", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "artifacts", "field": "kind", "type": "string", "schema": { "data_type": "varchar", "max_length": 40 }, "meta": {} },
+    { "collection": "artifacts", "field": "file", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": { "note": "FK to directus_files" } },
+    { "collection": "artifacts", "field": "page_no", "type": "integer", "schema": { "data_type": "integer", "is_nullable": true }, "meta": {} },
+    { "collection": "artifacts", "field": "format", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": {} },
+    { "collection": "artifacts", "field": "hash_sha256", "type": "string", "schema": { "data_type": "varchar", "max_length": 128 }, "meta": {} },
+    { "collection": "artifacts", "field": "metadata_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+
+    
+    { "collection": "extractions", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "extractions", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "extractions", "field": "schema_key", "type": "string", "schema": { "data_type": "varchar", "max_length": 100 }, "meta": {} },
+    { "collection": "extractions", "field": "schema_version", "type": "string", "schema": { "data_type": "varchar", "max_length": 50 }, "meta": {} },
+    { "collection": "extractions", "field": "payload_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "extractions", "field": "confidence_summary", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "extractions", "field": "model_used", "type": "string", "schema": { "data_type": "varchar", "max_length": 120 }, "meta": {} },
+    { "collection": "extractions", "field": "layout_refs_json", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "extraction_fields", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "extraction_fields", "field": "extraction", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "extraction_fields", "field": "field_key", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "extraction_fields", "field": "value_string", "type": "string", "schema": { "data_type": "varchar", "max_length": 2000, "is_nullable": true }, "meta": {} },
+    { "collection": "extraction_fields", "field": "value_number", "type": "float", "schema": { "data_type": "double precision", "is_nullable": true }, "meta": {} },
+    { "collection": "extraction_fields", "field": "value_date", "type": "date", "schema": { "data_type": "date", "is_nullable": true }, "meta": {} },
+    { "collection": "extraction_fields", "field": "confidence", "type": "float", "schema": { "data_type": "double precision", "is_nullable": true }, "meta": {} },
+    { "collection": "extraction_fields", "field": "critical", "type": "boolean", "schema": { "data_type": "boolean", "default_value": false }, "meta": {} },
+
+    
+    { "collection": "review_tasks", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "review_tasks", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "review_tasks", "field": "assignee", "type": "uuid", "schema": { "data_type": "uuid", "is_nullable": true }, "meta": { "note": "FK to directus_users" } },
+    { "collection": "review_tasks", "field": "status", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": { "options": { "choices": [
+      {"text":"open","value":"open"},{"text":"approved","value":"approved"},{"text":"rejected","value":"rejected"},{"text":"auto_accepted","value":"auto_accepted"}
+    ] } } },
+    { "collection": "review_tasks", "field": "diff_json", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "review_tasks", "field": "comment", "type": "text", "schema": { "data_type": "text", "is_nullable": true }, "meta": {} },
+    { "collection": "review_tasks", "field": "approved_at", "type": "dateTime", "schema": { "data_type": "timestamp", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "exports", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "exports", "field": "document", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "exports", "field": "format", "type": "string", "schema": { "data_type": "varchar", "max_length": 10 }, "meta": {} },
+    { "collection": "exports", "field": "mapping_key", "type": "string", "schema": { "data_type": "varchar", "max_length": 120 }, "meta": {} },
+    { "collection": "exports", "field": "file", "type": "uuid", "schema": { "data_type": "uuid", "is_nullable": true }, "meta": { "note": "FK to directus_files" } },
+    { "collection": "exports", "field": "hash_sha256", "type": "string", "schema": { "data_type": "varchar", "max_length": 128 }, "meta": {} },
+    { "collection": "exports", "field": "status", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": { "options": { "choices": [
+      {"text":"generated","value":"generated"},{"text":"delivered","value":"delivered"},{"text":"failed","value":"failed"}
+    ] } } },
+    { "collection": "exports", "field": "delivery_metadata", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "exports", "field": "delivered_at", "type": "dateTime", "schema": { "data_type": "timestamp", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "deliveries", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "deliveries", "field": "export", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "deliveries", "field": "target", "type": "uuid", "schema": { "data_type": "uuid" }, "meta": {} },
+    { "collection": "deliveries", "field": "status", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": { "options": { "choices": [
+      {"text":"pending","value":"pending"},{"text":"success","value":"success"},{"text":"failed","value":"failed"}
+    ] } } },
+    { "collection": "deliveries", "field": "attempt", "type": "integer", "schema": { "data_type": "integer" }, "meta": {} },
+    { "collection": "deliveries", "field": "request_json", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "deliveries", "field": "response_json", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "deliveries", "field": "external_id", "type": "string", "schema": { "data_type": "varchar", "max_length": 255, "is_nullable": true }, "meta": {} },
+    { "collection": "deliveries", "field": "error_message", "type": "text", "schema": { "data_type": "text", "is_nullable": true }, "meta": {} },
+    { "collection": "deliveries", "field": "sent_at", "type": "dateTime", "schema": { "data_type": "timestamp", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "integration_targets", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "integration_targets", "field": "name", "type": "string", "schema": { "data_type": "varchar", "max_length": 120 }, "meta": {} },
+    { "collection": "integration_targets", "field": "kind", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": {} },
+    { "collection": "integration_targets", "field": "base_url", "type": "string", "schema": { "data_type": "varchar", "max_length": 500, "is_nullable": true }, "meta": {} },
+    { "collection": "integration_targets", "field": "auth_kind", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": {} },
+    { "collection": "integration_targets", "field": "auth_secrets", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": { "special": ["encrypted"] } },
+    { "collection": "integration_targets", "field": "default_mapping_key", "type": "string", "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true }, "meta": {} },
+    { "collection": "integration_targets", "field": "active", "type": "boolean", "schema": { "data_type": "boolean", "default_value": true }, "meta": {} },
+
+    
+    { "collection": "schema_definitions", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "schema_definitions", "field": "schema_key", "type": "string", "schema": { "data_type": "varchar", "max_length": 100 }, "meta": {} },
+    { "collection": "schema_definitions", "field": "version", "type": "string", "schema": { "data_type": "varchar", "max_length": 20 }, "meta": {} },
+    { "collection": "schema_definitions", "field": "json_schema", "type": "json", "schema": { "data_type": "jsonb" }, "meta": {} },
+    { "collection": "schema_definitions", "field": "csv_mapping", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "schema_definitions", "field": "auto_accept_thresholds", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "schema_definitions", "field": "prompt_template", "type": "text", "schema": { "data_type": "text", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "master_vendors", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "master_vendors", "field": "name", "type": "string", "schema": { "data_type": "varchar", "max_length": 255 }, "meta": {} },
+    { "collection": "master_vendors", "field": "vat_id", "type": "string", "schema": { "data_type": "varchar", "max_length": 120, "is_unique": true }, "meta": {} },
+    { "collection": "master_vendors", "field": "iban", "type": "string", "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true }, "meta": {} },
+    { "collection": "master_vendors", "field": "aliases", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+
+    
+    { "collection": "activity_log", "field": "id", "type": "uuid", "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false }, "meta": {} },
+    { "collection": "activity_log", "field": "document", "type": "uuid", "schema": { "data_type": "uuid", "is_nullable": true }, "meta": {} },
+    { "collection": "activity_log", "field": "kind", "type": "string", "schema": { "data_type": "varchar", "max_length": 80 }, "meta": {} },
+    { "collection": "activity_log", "field": "payload", "type": "json", "schema": { "data_type": "jsonb", "is_nullable": true }, "meta": {} },
+    { "collection": "activity_log", "field": "emitted_by", "type": "string", "schema": { "data_type": "varchar", "max_length": 40 }, "meta": {} }
+  ],
+  "relations": [
+    
+    { "collection": "documents", "field": "file", "related_collection": "directus_files", "schema": { "constraint_name": "documents_file_fk", "table": "documents", "column": "file", "foreign_key_table": "directus_files", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} },
+    { "collection": "email_messages", "field": "raw_mime_file", "related_collection": "directus_files", "schema": { "constraint_name": "email_messages_raw_file_fk", "table": "email_messages", "column": "raw_mime_file", "foreign_key_table": "directus_files", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} },
+    { "collection": "artifacts", "field": "file", "related_collection": "directus_files", "schema": { "constraint_name": "artifacts_file_fk", "table": "artifacts", "column": "file", "foreign_key_table": "directus_files", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} },
+    { "collection": "exports", "field": "file", "related_collection": "directus_files", "schema": { "constraint_name": "exports_file_fk", "table": "exports", "column": "file", "foreign_key_table": "directus_files", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} },
+
+    
+    { "collection": "email_attachments", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "email_attachments_document_fk", "table": "email_attachments", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "extraction_jobs", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "extraction_jobs_document_fk", "table": "extraction_jobs", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "artifacts", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "artifacts_document_fk", "table": "artifacts", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "extractions", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "extractions_document_fk", "table": "extractions", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "extraction_fields", "field": "extraction", "related_collection": "extractions", "schema": { "constraint_name": "extraction_fields_extraction_fk", "table": "extraction_fields", "column": "extraction", "foreign_key_table": "extractions", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "review_tasks", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "review_tasks_document_fk", "table": "review_tasks", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "exports", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "exports_document_fk", "table": "exports", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "activity_log", "field": "document", "related_collection": "documents", "schema": { "constraint_name": "activity_log_document_fk", "table": "activity_log", "column": "document", "foreign_key_table": "documents", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} },
+
+    
+    { "collection": "email_attachments", "field": "email_message", "related_collection": "email_messages", "schema": { "constraint_name": "email_attachments_email_fk", "table": "email_attachments", "column": "email_message", "foreign_key_table": "email_messages", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+
+    
+    { "collection": "deliveries", "field": "export", "related_collection": "exports", "schema": { "constraint_name": "deliveries_export_fk", "table": "deliveries", "column": "export", "foreign_key_table": "exports", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "CASCADE" }, "meta": {} },
+    { "collection": "deliveries", "field": "target", "related_collection": "integration_targets", "schema": { "constraint_name": "deliveries_target_fk", "table": "deliveries", "column": "target", "foreign_key_table": "integration_targets", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "RESTRICT" }, "meta": {} },
+
+    
+    { "collection": "review_tasks", "field": "assignee", "related_collection": "directus_users", "schema": { "constraint_name": "review_tasks_assignee_fk", "table": "review_tasks", "column": "assignee", "foreign_key_table": "directus_users", "foreign_key_column": "id", "on_update": "NO ACTION", "on_delete": "SET NULL" }, "meta": {} }
+  ]
+}

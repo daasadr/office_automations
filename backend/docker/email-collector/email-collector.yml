@@ -1,0 +1,65 @@
+services:
+  email-collector:
+    build:
+      context: ../../email-collector
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_PREFIX}-email-collector
+    env_file:
+      - ../../.env
+    environment:
+      # Temporal connection
+      TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      TEMPORAL_NAMESPACE: default
+      
+      # Email settings
+      IMAP_HOST: ${IMAP_HOST}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_SECURE: ${IMAP_SECURE:-true}
+      IMAP_USER: ${IMAP_USER}
+      IMAP_PASSWORD: ${IMAP_PASSWORD}
+      IMAP_MAILBOX: ${IMAP_MAILBOX:-INBOX}
+      
+      # Gmail API settings (alternative to IMAP)
+      GMAIL_CLIENT_ID: ${GMAIL_CLIENT_ID}
+      GMAIL_CLIENT_SECRET: ${GMAIL_CLIENT_SECRET}
+      GMAIL_REFRESH_TOKEN: ${GMAIL_REFRESH_TOKEN}
+      
+      # Microsoft Graph API settings
+      MS_TENANT_ID: ${MS_TENANT_ID}
+      MS_CLIENT_ID: ${MS_CLIENT_ID}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET}
+      
+      # Storage connection
+      S3_ENDPOINT: http://${PROJECT_PREFIX}-minio:9000
+      S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      S3_SECRET_KEY: ${MINIO_SECRET_KEY}
+      S3_BUCKET: ${PROJECT_PREFIX}
+      
+      # Processing settings
+      EMAIL_CHECK_INTERVAL: ${EMAIL_CHECK_INTERVAL:-60000}
+      ALLOWED_SENDERS: ${ALLOWED_SENDERS}
+      ALLOWED_EXTENSIONS: ${ALLOWED_EXTENSIONS:-pdf,jpg,jpeg,png,tiff}
+      MAX_ATTACHMENT_SIZE: ${MAX_ATTACHMENT_SIZE:-10485760}
+      
+      # Service settings
+      NODE_ENV: ${NODE_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      temporal:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+

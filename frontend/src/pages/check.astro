@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { ValidationResults } from '../components/ValidationResults';
+import { getValidationResult } from '../lib/validation-store';
+
+// Get job ID from query parameters
+const jobId = Astro.url.searchParams.get('job');
+
+// If no job ID is present, redirect to upload page
+if (!jobId) {
+  return Astro.redirect('/upload', 302);
+}
+
+// Get validation result from store
+const validationData = getValidationResult(jobId);
+
+// If no validation data found, redirect to upload page
+if (!validationData) {
+  return Astro.redirect('/upload', 302);
+}
+
+// Extract the data
+const { present: presentItems, missing: missingItems, confidence: confidenceScore, imagePreview: imageData, extracted_data: extractedData } = validationData;
+---
+
+<BaseLayout title="Kontrola dokumentu" currentStep="check">
+  <div class="container mx-auto py-8">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold tracking-tight mb-4">Kontrola dokumentu</h1>
+      <p class="text-lg text-muted-foreground">
+        Výsledky analýzy vašeho PDF dokumentu
+      </p>
+    </div>
+    
+    <div class="max-w-6xl mx-auto space-y-8">
+      <!-- Validation Results -->
+      <ValidationResults 
+        client:load
+        present={presentItems}
+        missing={missingItems}
+        confidence={confidenceScore}
+        imagePreview={imageData}
+        extractedData={extractedData}
+      />
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
+        <a
+          href="/upload"
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors min-w-48"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Nahrát jiný dokument
+        </a>
+        
+        <button
+          type="button"
+          id="generate-excel"
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl min-w-48"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Vygenerovat Excel
+        </button>
+      </div>
+
+      <!-- Job Information -->
+      <div class="bg-muted/50 rounded-lg p-4 text-center">
+        <p class="text-sm text-muted-foreground">
+          ID úlohy: <code class="font-mono bg-background px-2 py-1 rounded text-xs">{jobId}</code>
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const generateBtn = document.getElementById('generate-excel');
+    
+    if (generateBtn) {
+      generateBtn.addEventListener('click', async () => {
+        // Get job ID from the page
+        const jobId = new URLSearchParams(window.location.search).get('job');
+        
+        if (!jobId) {
+          alert('Chyba: ID úlohy nebylo nalezeno');
+          return;
+        }
+
+        // Show loading state
+        const originalText = generateBtn.textContent;
+        generateBtn.textContent = 'Generování...';
+        generateBtn.setAttribute('disabled', 'true');
+
+        try {
+          // In a real implementation, this would call an API to generate Excel
+          // For now, simulate the process and redirect to download page
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+          
+          // Redirect to download page with the job ID
+          window.location.href = `/download?job=${jobId}`;
+        } catch (error) {
+          alert('Došlo k chybě při generování Excel souboru. Zkuste to prosím znovu.');
+          generateBtn.textContent = originalText;
+          generateBtn.removeAttribute('disabled');
+        }
+      });
+    }
+  });
+</script>

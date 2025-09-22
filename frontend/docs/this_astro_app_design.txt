@@ -1,0 +1,4 @@
+Design and architecture of this app
+
+general
+- app UI is in Czech language

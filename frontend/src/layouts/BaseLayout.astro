@@ -1,0 +1,159 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+  currentStep?: 'welcome' | 'upload' | 'check' | 'processing' | 'download';
+}
+
+const { title, description = 'Aplikace pro zpracování souborů', currentStep } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    
+    <!-- Import global styles -->
+    <link rel="stylesheet" href="/src/styles/globals.css" />
+    
+    <!-- View transitions for modern browsers -->
+    <meta name="view-transition" content="same-origin" />
+    
+    <!-- Minimal additional styles for progressive enhancement -->
+    <style>
+      /* View transition animations */
+      @view-transition {
+        navigation: auto;
+      }
+      
+      /* Fallback animation for older browsers */
+      @media (prefers-reduced-motion: no-preference) {
+        .page-content {
+          animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+          from {
+            transform: translateX(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      }
+      
+      /* Print styles */
+      @media print {
+        .progress-indicator {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  
+  <body class="min-h-screen bg-background font-sans antialiased">
+    <!-- Skip link for screen readers -->
+    <a href="#main-content" class="skip-link">Přeskočit na hlavní obsah</a>
+    
+    <div class="container mx-auto px-4 flex-1 flex flex-col">
+      <!-- Progress indicator -->
+      {currentStep && currentStep !== 'welcome' && (
+        <nav class="flex justify-center items-center py-8 gap-4" role="progressbar" aria-label="Průběh zpracování souboru">
+          <a 
+            href="/upload" 
+            class={`flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-primary transition-colors ${currentStep === 'upload' ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${
+              currentStep === 'upload' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10'
+            }`} aria-hidden="true">1</div>
+            <span>Nahrání souboru</span>
+          </a>
+          
+          <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
+          
+          <div class={`flex items-center gap-2 text-sm font-medium ${
+            currentStep === 'check' ? 'text-primary' : 
+            currentStep === 'processing' ? 'text-primary' : 
+            currentStep === 'download' ? 'text-primary' : 'text-muted-foreground'
+          }`}>
+            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
+              currentStep === 'check' ? 'bg-primary text-primary-foreground' :
+              currentStep === 'processing' ? 'bg-primary text-primary-foreground' :
+              currentStep === 'download' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`} aria-hidden="true">2</div>
+            <span>Kontrola</span>
+          </div>
+          
+          <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
+          
+          <div class={`flex items-center gap-2 text-sm font-medium ${currentStep === 'download' ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
+              currentStep === 'download' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`} aria-hidden="true">3</div>
+            <span>Stažení Excel</span>
+          </div>
+        </nav>
+      )}
+      
+      <!-- Main content -->
+      <main id="main-content" class="page-content flex-1" role="main">
+        <slot />
+      </main>
+    </div>
+    
+    <!-- Progressive enhancement JavaScript -->
+    <script>
+      // View transitions for supported browsers
+      const hasViewTransitions = 'startViewTransition' in document;
+      if (hasViewTransitions) {
+        // Modern browsers with native view transitions
+        document.addEventListener('astro:page-load', () => {
+          // Additional setup if needed
+        });
+      } else {
+        // Fallback for older browsers
+        document.addEventListener('astro:page-load', () => {
+          const content = document.querySelector('.page-content') as HTMLElement;
+          if (content) {
+            content.style.animation = 'slideIn 0.3s ease-out';
+          }
+        });
+      }
+      
+      // Enhance form submissions for better UX
+      document.addEventListener('astro:page-load', () => {
+        const forms = document.querySelectorAll('form[data-enhance]');
+        forms.forEach(form => {
+          form.addEventListener('submit', function() {
+            const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+            if (submitButton) {
+              submitButton.disabled = true;
+              submitButton.setAttribute('aria-busy', 'true');
+              const originalText = submitButton.textContent;
+              const loadingText = (submitButton as any).dataset?.loadingText || 'Zpracování...';
+              submitButton.textContent = loadingText;
+              
+              // Re-enable after timeout as failsafe
+              setTimeout(() => {
+                submitButton.disabled = false;
+                submitButton.removeAttribute('aria-busy');
+                if (originalText) submitButton.textContent = originalText;
+              }, 30000);
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 10% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 10% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 5%;
+    --primary: 24 95% 50%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 24 10% 93%;
+    --secondary-foreground: 20 10% 5%;
+    --muted: 24 10% 93%;
+    --muted-foreground: 20 10% 40%;
+    --accent: 24 10% 93%;
+    --accent-foreground: 20 10% 5%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 24 95% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 20 10% 5%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 10% 5%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 10% 5%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 24 95% 50%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 24 30% 15%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 24 30% 15%;
+    --muted-foreground: 24 10% 70%;
+    --accent: 24 30% 15%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 24 30% 15%;
+    --input: 24 30% 15%;
+    --ring: 24 95% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Additional accessibility styles */
+@layer base {
+  /* Focus management for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-ring outline-offset-2;
+  }
+
+  /* Skip link for screen readers */
+  .skip-link {
+    @apply absolute -top-40 left-6 bg-primary text-primary-foreground px-2 py-1 rounded z-50;
+  }
+
+  .skip-link:focus {
+    @apply top-6;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* High contrast support */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: 0 0% 0%;
+      --input: 0 0% 0%;
+    }
+  }
+}

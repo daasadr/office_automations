@@ -1,0 +1,4 @@
+- refactoring workers
+- dockerization of fe
+- XLS generator
+- Sentry

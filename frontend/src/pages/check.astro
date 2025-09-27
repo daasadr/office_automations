@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { ValidationResults } from '../components/ValidationResults';
-import { getValidationResult } from '../lib/validation-store';
 
 // Get job ID from query parameters
 const jobId = Astro.url.searchParams.get('job');
@@ -11,16 +10,27 @@ if (!jobId) {
   return Astro.redirect('/upload', 302);
 }
 
-// Get validation result from store
-const validationData = getValidationResult(jobId);
+// Get validation result from backend API
+const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
+let validationData = null;
+
+try {
+  const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`);
+  if (response.ok) {
+    validationData = await response.json();
+  }
+} catch (error) {
+  console.error('Error fetching validation data:', error);
+}
 
 // If no validation data found, redirect to upload page
-if (!validationData) {
+if (!validationData || !validationData.validationResult) {
   return Astro.redirect('/upload', 302);
 }
 
-// Extract the data
-const { present: presentItems, missing: missingItems, confidence: confidenceScore, imagePreview: imageData, extracted_data: extractedData } = validationData;
+// Extract the data from the backend response
+const { present: presentItems, missing: missingItems, confidence: confidenceScore, extracted_data: extractedData } = validationData.validationResult;
+const imageData = null; // Backend doesn't provide image preview
 ---
 
 <BaseLayout title="Kontrola dokumentu" currentStep="check">
@@ -39,7 +49,7 @@ const { present: presentItems, missing: missingItems, confidence: confidenceScor
         present={presentItems}
         missing={missingItems}
         confidence={confidenceScore}
-        imagePreview={imageData}
+        imagePreview={imageData || undefined}
         extractedData={extractedData}
       />
 
@@ -55,60 +65,113 @@ const { present: presentItems, missing: missingItems, confidence: confidenceScor
           Nahrát jiný dokument
         </a>
         
-        <button
-          type="button"
-          id="generate-excel"
+        <a
+          href={`/download?job=${jobId}`}
           class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl min-w-48"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
           </svg>
-          Vygenerovat Excel
-        </button>
+          Pokračovat ke stažení
+        </a>
       </div>
 
       <!-- Job Information -->
-      <div class="bg-muted/50 rounded-lg p-4 text-center">
+      <!-- <div class="bg-muted/50 rounded-lg p-4 text-center">
         <p class="text-sm text-muted-foreground">
           ID úlohy: <code class="font-mono bg-background px-2 py-1 rounded text-xs">{jobId}</code>
         </p>
-      </div>
+      </div> -->
     </div>
   </div>
 </BaseLayout>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
-    const generateBtn = document.getElementById('generate-excel');
+  async function generateExcelFile() {
+    console.log('=== CHECK PAGE LOADED ===');
+    console.log('User agent:', navigator.userAgent);
+    console.log('Page URL:', window.location.href);
+    console.log('Document ready state:', document.readyState);
     
-    if (generateBtn) {
-      generateBtn.addEventListener('click', async () => {
-        // Get job ID from the page
-        const jobId = new URLSearchParams(window.location.search).get('job');
+    // Generate Excel file when page loads
+    const jobId = new URLSearchParams(window.location.search).get('job');
+    console.log('JobId from URL:', jobId);
+    
+    if (jobId) {
+      try {
+        console.log('Starting Excel file generation for job:', jobId);
+        console.log('Making POST request to /api/generate-excel...');
         
-        if (!jobId) {
-          alert('Chyba: ID úlohy nebylo nalezeno');
-          return;
-        }
+        const response = await fetch('/api/generate-excel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobId }),
+        });
 
-        // Show loading state
-        const originalText = generateBtn.textContent;
-        generateBtn.textContent = 'Generování...';
-        generateBtn.setAttribute('disabled', 'true');
+        console.log('Response received:');
+        console.log('- Status:', response.status);
+        console.log('- Status text:', response.statusText);
+        console.log('- Headers:', Object.fromEntries(response.headers.entries()));
 
-        try {
-          // In a real implementation, this would call an API to generate Excel
-          // For now, simulate the process and redirect to download page
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+        if (response.ok) {
+          const result = await response.json();
+          console.log('SUCCESS: Excel file generated');
+          console.log('- Filename:', result.filename);
+          console.log('- Download URL:', result.downloadUrl);
+          console.log('- Full result:', result);
           
-          // Redirect to download page with the job ID
-          window.location.href = `/download?job=${jobId}`;
-        } catch (error) {
-          alert('Došlo k chybě při generování Excel souboru. Zkuste to prosím znovu.');
-          generateBtn.textContent = originalText;
-          generateBtn.removeAttribute('disabled');
+          // Store the download URL for later use
+          const excelData = {
+            filename: result.filename,
+            downloadUrl: result.downloadUrl,
+            timestamp: Date.now()
+          };
+          
+          sessionStorage.setItem(`excel_${jobId}`, JSON.stringify(excelData));
+          console.log('Excel data stored in sessionStorage:', excelData);
+          
+          // Verify storage
+          const stored = sessionStorage.getItem(`excel_${jobId}`);
+          console.log('Verification - stored data:', stored);
+        } else {
+          console.error('ERROR: Failed to generate Excel file');
+          console.error('- Status:', response.status);
+          console.error('- Status text:', response.statusText);
+          
+          try {
+            const errorText = await response.text();
+            console.error('- Response body:', errorText);
+          } catch (e) {
+            console.error('- Could not read response body:', e);
+          }
         }
-      });
+      } catch (error) {
+        console.error('EXCEPTION: Error generating Excel file');
+        console.error('- Error type:', typeof error);
+        console.error('- Error message:', error instanceof Error ? error.message : String(error));
+        console.error('- Error stack:', error instanceof Error ? error.stack : 'No stack available');
+        console.error('- Full error object:', error);
+      }
+    } else {
+      console.warn('No jobId found in URL parameters');
+      console.log('Current URL:', window.location.href);
+      console.log('Search params:', window.location.search);
     }
-  });
+    
+    console.log('=== CHECK PAGE EXCEL GENERATION COMPLETE ===');
+  }
+
+  // Try multiple event listeners to ensure the script runs
+  document.addEventListener('astro:page-load', generateExcelFile);
+  document.addEventListener('DOMContentLoaded', generateExcelFile);
+  
+  // If the page is already loaded, run immediately
+  if (document.readyState === 'loading') {
+    // Document still loading
+  } else {
+    // Document already loaded
+    generateExcelFile();
+  }
 </script>

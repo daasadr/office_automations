@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 
-// Temporal client for workflow execution
 const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -21,6 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const provider = formData.get('provider') as string || 'auto';
 
     if (!file || file.size === 0) {
       return new Response(
@@ -35,19 +35,16 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Validate file type - now supporting PDF files for waste validation
+    // Validate file type - now accepting PDFs for document processing
     const allowedTypes = [
-      'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/pdf' // Added PDF support
+      'application/pdf'
     ];
 
     if (!allowedTypes.includes(file.type)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid file type. Please upload a CSV, Excel, or PDF file.' 
+          error: 'Invalid file type. Please upload a PDF file.' 
         }),
         { 
           status: 400,
@@ -71,50 +68,34 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Generate job ID
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    // Forward the request to the backend orchestration API
+    const backendFormData = new FormData();
+    backendFormData.append('file', file);
+    backendFormData.append('provider', provider);
 
-    // Convert file to buffer for workflow
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-
-    // Determine processing type based on file type
-    const processingType = file.type === 'application/pdf' ? 'waste-validation' : 'generic-extraction';
-
-    // Forward to orchestration API to start Temporal workflow
-    const workflowPayload = {
-      jobId,
-      fileName: file.name,
-      fileBuffer: Array.from(fileBuffer), // Convert to array for JSON serialization
-      contentType: file.type,
-      processingType
-    };
-
-    const response = await fetch(`${ORCHESTRATION_API_URL}/workflows/start`, {
+    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/validate-pdf`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        workflowType: 'processFileWorkflow',
-        workflowId: `file-processing-${jobId}`,
-        input: workflowPayload
-      })
+      body: backendFormData,
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(`Workflow start failed: ${errorData.error || response.statusText}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: result.error || 'Backend processing failed',
+          details: result.details
+        }),
+        { 
+          status: response.status,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    const workflowResult = await response.json();
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        jobId,
-        workflowId: workflowResult.workflowId,
-        message: 'File uploaded successfully and processing started via Temporal workflow.'
-      }),
+      JSON.stringify(result),
       { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -127,7 +108,8 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error. Please try again later.' 
+        error: 'Internal server error. Please try again later.',
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500,

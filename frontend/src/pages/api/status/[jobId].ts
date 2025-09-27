@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 
-// Orchestration API URL
 const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
 
 export const GET: APIRoute = async ({ params }) => {
@@ -20,52 +19,32 @@ export const GET: APIRoute = async ({ params }) => {
       );
     }
 
-    // Query workflow status from orchestration API
-    const workflowId = `file-processing-${jobId}`;
-    const response = await fetch(`${ORCHESTRATION_API_URL}/workflows/${workflowId}/status`, {
+    // Forward the request to the backend orchestration API
+    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      // If workflow not found, return a default status
-      if (response.status === 404) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Job not found. It may have expired or never existed.' 
-          }),
-          { 
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      throw new Error(`Workflow status query failed: ${response.statusText}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: result.error || 'Backend request failed',
+          details: result.details
+        }),
+        { 
+          status: response.status,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    const workflowStatus = await response.json();
-    
-    // Transform workflow status to frontend job format
-    const job = {
-      id: jobId,
-      workflowId: workflowId,
-      status: workflowStatus.status || 'unknown',
-      progress: workflowStatus.progress || 0,
-      currentStep: workflowStatus.currentStep || 'Processing',
-      originalFileName: workflowStatus.fileName || 'Unknown file',
-      error: workflowStatus.error,
-      result: workflowStatus.result
-    };
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        job
-      }),
+      JSON.stringify(result),
       { 
         status: 200,
         headers: { 
@@ -81,7 +60,8 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error. Please try again later.' 
+        error: 'Internal server error. Please try again later.',
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500,

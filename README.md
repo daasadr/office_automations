@@ -32,6 +32,8 @@ A comprehensive document processing system for automating PDF document validatio
 
 This office automation system processes PDF documents, validates their content, and converts them to Excel format. It's designed to handle waste management documentation ("průběžná evidence odpadů") with intelligent content validation and automated workflow processing.
 
+**Note:** This system is currently designed to operate behind a company VPN for security purposes and is not intended for direct public internet exposure.
+
 ### Key Features
 
 - **PDF Document Processing**: Upload, validate, and convert PDF documents to Excel

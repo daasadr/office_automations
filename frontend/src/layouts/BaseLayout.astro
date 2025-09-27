@@ -83,14 +83,10 @@ const { title, description = 'Aplikace pro zpracování souborů', currentStep }
           <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
           
           <div class={`flex items-center gap-2 text-sm font-medium ${
-            currentStep === 'check' ? 'text-primary' : 
-            currentStep === 'processing' ? 'text-primary' : 
-            currentStep === 'download' ? 'text-primary' : 'text-muted-foreground'
+            currentStep === 'processing' ? 'text-primary' : 'text-muted-foreground'
           }`}>
             <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-              currentStep === 'check' ? 'bg-primary text-primary-foreground' :
-              currentStep === 'processing' ? 'bg-primary text-primary-foreground' :
-              currentStep === 'download' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              currentStep === 'processing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
             }`} aria-hidden="true">2</div>
             <span>Kontrola</span>
           </div>

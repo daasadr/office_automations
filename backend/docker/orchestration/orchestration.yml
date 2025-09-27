@@ -29,6 +29,15 @@ services:
       # Security
       API_SECRET_KEY: ${API_SECRET_KEY}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:4321,http://localhost:8055}
+      
+      # LLM Configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
     ports:
       - "${ORCHESTRATION_PORT:-3001}:3001"
     depends_on:

@@ -73,7 +73,7 @@ export function ProcessingOverlay({ isVisible, onClose }: ProcessingOverlayProps
               )}
             </div>
             <span className={`text-sm ${currentStep >= 2 ? '' : 'text-muted-foreground'}`}>
-              {currentStep >= 2 ? 'PDF převeden na obrázek' : 'Převod PDF na obrázek...'}
+              {currentStep >= 2 ? 'Analýza dokumentu' : 'Analýza dokumentu'}
             </span>
           </div>
 
@@ -95,7 +95,7 @@ export function ProcessingOverlay({ isVisible, onClose }: ProcessingOverlayProps
               )}
             </div>
             <span className={`text-sm ${currentStep >= 3 ? '' : currentStep === 3 ? '' : 'text-muted-foreground'}`}>
-              {currentStep >= 3 ? 'Analýza dokončena' : 'Analýza AI modelem...'}
+              {currentStep >= 3 ? 'Zpracování dokumentu' : 'Zpracování dokumentu'}
             </span>
           </div>
         </div>

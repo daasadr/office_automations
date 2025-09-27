@@ -6,6 +6,7 @@ import { logger } from './utils/logger';
 import { webhookRouter } from './routes/webhooks';
 import { workflowRouter } from './routes/workflows';
 import { healthRouter } from './routes/health';
+import { documentRouter } from './routes/documents';
 import { errorHandler } from './middleware/errorHandler';
 import { temporalClient } from './temporal/client';
 
@@ -14,7 +15,7 @@ const app = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+  origin: config.cors.origin,
   credentials: true
 }));
 
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
 app.use('/health', healthRouter);
 app.use('/webhooks', webhookRouter);
 app.use('/workflows', workflowRouter);
+app.use('/documents', documentRouter);
 
 // Error handling
 app.use(errorHandler);

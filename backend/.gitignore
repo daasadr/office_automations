@@ -1,3 +1,90 @@
+# System files
 .DS_Store
-node_modules
+Thumbs.db
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+out/
+
+# Node.js application build artifacts
+orchestration-api/dist/
+workers/dist/
+
+# TypeScript compilation artifacts in source directories
+orchestration-api/**/*.js
+orchestration-api/**/*.js.map
+orchestration-api/**/*.d.ts
+orchestration-api/**/*.d.ts.map
+workers/**/*.js
+workers/**/*.js.map
+workers/**/*.d.ts
+workers/**/*.d.ts.map
+
+# Exclude source TypeScript files from the above patterns
+!orchestration-api/src/**/*.ts
+!workers/src/**/*.ts
+
+# TypeScript build info
+*.tsbuildinfo
+orchestration-api/*.tsbuildinfo
+workers/*.tsbuildinfo
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# ESLint cache
+.eslintcache
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store?
+ehthumbs.db
+Icon?
+
+# Temporary files
+tmp/
+temp/

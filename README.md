@@ -155,7 +155,7 @@ This office automation system processes PDF documents, validates their content, 
 4. **Configure required environment variables:**
    ```bash
    # Minimum required variables:
-   PROJECT_PREFIX=spur_odpady_
+   PROJECT_PREFIX=office-automation_
    POSTGRES_PASSWORD=your_secure_password
    KEYDB_PASSWORD=your_redis_password
    MINIO_ACCESS_KEY=your_minio_key
@@ -312,6 +312,7 @@ make db                 # Connect to PostgreSQL
 - Replay attack prevention with timestamp verification
 - Timing-safe signature comparison
 - Request authentication and payload integrity verification
+- obscure backend services
 
 **Endpoints:**
 - `POST /webhooks/directus` - Directus webhook handler

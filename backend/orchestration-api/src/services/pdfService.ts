@@ -42,13 +42,17 @@ export async function processPdfFile(input: ProcessPdfInput): Promise<ProcessPdf
     // Initialize Poppler for PDF to image conversion
     let poppler;
     try {
-      poppler = new Poppler();
+      // Try to initialize Poppler with explicit binary path for Alpine Linux
+      poppler = new Poppler('/usr/bin');
     } catch (constructorError) {
       logger.error('Poppler constructor error:', constructorError);
-      // Try alternative import approach for compatibility
-      const PopplerModule = await import('node-poppler');
-      const PopplerClass = PopplerModule.default || PopplerModule.Poppler;
-      poppler = new PopplerClass();
+      try {
+        // Fallback: try without explicit path
+        poppler = new Poppler();
+      } catch (fallbackError) {
+        logger.error('Poppler fallback constructor error:', fallbackError);
+        throw new Error(`Failed to initialize Poppler: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      }
     }
 
     // Convert all PDF pages to images using Poppler

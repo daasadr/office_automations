@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { logger } from '../utils/logger';
-import { processPdfFile } from '../services/pdfService';
 import { validateDocumentContent, ValidationProvider } from '../services/llmService';
 import { generateExcelFile } from '../services/excelService';
 import { createJob, updateJob, getJob, completeJob, failJob, setJobExcel, generateJobId, getAllJobs } from '../services/jobService';
@@ -53,66 +52,30 @@ router.post('/validate-pdf', upload.single('file'), async (req, res) => {
     const jobId = generateJobId();
     createJob(jobId, req.file.originalname, req.file.size);
 
-    // Try Gemini first for native PDF processing if available
-    if (provider === 'auto' || provider === 'gemini') {
-      try {
-        logger.info(`Attempting validation with provider: ${provider}`, { jobId });
-        const validationResult = await validateDocumentContent(new Uint8Array(req.file.buffer).buffer, { provider });
-        
-        // Complete the job
-        completeJob(jobId, validationResult, 'gemini');
+    // Use Gemini for native PDF processing (no image conversion needed)
+    try {
+      logger.info(`Processing PDF with Gemini (provider: ${provider})`, { jobId });
+      const validationResult = await validateDocumentContent(new Uint8Array(req.file.buffer).buffer, { provider: 'gemini' });
+      
+      // Complete the job
+      completeJob(jobId, validationResult, 'gemini');
 
-        return res.json({
-          success: true,
-          jobId: jobId,
-          provider: 'gemini'
-        });
-      } catch (geminiError) {
-        logger.info('Gemini validation failed, falling back to OpenAI', { jobId, error: geminiError });
-        if (provider === 'gemini') {
-          // If explicitly requested Gemini, don't fall back
-          failJob(jobId, geminiError instanceof Error ? geminiError.message : 'Gemini validation failed');
-          throw geminiError;
-        }
-        // Continue to OpenAI fallback for 'auto' mode
-      }
-    }
+      logger.info('PDF validation completed successfully with Gemini', { jobId });
 
-    // OpenAI processing with image conversion (fallback or explicit choice)
-    logger.info('Using OpenAI with image conversion...', { jobId });
-
-    // Process PDF to images
-    const pdfResult = await processPdfFile({
-      fileBuffer: req.file.buffer,
-      fileName: req.file.originalname,
-      jobId
-    });
-
-    if (!pdfResult.success) {
-      failJob(jobId, pdfResult.error || 'PDF processing failed');
+      return res.json({
+        success: true,
+        jobId: jobId,
+        provider: 'gemini'
+      });
+    } catch (geminiError) {
+      logger.error('Gemini PDF validation failed', { jobId, error: geminiError });
+      failJob(jobId, geminiError instanceof Error ? geminiError.message : 'PDF validation failed');
+      
       return res.status(500).json({
-        error: 'PDF processing failed',
-        details: pdfResult.error
+        error: 'PDF validation failed',
+        details: geminiError instanceof Error ? geminiError.message : 'Unknown error occurred during PDF processing'
       });
     }
-
-    // Validate with OpenAI using processed images
-    logger.info(`Sending ${pdfResult.processedImages.length} page(s) to OpenAI for validation...`, { jobId });
-    const validationResult = await validateDocumentContent(pdfResult.processedImages);
-
-    // Add preview image to validation result
-    validationResult.imagePreview = pdfResult.previewImage;
-
-    // Complete the job
-    completeJob(jobId, validationResult, 'openai');
-
-    logger.info('PDF validation completed successfully', { jobId, provider: 'openai' });
-
-    res.json({
-      success: true,
-      jobId: jobId,
-      provider: 'openai'
-    });
 
   } catch (error) {
     logger.error('Error processing PDF validation:', error);

@@ -34,6 +34,11 @@ export const config = {
   security: {
     apiSecretKey: process.env.API_SECRET_KEY || 'your-secret-key',
     webhookSecret: process.env.WEBHOOK_SECRET || 'webhook-secret'
+  },
+  
+  // CORS configuration
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:4321,http://localhost:8055'
   }
 };
 

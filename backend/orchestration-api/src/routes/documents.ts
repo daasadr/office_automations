@@ -57,7 +57,7 @@ router.post('/validate-pdf', upload.single('file'), async (req, res) => {
     if (provider === 'auto' || provider === 'gemini') {
       try {
         logger.info(`Attempting validation with provider: ${provider}`, { jobId });
-        const validationResult = await validateDocumentContent(req.file.buffer, { provider });
+        const validationResult = await validateDocumentContent(new Uint8Array(req.file.buffer).buffer, { provider });
         
         // Complete the job
         completeJob(jobId, validationResult, 'gemini');
@@ -279,3 +279,4 @@ router.get('/jobs', async (req, res) => {
 });
 
 export { router as documentRouter };
+

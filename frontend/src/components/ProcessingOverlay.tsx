@@ -20,14 +20,14 @@ export function ProcessingOverlay({ isVisible, onClose }: ProcessingOverlayProps
     }, 3000);
 
     // Step 3: Analyze (after 6 seconds)
-    const timer2 = setTimeout(() => {
-      setCurrentStep(3);
-    }, 6000);
+    // const timer2 = setTimeout(() => {
+    //   setCurrentStep(3);
+    // }, 6000);
 
     // Cleanup timers
     return () => {
       clearTimeout(timer1);
-      clearTimeout(timer2);
+      // clearTimeout(timer2);
     };
   }, [isVisible]);
 

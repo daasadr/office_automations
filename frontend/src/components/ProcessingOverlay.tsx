@@ -45,7 +45,7 @@ export function ProcessingOverlay({ isVisible, onClose }: ProcessingOverlayProps
           </div>
           <h3 className="text-xl font-semibold mb-2">Zpracovávám dokument</h3>
           <p className="text-muted-foreground mb-4">
-            Probíhá zpracování dokumentu.
+            {/* Po dokončení zpracování dokumentu budete upozorněni e-mailem. */}
           </p>
         </div>
 

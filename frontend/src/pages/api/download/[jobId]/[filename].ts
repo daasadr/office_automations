@@ -1,29 +1,33 @@
 import type { APIRoute } from 'astro';
+import { withLogging, createErrorResponse, loggedFetch } from '../../../lib/middleware';
+import { generateRequestId } from '../../../lib/logger';
 
 const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
 
-export const GET: APIRoute = async ({ params }) => {
+const downloadHandler: APIRoute = async ({ params }) => {
+  const requestId = generateRequestId();
   try {
     const { jobId, filename } = params;
 
     if (!jobId || !filename) {
-      return new Response('Job ID and filename are required.', { 
-        status: 400,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return createErrorResponse(
+        'Job ID and filename are required',
+        { status: 400, requestId }
+      );
     }
 
     // Forward the request to the backend orchestration API
-    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/download/${jobId}/${filename}`, {
+    const response = await loggedFetch(`${ORCHESTRATION_API_URL}/documents/download/${jobId}/${filename}`, {
       method: 'GET',
+      requestId
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      return new Response(errorText || 'Backend download failed', { 
-        status: response.status,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return createErrorResponse(
+        errorText || 'Backend download failed',
+        { status: response.status, requestId }
+      );
     }
 
     // Get the response as a stream and forward it
@@ -40,6 +44,7 @@ export const GET: APIRoute = async ({ params }) => {
       headers.set('Content-Length', contentLength);
     }
     headers.set('Cache-Control', 'private, max-age=3600');
+    headers.set('X-Request-ID', requestId);
 
     return new Response(response.body, {
       status: 200,
@@ -47,14 +52,14 @@ export const GET: APIRoute = async ({ params }) => {
     });
 
   } catch (error) {
-    console.error('Download API error:', error);
-    
-    return new Response('Internal server error. Please try again later.', { 
-      status: 500,
-      headers: { 'Content-Type': 'text/plain' }
-    });
+    return createErrorResponse(
+      'Internal server error. Please try again later.',
+      { status: 500, requestId }
+    );
   }
 };
+
+export const GET = withLogging(downloadHandler);
 
 // Handle OPTIONS for CORS preflight
 export const OPTIONS: APIRoute = async () => {

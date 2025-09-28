@@ -18,7 +18,7 @@ const generateExcelHandler: APIRoute = async ({ request }) => {
       );
     }
 
-    // Forward the request to the backend orchestration API
+    // Forward the request to the backend orchestration API to generate Excel
     const backendResponse = await loggedFetch(`${ORCHESTRATION_API_URL}/documents/generate-excel`, {
       method: 'POST',
       headers: {
@@ -40,21 +40,25 @@ const generateExcelHandler: APIRoute = async ({ request }) => {
       );
     }
 
-    // Get the Excel file buffer from backend
-    const excelBuffer = await backendResponse.arrayBuffer();
-    
+    // Excel file was generated successfully on backend
     // Extract filename from Content-Disposition header
     const contentDisposition = backendResponse.headers.get('Content-Disposition');
     const filenameMatch = contentDisposition?.match(/filename="([^"]+)"/);
     const filename = filenameMatch?.[1] || `odpady_${jobId}.xlsx`;
 
-    // Return the Excel file with proper headers
-    return new Response(excelBuffer, {
+    // Return JSON response with download URL pointing to frontend proxy
+    const downloadUrl = `/api/download/${jobId}/${filename}`;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      filename,
+      downloadUrl,
+      requestId,
+      message: 'Excel file generated successfully'
+    }), {
       status: 200,
       headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': excelBuffer.byteLength.toString(),
+        'Content-Type': 'application/json',
         'X-Request-ID': requestId,
       },
     });

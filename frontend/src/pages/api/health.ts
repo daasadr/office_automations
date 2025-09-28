@@ -1,4 +1,6 @@
 import type { APIRoute } from 'astro';
+import { withLogging, createLoggedResponse, loggedFetch } from '../../lib/middleware';
+import { generateRequestId, logPerformance } from '../../lib/logger';
 
 interface ServiceStatus {
   name: string;
@@ -28,20 +30,21 @@ interface HealthResponse {
 }
 
 // Helper function to check service health
-async function checkService(name: string, url: string, timeout: number = 5000): Promise<ServiceStatus> {
+async function checkService(name: string, url: string, requestId: string, timeout: number = 5000): Promise<ServiceStatus> {
   const startTime = Date.now();
   
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    const response = await fetch(url, {
+    const response = await loggedFetch(url, {
       method: 'GET',
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'Frontend-Health-Check/1.0'
-      }
+      },
+      requestId
     });
     
     clearTimeout(timeoutId);
@@ -82,8 +85,9 @@ const getServiceUrls = () => {
   };
 };
 
-export const GET: APIRoute = async () => {
+const healthHandler: APIRoute = async () => {
   const startTime = Date.now();
+  const requestId = generateRequestId();
   const serviceUrls = getServiceUrls();
   
   try {
@@ -98,7 +102,7 @@ export const GET: APIRoute = async () => {
     // Check all services in parallel
     const serviceChecks = await Promise.all(
       servicesToCheck.map(service => 
-        checkService(service.name, service.url)
+        checkService(service.name, service.url, requestId)
       )
     );
 
@@ -148,24 +152,40 @@ export const GET: APIRoute = async () => {
       summary
     };
 
+    // Log performance metrics
+    logPerformance({
+      requestId,
+      operation: 'health_check',
+      duration: Date.now() - startTime,
+      metadata: {
+        servicesChecked: summary.total,
+        healthyServices: summary.healthy,
+        overallStatus
+      }
+    });
+
     // Set appropriate HTTP status code
     const httpStatus = overallStatus === 'healthy' ? 200 : 
                       overallStatus === 'degraded' ? 207 : 503;
 
-    return new Response(
-      JSON.stringify(healthResponse, null, 2),
-      {
-        status: httpStatus,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'X-Response-Time': `${Date.now() - startTime}ms`
-        }
+    return createLoggedResponse(healthResponse, {
+      status: httpStatus,
+      requestId,
+      headers: {
+        'X-Response-Time': `${Date.now() - startTime}ms`
       }
-    );
+    });
 
   } catch (error) {
-    console.error('Health check error:', error);
+    // Log the error
+    logPerformance({
+      requestId,
+      operation: 'health_check_error',
+      duration: Date.now() - startTime,
+      metadata: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     
     // Check if we're in development environment
     const isDev = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
@@ -191,19 +211,17 @@ export const GET: APIRoute = async () => {
       }
     };
 
-    return new Response(
-      JSON.stringify(errorResponse, null, 2),
-      {
-        status: 503,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'X-Response-Time': `${Date.now() - startTime}ms`
-        }
+    return createLoggedResponse(errorResponse, {
+      status: 503,
+      requestId,
+      headers: {
+        'X-Response-Time': `${Date.now() - startTime}ms`
       }
-    );
+    });
   }
 };
+
+export const GET = withLogging(healthHandler);
 
 // Handle OPTIONS for CORS preflight
 export const OPTIONS: APIRoute = async () => {

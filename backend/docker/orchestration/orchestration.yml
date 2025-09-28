@@ -9,6 +9,8 @@ services:
     environment:
       # Temporal connection
       TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      TEMPORAL_TASK_QUEUE: ${TEMPORAL_TASK_QUEUE:-document-processing}
       
       # Database connection
       DB_HOST: ${PROJECT_PREFIX}-postgres
@@ -20,6 +22,7 @@ services:
       # Directus connection
       DIRECTUS_URL: http://${PROJECT_PREFIX}-directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
       
       # API settings
       PORT: 3001

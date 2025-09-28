@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useLogger } from '../lib/client-logger';
 
 interface FileUploadProps {
   onFileSelect?: (file: File) => void;
@@ -8,6 +9,13 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const log = useLogger('FileUpload');
+
+  // Log component mount/unmount
+  useEffect(() => {
+    log.mount({ hasOnFileSelect: !!onFileSelect });
+    return () => log.unmount();
+  }, []);
 
   function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
@@ -18,6 +26,12 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
   }
 
   function handleFileSelect(file: File) {
+    log.userAction('file_selected', {
+      filename: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+    
     setSelectedFile(file);
     if (onFileSelect) {
       onFileSelect(file);
@@ -28,6 +42,10 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
     e.preventDefault();
     setIsDragging(false);
     
+    log.userAction('file_dropped', {
+      dragDataTypes: Array.from(e.dataTransfer.types)
+    });
+    
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       handleFileSelect(files[0]);
@@ -37,6 +55,8 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
         dataTransfer.items.add(files[0]);
         fileInputRef.current.files = dataTransfer.files;
       }
+    } else {
+      log.warn('No files found in drop event');
     }
   }
 

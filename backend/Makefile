@@ -45,7 +45,7 @@ quick-import:
 
 backup:
 	@echo "💾 Creating schema backup..."
-	@CONTAINER_NAME="$${PROJECT_PREFIX:-spur_odpady_}-directus"; \
+	@CONTAINER_NAME="$${PROJECT_PREFIX:-office-automation_}-directus"; \
 	BACKUP_FILE="backup-$$(date +%F_%H-%M-%S).json"; \
 	docker exec "$$CONTAINER_NAME" npx directus schema snapshot "/directus/snapshots/$$BACKUP_FILE"; \
 	echo "✅ Backup created: /directus/snapshots/$$BACKUP_FILE"
@@ -96,6 +96,6 @@ dev-setup: start import-schema
 
 # Database access
 db:
-	@CONTAINER_NAME="$${PROJECT_PREFIX:-spur_odpady_}-postgres"; \
+	@CONTAINER_NAME="$${PROJECT_PREFIX:-office-automation_}-postgres"; \
 	docker exec -it "$$CONTAINER_NAME" psql -U directus -d directus
 

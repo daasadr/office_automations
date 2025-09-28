@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { generateRequestId, logRequest, type RequestLogData } from './logger';
+import { generateRequestId, logRequest } from './logger';
 
 // Request timing utility
 export class RequestTimer {

@@ -1,26 +1,23 @@
 services:
   temporal:
-    image: temporalio/server:1.25.0
+    image: temporalio/auto-setup:1.25.0
     container_name: ${PROJECT_PREFIX}-temporal
     environment:
-      DB: postgresql
-      DB_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PWD: ${POSTGRES_PASSWORD}
-      POSTGRES_SEEDS: ${PROJECT_PREFIX}-postgres
-      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development.yaml
-      ENABLE_ES: false
-      ES_SEEDS: ""
-      ES_VERSION: ""
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=${PROJECT_PREFIX}-postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - ENABLE_ES=false
     ports:
       - "${TEMPORAL_PORT:-7233}:7233"
-      # Web UI port removed for minimal setup
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      test: ["CMD", "sh", "-c", "tctl --address $$(hostname -i):7233 cluster health"]
       interval: 30s
       timeout: 10s
       retries: 5

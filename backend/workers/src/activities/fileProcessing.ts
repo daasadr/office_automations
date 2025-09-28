@@ -85,6 +85,9 @@ export async function processPdfFile(input: ProcessPdfInput): Promise<ProcessPdf
     logger.info('PDF converted to images', { jobId: input.jobId });
 
     // Find all generated page files
+    if (!tempDir) {
+      throw new Error('Temporary directory not initialized');
+    }
     const files = fs.readdirSync(tempDir);
     const pageFiles = files
       .filter(file => file.startsWith('page-') && file.endsWith('.png'))
@@ -94,7 +97,7 @@ export async function processPdfFile(input: ProcessPdfInput): Promise<ProcessPdf
         const pageNumB = parseInt(b.match(/page-(\d+)\.png/)?.[1] || '0');
         return pageNumA - pageNumB;
       })
-      .map(file => path.join(tempDir, file));
+      .map(file => path.join(tempDir!, file));
 
     if (pageFiles.length === 0) {
       // Fallback: try different naming patterns

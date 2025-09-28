@@ -22,6 +22,12 @@ export const config = {
     password: process.env.DB_PASSWORD || 'directus'
   },
   
+  // Directus configuration
+  directus: {
+    url: process.env.DIRECTUS_URL || 'http://localhost:8055',
+    apiToken: process.env.DIRECTUS_API_TOKEN || ''
+  },
+  
   // S3/MinIO configuration
   s3: {
     endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
@@ -36,9 +42,6 @@ export const config = {
     openai: {
       apiKey: process.env.OPENAI_API_KEY || '',
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    },
-    anthropic: {
-      apiKey: process.env.ANTHROPIC_API_KEY || ''
     }
   },
   

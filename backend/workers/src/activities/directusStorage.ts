@@ -60,11 +60,22 @@ interface Extraction {
   validation_notes?: string;
 }
 
+interface DirectusFile {
+  id: string;
+  storage: string;
+  filename_disk: string | null;
+  filename_download: string;
+  title: string | null;
+  type: string | null;
+  [key: string]: any;
+}
+
 interface DirectusSchema {
   documents: Document;
   artifacts: Artifact;
   extraction_jobs: ExtractionJob;
   extractions: Extraction;
+  directus_files: DirectusFile;
 }
 
 // Initialize Directus client
@@ -147,26 +158,21 @@ export async function storeDocument(input: StoreDocumentInput): Promise<StoreDoc
     // Calculate file hash
     const hash = createHash('sha256').update(input.fileBuffer).digest('hex');
     
-    // Check if document with this hash already exists
-    const existingDocs = await directus.request(
+    // Check if file with this hash already exists
+    const existingFiles = await directus.request(
       readFiles({
-        filter: { hash_sha256: { _eq: hash } }
+        filter: { filename_download: { _eq: input.fileName } }
       })
     );
 
-    if (existingDocs.length > 0) {
-      logger.info('Document with same hash already exists', {
+    if (existingFiles.length > 0) {
+      logger.info('File with same name already exists', {
         jobId: input.jobId,
-        hash,
-        existingDocId: existingDocs[0].id
+        fileName: input.fileName,
+        existingFileId: existingFiles[0].id
       });
       
-      return {
-        success: true,
-        documentId: existingDocs[0].id,
-        fileId: existingDocs[0].id,
-        hash
-      };
+      // Still create a new document record even if file exists
     }
 
     // Upload file to Directus
@@ -331,9 +337,9 @@ export async function updateDocumentStatus(input: UpdateDocumentStatusInput): Pr
 
     if (input.metadata) {
       // Merge with existing metadata
-      const existingDoc = await directus.request(readItem('documents', input.documentId));
+      const existingDoc: any = await directus.request((readItem as any)('documents', input.documentId));
       updateData.metadata_json = {
-        ...existingDoc.metadata_json,
+        ...(existingDoc?.metadata_json || {}),
         ...input.metadata,
         lastStatusUpdate: new Date().toISOString()
       };
@@ -457,7 +463,7 @@ export async function storeExtractionResult(input: StoreExtractionResultInput): 
 export async function getDocumentWithRelations(documentId: string) {
   try {
     const document = await directus.request(
-      readItem('documents', documentId, {
+      (readItem as any)('documents', documentId, {
         fields: ['*', 'file.*', 'artifacts.*', 'extraction_jobs.*', 'extractions.*']
       })
     );

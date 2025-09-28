@@ -1,15 +1,16 @@
-FROM node:18-alpine
+FROM node:18
 
 # Install necessary system dependencies for OCR and PDF processing
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     tesseract-ocr \
-    tesseract-ocr-data-ces \
-    tesseract-ocr-data-eng \
+    tesseract-ocr-ces \
+    tesseract-ocr-eng \
     poppler-utils \
     imagemagick \
     python3 \
-    py3-pip \
-    build-base
+    python3-pip \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -17,8 +18,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY src/ ./src/
@@ -27,8 +28,8 @@ COPY src/ ./src/
 RUN npm run build
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S temporal -u 1001
+RUN groupadd -g 1001 nodejs
+RUN useradd -r -u 1001 -g nodejs temporal
 
 # Change to non-root privilege
 USER temporal

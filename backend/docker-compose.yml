@@ -1,4 +1,4 @@
-name: spur_odpady_
+name: office-automation_
 
 include:
   - ./docker/postgres/postgres.yml

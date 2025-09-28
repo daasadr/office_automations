@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ProcessingOverlay } from './ProcessingOverlay';
+import { useLogger } from '../lib/client-logger';
 
 export function UploadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -9,24 +10,42 @@ export function UploadForm() {
   const [isHydrated, setIsHydrated] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const log = useLogger('UploadForm');
 
-  // Debug: Check if component is hydrated
+  // Component lifecycle logging
   useEffect(() => {
-    console.log('UploadForm component hydrated on client!');
+    log.mount();
     setIsHydrated(true);
+    return () => log.unmount();
   }, []);
 
   const handleFileSelect = useCallback((file: File) => {
+    log.userAction('file_selected', {
+      filename: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
     if (file.type !== 'application/pdf') {
+      log.warn('Invalid file type selected', {
+        filename: file.name,
+        fileType: file.type,
+        expected: 'application/pdf'
+      });
       alert('Prosím vyberte pouze PDF soubory.');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
+      log.warn('File too large selected', {
+        filename: file.name,
+        fileSize: file.size,
+        maxSize: 10 * 1024 * 1024
+      });
       alert('Soubor je příliš velký. Maximální velikost je 10MB.');
       return;
     }
     setSelectedFile(file);
-  }, []);
+  }, [log]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,33 +83,71 @@ export function UploadForm() {
     if (isSubmitting) return;
 
     if (!selectedFile) {
+      log.warn('Submit attempted without file selected');
       alert('Prosím vyberte soubor k nahrání.');
       return;
     }
 
+    log.userAction('form_submit', {
+      filename: selectedFile.name,
+      fileSize: selectedFile.size
+    });
+
     setIsSubmitting(true);
     setShowProcessing(true);
+
+    const startTime = Date.now();
 
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
+
+      log.info('Starting file upload', {
+        filename: selectedFile.name,
+        endpoint: '/api/validate-pdf'
+      });
 
       const response = await fetch('/api/validate-pdf', {
         method: 'POST',
         body: formData,
       });
 
+      const duration = Date.now() - startTime;
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Chyba při zpracování souboru');
+        const errorMessage = error.error || 'Chyba při zpracování souboru';
+        
+        log.error('Upload failed', new Error(errorMessage), {
+          filename: selectedFile.name,
+          statusCode: response.status,
+          duration,
+          requestId: error.requestId,
+          details: error.details
+        });
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       
+      log.info('Upload completed successfully', {
+        filename: selectedFile.name,
+        duration,
+        jobId: result.jobId,
+        requestId: result.requestId
+      });
+      
       // Redirect to check page with job ID
       window.location.href = `/check?job=${result.jobId}`;
     } catch (error) {
-      console.error('Upload error:', error);
+      const duration = Date.now() - startTime;
+      
+      log.error('Upload error occurred', error instanceof Error ? error : new Error(String(error)), {
+        filename: selectedFile.name,
+        duration
+      });
+      
       alert(error instanceof Error ? error.message : 'Došlo k neočekávané chybě. Prosím zkuste to znovu.');
       setIsSubmitting(false);
       setShowProcessing(false);

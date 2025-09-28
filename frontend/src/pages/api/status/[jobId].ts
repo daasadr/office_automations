@@ -1,75 +1,85 @@
 import type { APIRoute } from 'astro';
+import { withLogging, createErrorResponse, createSuccessResponse, loggedFetch } from '../../../lib/middleware';
+import { generateRequestId, logPerformance } from '../../../lib/logger';
 
 const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
 
-export const GET: APIRoute = async ({ params }) => {
+const statusHandler: APIRoute = async ({ params }) => {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
   try {
     const jobId = params.jobId;
 
     if (!jobId) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Job ID is required.' 
-        }),
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        }
+      return createErrorResponse(
+        'Job ID is required.',
+        { status: 400, requestId }
       );
     }
 
+    // Log the status check request
+    logPerformance({
+      requestId,
+      operation: 'status_check_start',
+      duration: 0,
+      metadata: { jobId }
+    });
+
     // Forward the request to the backend orchestration API
-    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`, {
+    const backendResponse = await loggedFetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      requestId
     });
 
-    const result = await response.json();
+    const result = await backendResponse.json();
 
-    if (!response.ok) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: result.error || 'Backend request failed',
-          details: result.details
-        }),
+    if (!backendResponse.ok) {
+      return createErrorResponse(
+        result.error || 'Backend request failed',
         { 
-          status: response.status,
-          headers: { 'Content-Type': 'application/json' }
+          status: backendResponse.status, 
+          requestId,
+          details: result.details 
         }
       );
     }
 
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+    // Log successful status retrieval
+    logPerformance({
+      requestId,
+      operation: 'status_check_complete',
+      duration: Date.now() - startTime,
+      metadata: { 
+        jobId,
+        status: result.status || 'unknown'
       }
-    );
+    });
+
+    const response = createSuccessResponse(result, {
+      requestId
+    });
+    
+    // Add cache control header
+    response.headers.set('Cache-Control', 'no-cache');
+    
+    return response;
 
   } catch (error) {
-    console.error('Status API error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Internal server error. Please try again later.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
+    return createErrorResponse(
+      'Internal server error. Please try again later.',
       { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        status: 500, 
+        requestId,
+        details: error instanceof Error ? error.message : 'Unknown error'
       }
     );
   }
 };
+
+export const GET = withLogging(statusHandler);
 
 // Handle OPTIONS for CORS preflight
 export const OPTIONS: APIRoute = async () => {

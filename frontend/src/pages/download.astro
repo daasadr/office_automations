@@ -340,6 +340,7 @@ const jobData = {
     
     // Set up Excel download link
     const jobId = new URLSearchParams(window.location.search).get('job');
+    
     if (jobId && excelDownloadLink && excelDownloadText) {
       // Check if Excel file was generated
       const excelData = sessionStorage.getItem(`excel_${jobId}`);
@@ -350,8 +351,6 @@ const jobData = {
           (excelDownloadLink as HTMLAnchorElement).href = downloadUrl;
           (excelDownloadLink as HTMLAnchorElement).download = filename;
           excelDownloadText.textContent = 'Stáhnout Excel';
-          
-          console.log('Excel download link set up:', downloadUrl);
         } catch (error) {
           console.error('Error parsing Excel data from sessionStorage:', error);
           excelDownloadText.textContent = 'Excel nedostupný';
@@ -367,6 +366,7 @@ const jobData = {
         // Check again after a short delay
         setTimeout(() => {
           const excelDataRetry = sessionStorage.getItem(`excel_${jobId}`);
+          
           if (excelDataRetry) {
             try {
               const { filename, downloadUrl } = JSON.parse(excelDataRetry);
@@ -378,6 +378,8 @@ const jobData = {
             } catch (error) {
               console.error('Error parsing Excel data from sessionStorage on retry:', error);
             }
+          } else {
+            excelDownloadText.textContent = 'Excel nedostupný';
           }
         }, 2000);
       }
@@ -424,4 +426,5 @@ const jobData = {
       });
     }
   });
+
 </script>

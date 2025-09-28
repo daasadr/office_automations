@@ -103,7 +103,7 @@ export function ProcessingOverlay({ isVisible, onClose }: ProcessingOverlayProps
         {/* Estimated Time */}
         <div className="mt-6 pt-4 border-t">
           <p className="text-xs text-muted-foreground">
-            Odhadovaný čas: 10-30 sekund
+            Odhadovaný čas: 30-90 sekund
           </p>
         </div>
       </div>

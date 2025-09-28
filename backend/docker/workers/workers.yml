@@ -26,9 +26,6 @@ services:
       S3_BUCKET: ${PROJECT_PREFIX}
       
       # LLM settings
-      # OPENAI_API_KEY: ${OPENAI_API_KEY}
-      # OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       
       
       # OCR settings

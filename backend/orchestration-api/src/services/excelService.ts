@@ -31,7 +31,7 @@ export async function generateExcelFile(input: GenerateExcelInput): Promise<Gene
     // Process each waste code entry
     validationResult.extracted_data.forEach((item, index) => {
       // Get waste code from either new or legacy format
-      const kodOdpadu = item['kód odpadu'] || item.kod_odpadu || `Záznam_${index + 1}`;
+      const kodOdpadu = item['kód odpadu'] || `Záznam_${index + 1}`;
       
       // Create safe sheet name (Excel has limitations on sheet names)
       let sheetName = kodOdpadu.replace(/[[\]\\/:*?]/g, '_').substring(0, 31);

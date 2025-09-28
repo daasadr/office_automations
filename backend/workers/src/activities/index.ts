@@ -3,7 +3,6 @@ import { createWorkerLogger } from '../shared/logger';
 
 // Export all activities
 export * from './fileProcessing';
-export * from './llmValidation';
 export * from './storage';
 export * from './directusStorage';
 export * from './classify';
@@ -175,7 +174,7 @@ export async function extractWithLLM(input: ExtractWithLLMInput): Promise<Extrac
         dueDate: 0.92
       },
       metadata: {
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        model: 'gemini-2.5-flash',
         timestamp: new Date().toISOString()
       }
     };

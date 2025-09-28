@@ -37,13 +37,6 @@ export const config = {
     region: process.env.S3_REGION || 'us-east-1'
   },
   
-  // LLM configuration
-  llm: {
-    openai: {
-      apiKey: process.env.OPENAI_API_KEY || '',
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    }
-  },
   
   // OCR configuration
   ocr: {

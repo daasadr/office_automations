@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { logger } from '../utils/logger';
-import { validateDocumentContent, ValidationProvider } from '../services/llmService';
+import { validateDocumentContent } from '../services/llmService';
 import { generateExcelFile } from '../services/excelService';
 import { createJob, updateJob, getJob, completeJob, failJob, setJobExcel, generateJobId, getAllJobs } from '../services/jobService';
 
@@ -38,8 +38,8 @@ router.post('/validate-pdf', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Check for provider preference (default to 'auto' which prefers Gemini for PDFs)
-    const provider = (req.body.provider as ValidationProvider) || 'auto';
+    // Use Gemini for PDF processing
+    const provider = 'gemini';
 
     logger.info('File received for validation', {
       originalName: req.file.originalname,

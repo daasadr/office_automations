@@ -6,7 +6,7 @@ export interface JobData {
   status: 'processing' | 'completed' | 'failed';
   fileName?: string;
   fileSize?: number;
-  provider?: 'openai' | 'gemini';
+  provider?: 'gemini';
   validationResult?: ValidationResult;
   excelBuffer?: Buffer;
   excelFilename?: string;
@@ -67,7 +67,7 @@ export function getJob(jobId: string): JobData | null {
   return job;
 }
 
-export function completeJob(jobId: string, validationResult: ValidationResult, provider: 'openai' | 'gemini'): JobData | null {
+export function completeJob(jobId: string, validationResult: ValidationResult, provider: 'gemini'): JobData | null {
   const updates: Partial<JobData> = {
     status: 'completed',
     validationResult,

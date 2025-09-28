@@ -15,8 +15,8 @@ interface HealthResponse {
   uptime: number;
   frontend: {
     status: 'healthy';
-    nodeVersion: string;
-    memoryUsage: NodeJS.MemoryUsage;
+    nodeVersion?: string;
+    memoryUsage?: NodeJS.MemoryUsage;
   };
   services: ServiceStatus[];
   summary: {
@@ -79,9 +79,6 @@ async function checkService(name: string, url: string, timeout: number = 5000): 
 const getServiceUrls = () => {
   return {
     orchestrationApi: import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001',
-    directus: import.meta.env.DIRECTUS_URL || 'http://localhost:8055',
-    temporal: 'http://localhost:8085', // Temporal UI
-    minio: 'http://localhost:9001', // MinIO Console
   };
 };
 
@@ -90,23 +87,11 @@ export const GET: APIRoute = async () => {
   const serviceUrls = getServiceUrls();
   
   try {
-    // Define services to check
+    // Define services to check - only orchestration API as it handles all backend communication
     const servicesToCheck = [
       {
         name: 'Orchestration API',
         url: `${serviceUrls.orchestrationApi}/health`
-      },
-      {
-        name: 'Directus CMS',
-        url: `${serviceUrls.directus}/server/health`
-      },
-      {
-        name: 'Temporal UI',
-        url: `${serviceUrls.temporal}/health`
-      },
-      {
-        name: 'MinIO Console',
-        url: `${serviceUrls.minio}/minio/health/ready`
       }
     ];
 
@@ -144,6 +129,9 @@ export const GET: APIRoute = async () => {
       // Fallback version
     }
 
+    // Check if we're in development environment
+    const isDev = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+
     const healthResponse: HealthResponse = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
@@ -151,8 +139,10 @@ export const GET: APIRoute = async () => {
       uptime: process.uptime(),
       frontend: {
         status: 'healthy',
-        nodeVersion: process.version,
-        memoryUsage: process.memoryUsage()
+        ...(isDev && {
+          nodeVersion: process.version,
+          memoryUsage: process.memoryUsage()
+        })
       },
       services: serviceChecks,
       summary
@@ -177,6 +167,9 @@ export const GET: APIRoute = async () => {
   } catch (error) {
     console.error('Health check error:', error);
     
+    // Check if we're in development environment
+    const isDev = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+
     const errorResponse: HealthResponse = {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -184,8 +177,10 @@ export const GET: APIRoute = async () => {
       uptime: process.uptime(),
       frontend: {
         status: 'healthy',
-        nodeVersion: process.version,
-        memoryUsage: process.memoryUsage()
+        ...(isDev && {
+          nodeVersion: process.version,
+          memoryUsage: process.memoryUsage()
+        })
       },
       services: [],
       summary: {
@@ -221,3 +216,4 @@ export const OPTIONS: APIRoute = async () => {
     },
   });
 };
+

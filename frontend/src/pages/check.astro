@@ -1,17 +1,17 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { ValidationResults } from '../components/ValidationResults';
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { ValidationResults } from "../components/ValidationResults";
 
 // Get job ID from query parameters
-const jobId = Astro.url.searchParams.get('job');
+const jobId = Astro.url.searchParams.get("job");
 
 // If no job ID is present, redirect to upload page
 if (!jobId) {
-  return Astro.redirect('/upload', 302);
+  return Astro.redirect("/upload", 302);
 }
 
 // Get validation result from backend API
-const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
+const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || "http://localhost:3001";
 let validationData = null;
 
 try {
@@ -20,17 +20,21 @@ try {
     validationData = await response.json();
   }
 } catch (error) {
-  console.error('Error fetching validation data:', error);
+  console.error("Error fetching validation data:", error);
 }
 
 // If no validation data found, redirect to upload page
 if (!validationData || !validationData.validationResult) {
-  return Astro.redirect('/upload', 302);
+  return Astro.redirect("/upload", 302);
 }
 
 // Extract the data from the backend response
-const { present: presentItems, missing: missingItems, confidence: confidenceScore, extracted_data: extractedData } = validationData.validationResult;
-const imageData = null; // Backend doesn't provide image preview
+const {
+  present: presentItems,
+  missing: missingItems,
+  confidence: confidenceScore,
+  extracted_data: extractedData,
+} = validationData.validationResult;
 ---
 
 <BaseLayout title="Kontrola dokumentu" currentStep="check">
@@ -75,103 +79,7 @@ const imageData = null; // Backend doesn't provide image preview
           Pokračovat ke stažení
         </a>
       </div>
-
-      <!-- Job Information -->
-      <!-- <div class="bg-muted/50 rounded-lg p-4 text-center">
-        <p class="text-sm text-muted-foreground">
-          ID úlohy: <code class="font-mono bg-background px-2 py-1 rounded text-xs">{jobId}</code>
-        </p>
-      </div> -->
     </div>
   </div>
 </BaseLayout>
 
-<script>
-  async function generateExcelFile() {
-    console.log('=== CHECK PAGE LOADED ===');
-    console.log('User agent:', navigator.userAgent);
-    console.log('Page URL:', window.location.href);
-    console.log('Document ready state:', document.readyState);
-    
-    // Generate Excel file when page loads
-    const jobId = new URLSearchParams(window.location.search).get('job');
-    console.log('JobId from URL:', jobId);
-    
-    if (jobId) {
-      try {
-        console.log('Starting Excel file generation for job:', jobId);
-        console.log('Making POST request to /api/generate-excel...');
-        
-        const response = await fetch('/api/generate-excel', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ jobId }),
-        });
-
-        console.log('Response received:');
-        console.log('- Status:', response.status);
-        console.log('- Status text:', response.statusText);
-        console.log('- Headers:', Object.fromEntries(response.headers.entries()));
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('SUCCESS: Excel file generated');
-          console.log('- Filename:', result.filename);
-          console.log('- Download URL:', result.downloadUrl);
-          console.log('- Full result:', result);
-          
-          // Store the download URL for later use
-          const excelData = {
-            filename: result.filename,
-            downloadUrl: result.downloadUrl,
-            timestamp: Date.now()
-          };
-          
-          sessionStorage.setItem(`excel_${jobId}`, JSON.stringify(excelData));
-          console.log('Excel data stored in sessionStorage:', excelData);
-          
-          // Verify storage
-          const stored = sessionStorage.getItem(`excel_${jobId}`);
-          console.log('Verification - stored data:', stored);
-        } else {
-          console.error('ERROR: Failed to generate Excel file');
-          console.error('- Status:', response.status);
-          console.error('- Status text:', response.statusText);
-          
-          try {
-            const errorText = await response.text();
-            console.error('- Response body:', errorText);
-          } catch (e) {
-            console.error('- Could not read response body:', e);
-          }
-        }
-      } catch (error) {
-        console.error('EXCEPTION: Error generating Excel file');
-        console.error('- Error type:', typeof error);
-        console.error('- Error message:', error instanceof Error ? error.message : String(error));
-        console.error('- Error stack:', error instanceof Error ? error.stack : 'No stack available');
-        console.error('- Full error object:', error);
-      }
-    } else {
-      console.warn('No jobId found in URL parameters');
-      console.log('Current URL:', window.location.href);
-      console.log('Search params:', window.location.search);
-    }
-    
-    console.log('=== CHECK PAGE EXCEL GENERATION COMPLETE ===');
-  }
-
-  // Try multiple event listeners to ensure the script runs
-  document.addEventListener('astro:page-load', generateExcelFile);
-  document.addEventListener('DOMContentLoaded', generateExcelFile);
-  
-  // If the page is already loaded, run immediately
-  if (document.readyState === 'loading') {
-    // Document still loading
-  } else {
-    // Document already loaded
-    generateExcelFile();
-  }
-</script>

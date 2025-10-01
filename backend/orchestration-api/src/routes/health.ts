@@ -1,37 +1,27 @@
-import { Router } from 'express';
-import { temporalClient } from '../temporal/client';
+import { Router } from "express";
 
 const router = Router();
 
-router.get('/', async (req, res) => {
+router.get("/", async (_req, res) => {
   try {
-    // Check Temporal connection
-    const client = temporalClient.getClient();
-    
-    // Try to list workflows to verify connection
-    await client.workflow.list();
-    
     res.json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
       services: {
-        temporal: 'connected',
-        api: 'running'
-      }
+        api: "running",
+        gemini: process.env.GEMINI_API_KEY ? "configured" : "not_configured",
+      },
     });
   } catch (error) {
     res.status(503).json({
-      status: 'unhealthy',
+      status: "unhealthy",
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
       services: {
-        temporal: 'disconnected',
-        api: 'running'
-      }
+        api: "running",
+      },
     });
   }
 });
 
 export { router as healthRouter };
-
-

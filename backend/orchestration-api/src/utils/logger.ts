@@ -1,5 +1,5 @@
-import winston from 'winston';
-import { config } from '../config';
+import winston from "winston";
+import { config } from "../config";
 
 const format = winston.format.combine(
   winston.format.timestamp(),
@@ -7,28 +7,29 @@ const format = winston.format.combine(
   winston.format.json()
 );
 
+// Create base transports array
+const transports: winston.transport[] = [];
+
+// Add console transport with appropriate format based on environment
+if (config.nodeEnv === "production") {
+  // Production: JSON format for structured logging
+  transports.push(
+    new winston.transports.Console({
+      format,
+    })
+  );
+} else {
+  // Development: Colorized simple format for readability
+  transports.push(
+    new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    })
+  );
+}
+
 export const logger = winston.createLogger({
   level: config.logLevel,
   format,
-  defaultMeta: { service: 'orchestration-api' },
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
+  defaultMeta: { service: "orchestration-api" },
+  transports,
 });
-
-// If we're not in production, log to the console with colorized simple format
-if (config.nodeEnv !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
-}
-
-

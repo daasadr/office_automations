@@ -2,10 +2,10 @@
 export interface Props {
   title: string;
   description?: string;
-  currentStep?: 'welcome' | 'upload' | 'check' | 'processing' | 'download';
+  currentStep?: "welcome" | "upload" | "check" | "processing" | "download";
 }
 
-const { title, description = 'Aplikace pro zpracování souborů', currentStep } = Astro.props;
+const { title, description = "Aplikace pro zpracování souborů", currentStep } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -83,10 +83,10 @@ const { title, description = 'Aplikace pro zpracování souborů', currentStep }
           <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
           
           <div class={`flex items-center gap-2 text-sm font-medium ${
-            currentStep === 'processing' ? 'text-primary' : 'text-muted-foreground'
+            currentStep === 'check' ? 'text-primary' : 'text-muted-foreground'
           }`}>
             <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-              currentStep === 'processing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              currentStep === 'check' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
             }`} aria-hidden="true">2</div>
             <span>Kontrola</span>
           </div>

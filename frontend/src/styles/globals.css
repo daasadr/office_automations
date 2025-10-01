@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light mode (default) */
   :root {
     --background: 0 0% 100%;
     --foreground: 20 10% 5%;
@@ -26,26 +27,29 @@
     --radius: 0.5rem;
   }
 
-  .dark {
-    --background: 20 10% 5%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 10% 5%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 10% 5%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 24 95% 50%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 24 30% 15%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 24 30% 15%;
-    --muted-foreground: 24 10% 70%;
-    --accent: 24 30% 15%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 24 30% 15%;
-    --input: 24 30% 15%;
-    --ring: 24 95% 50%;
+  /* Dark mode - automatically applied when system prefers dark */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 20 10% 5%;
+      --foreground: 60 9.1% 97.8%;
+      --card: 20 10% 5%;
+      --card-foreground: 60 9.1% 97.8%;
+      --popover: 20 10% 5%;
+      --popover-foreground: 60 9.1% 97.8%;
+      --primary: 24 95% 50%;
+      --primary-foreground: 60 9.1% 97.8%;
+      --secondary: 24 30% 15%;
+      --secondary-foreground: 60 9.1% 97.8%;
+      --muted: 24 30% 15%;
+      --muted-foreground: 24 10% 70%;
+      --accent: 24 30% 15%;
+      --accent-foreground: 60 9.1% 97.8%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 60 9.1% 97.8%;
+      --border: 24 30% 15%;
+      --input: 24 30% 15%;
+      --ring: 24 95% 50%;
+    }
   }
 }
 
@@ -85,11 +89,20 @@
     }
   }
 
-  /* High contrast support */
+  /* High contrast support for both light and dark modes */
   @media (prefers-contrast: high) {
     :root {
       --border: 0 0% 0%;
       --input: 0 0% 0%;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --border: 0 0% 100%;
+        --input: 0 0% 100%;
+        --foreground: 0 0% 100%;
+        --background: 0 0% 0%;
+      }
     }
   }
 }

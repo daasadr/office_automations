@@ -283,3 +283,5 @@ temp/
 
 # OS generated thumbnails
 .thumbs/
+
+/package-lock.json

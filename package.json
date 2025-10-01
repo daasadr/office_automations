@@ -1,0 +1,29 @@
+{
+  "name": "office_automations",
+  "version": "1.0.0",
+  "description": "A comprehensive document processing system for automating PDF document validation and Excel conversion workflows, built with microservices architecture using Docker, Temporal workflows, and modern web technologies.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daasadr/office_automations.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/daasadr/office_automations/issues"
+  },
+  "homepage": "https://github.com/daasadr/office_automations#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.4"
+  }
+}

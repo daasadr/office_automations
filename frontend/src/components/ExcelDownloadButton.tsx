@@ -20,6 +20,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
   disabled = false,
 }) => {
   const [state, setState] = useState<ExcelDownloadState>({ status: "preparing" });
+  const [hasAttempted, setHasAttempted] = useState(false);
   const logger = useLogger("ExcelDownloadButton");
   const linkId = useId();
   const textId = useId();
@@ -29,25 +30,6 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
     setState({ status: "generating" });
 
     try {
-      // Check if Excel file was already generated and stored in sessionStorage
-      const existingData = sessionStorage.getItem(`excel_${jobId}`);
-      if (existingData) {
-        try {
-          const { filename, downloadUrl } = JSON.parse(existingData);
-          logger.info("Found existing Excel file in sessionStorage", { filename, downloadUrl });
-          setState({
-            status: "ready",
-            filename,
-            downloadUrl,
-          });
-          return;
-        } catch (error) {
-          logger.warn("Failed to parse existing Excel data from sessionStorage", undefined, {
-            error,
-          });
-        }
-      }
-
       logger.debug("Making POST request to /api/generate-excel", { jobId });
 
       const response = await fetch("/api/generate-excel", {
@@ -69,16 +51,6 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
           filename: result.filename,
           downloadUrl: result.downloadUrl,
         });
-
-        // Store the download URL for later use
-        const excelData = {
-          filename: result.filename,
-          downloadUrl: result.downloadUrl,
-          timestamp: Date.now(),
-        };
-
-        sessionStorage.setItem(`excel_${jobId}`, JSON.stringify(excelData));
-        logger.debug("Excel data stored in sessionStorage", excelData);
 
         setState({
           status: "ready",
@@ -119,6 +91,11 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
     return () => logger.unmount();
   }, [jobId, logger]);
 
+  // Reset hasAttempted when jobId changes
+  useEffect(() => {
+    setHasAttempted(false);
+  }, []);
+
   useEffect(() => {
     if (!jobId) {
       logger.warn("No jobId provided");
@@ -126,8 +103,12 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       return;
     }
 
-    generateExcelFile();
-  }, [jobId, generateExcelFile, logger]);
+    // Only generate if we haven't attempted yet
+    if (!hasAttempted) {
+      setHasAttempted(true);
+      generateExcelFile();
+    }
+  }, [jobId, hasAttempted, generateExcelFile, logger]);
 
   const handleDownloadClick = () => {
     if (state.status === "ready" && state.downloadUrl) {
@@ -136,6 +117,12 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
         downloadUrl: state.downloadUrl,
       });
     }
+  };
+
+  const handleRetryClick = () => {
+    logger.userAction("excel_retry_clicked", { jobId });
+    setHasAttempted(false);
+    // Don't call generateExcelFile directly, let the useEffect handle it
   };
 
   const getButtonText = () => {
@@ -147,7 +134,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       case "ready":
         return "Stáhnout Excel";
       case "unavailable":
-        return "Excel nedostupný";
+        return "Zkusit znovu";
       default:
         return "Stáhnout Excel";
     }
@@ -165,13 +152,13 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       case "ready":
         return "Klikněte pro stažení Excel souboru";
       case "unavailable":
-        return "Excel soubor není k dispozici";
+        return "Klikněte pro opakování generování Excel souboru";
       default:
         return "Excel download button";
     }
   };
 
-  const isButtonDisabled = disabled || state.status !== "ready";
+  const isButtonDisabled = disabled || (state.status !== "ready" && state.status !== "unavailable");
   const buttonOpacity = isButtonDisabled ? "opacity-50" : "opacity-100";
   const pointerEvents = isButtonDisabled ? "pointer-events-none" : "pointer-events-auto";
 
@@ -180,7 +167,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       id={linkId}
       href={state.status === "ready" ? state.downloadUrl : "#"}
       download={state.status === "ready" ? state.filename : undefined}
-      onClick={handleDownloadClick}
+      onClick={state.status === "unavailable" ? handleRetryClick : handleDownloadClick}
       className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors ${buttonOpacity} ${pointerEvents} ${className}`}
       aria-disabled={isButtonDisabled}
       title={getButtonTitle()}

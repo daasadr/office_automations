@@ -1,65 +1,17 @@
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-
-interface ExtractedData {
-  'kód odpadu'?: string;
-  'název/druh odpadu'?: string;
-  'kategorie odpadu'?: string;
-  'kód způsobu nakládání'?: string;
-  původce?: {
-    IČO?: string;
-    název?: string;
-    adresa?: string;
-    'zodpovědná osoba'?: string;
-    'samostatná provozovna'?: {
-      'číslo provozovny'?: string;
-      název?: string;
-      adresa?: string;
-      'zodpovědná osoba'?: string;
-    };
-  };
-  odběratel?: {
-    IČO?: string;
-    název?: string;
-    adresa?: string;
-    IČZ?: string;
-  };
-  tabulka?: Array<{
-    'pořadové číslo'?: number;
-    'datum vzniku'?: string;
-    'množství vzniklého odpadu'?: number;
-    'množství předaného odpadu'?: number;
-  }>;
-  
-  // Legacy fields for backward compatibility
-  kod_odpadu?: string;
-  druh_odpadu?: string;
-  kategorie_odpadu?: string;
-  mnozstvi_odpadu?: string;
-  zpusob_nakládání?: string;
-  datum_vzniku?: string;
-  identifikace_prijemce?: string;
-  přepravce_odpadu?: string;
-  doklady_spojené_s_odpadem?: string;
-  identifikační_čísla_zařízení?: string;
-}
+import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 interface ValidationResultsProps {
   present: string[];
   missing: string[];
   confidence: number;
-  imagePreview?: string;
-  extractedData?: ExtractedData[];
 }
 
-export function ValidationResults({ present, missing, confidence, extractedData }: ValidationResultsProps) {
-
+export function ValidationResults({ present, missing, confidence }: ValidationResultsProps) {
   return (
     <div className="space-y-6">
       {/* Confidence Score */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        <div className="text-2xl font-semibold">
-         Úplnost dokumentu: {confidence.toFixed(1)}%
-        </div>
+        <div className="text-2xl font-semibold">Úplnost dokumentu: {confidence.toFixed(1)}%</div>
         {confidence >= 80 ? (
           <CheckCircle className="w-8 h-8 text-green-500" />
         ) : confidence >= 50 ? (

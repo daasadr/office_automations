@@ -272,7 +272,7 @@ docker compose up -d --scale worker-llm-extract=2
 
 - **Environment variables**: See `ENVIRONMENT.md` for complete reference
 - **Scaling**: Adjust replica counts in environment variables
-- **LLM providers**: Configure OpenAI or Anthropic API keys
+- **LLM providers**: Configure Gemini API key
 - **Email sources**: Configure IMAP, Gmail API, or Microsoft Graph
 
 ## Troubleshooting

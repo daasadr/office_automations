@@ -1,8 +1,12 @@
-import type { APIRoute } from 'astro';
-import { withLogging, createErrorResponse, createSuccessResponse, loggedFetch } from '../../../lib/middleware';
-import { generateRequestId, logPerformance } from '../../../lib/logger';
-
-const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
+import type { APIRoute } from "astro";
+import {
+  withLogging,
+  createErrorResponse,
+  createSuccessResponse,
+  loggedFetch,
+} from "../../../lib/middleware";
+import { generateRequestId, logPerformance } from "../../../lib/logger";
+import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "../../../constants";
 
 const statusHandler: APIRoute = async ({ params }) => {
   const requestId = generateRequestId();
@@ -11,71 +15,64 @@ const statusHandler: APIRoute = async ({ params }) => {
     const jobId = params.jobId;
 
     if (!jobId) {
-      return createErrorResponse(
-        'Job ID is required.',
-        { status: 400, requestId }
-      );
+      return createErrorResponse("Job ID is required.", { status: 400, requestId });
     }
 
     // Log the status check request
     logPerformance({
       requestId,
-      operation: 'status_check_start',
+      operation: "status_check_start",
       duration: 0,
-      metadata: { jobId }
+      metadata: { jobId },
     });
 
     // Forward the request to the backend orchestration API
-    const backendResponse = await loggedFetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      requestId
-    });
+    const backendResponse = await loggedFetch(
+      `${ORCHESTRATION_API_URL}/documents/status/${jobId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": CONTENT_TYPE_JSON,
+        },
+        requestId,
+      }
+    );
 
     const result = await backendResponse.json();
 
     if (!backendResponse.ok) {
-      return createErrorResponse(
-        result.error || 'Backend request failed',
-        { 
-          status: backendResponse.status, 
-          requestId,
-          details: result.details 
-        }
-      );
+      return createErrorResponse(result.error || "Backend request failed", {
+        status: backendResponse.status,
+        requestId,
+        details: result.details,
+      });
     }
 
     // Log successful status retrieval
     logPerformance({
       requestId,
-      operation: 'status_check_complete',
+      operation: "status_check_complete",
       duration: Date.now() - startTime,
-      metadata: { 
+      metadata: {
         jobId,
-        status: result.status || 'unknown'
-      }
+        status: result.status || "unknown",
+      },
     });
 
     const response = createSuccessResponse(result, {
-      requestId
+      requestId,
     });
-    
-    // Add cache control header
-    response.headers.set('Cache-Control', 'no-cache');
-    
-    return response;
 
+    // Add cache control header
+    response.headers.set("Cache-Control", "no-cache");
+
+    return response;
   } catch (error) {
-    return createErrorResponse(
-      'Internal server error. Please try again later.',
-      { 
-        status: 500, 
-        requestId,
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }
-    );
+    return createErrorResponse("Internal server error. Please try again later.", {
+      status: 500,
+      requestId,
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 
@@ -86,9 +83,9 @@ export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 };

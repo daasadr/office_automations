@@ -1,8 +1,7 @@
-import type { APIRoute } from 'astro';
-import { withLogging, createErrorResponse, loggedFetch } from '../../../../lib/middleware';
-import { generateRequestId } from '../../../../lib/logger';
-
-const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
+import type { APIRoute } from "astro";
+import { withLogging, createErrorResponse, loggedFetch } from "../../../../lib/middleware";
+import { generateRequestId } from "../../../../lib/logger";
+import { ORCHESTRATION_API_URL } from "../../../../constants";
 
 const downloadHandler: APIRoute = async ({ params }) => {
   const requestId = generateRequestId();
@@ -10,28 +9,24 @@ const downloadHandler: APIRoute = async ({ params }) => {
     const { jobId, filename } = params;
 
     if (!jobId || !filename) {
-      return createErrorResponse(
-        'Job ID and filename are required',
-        { status: 400, requestId }
-      );
+      return createErrorResponse("Job ID and filename are required", { status: 400, requestId });
     }
 
     // Redirect directly to the backend download URL to avoid binary data corruption
     const backendDownloadUrl = `${ORCHESTRATION_API_URL}/documents/download/${jobId}/${filename}`;
-    
+
     return new Response(null, {
       status: 302,
       headers: {
-        'Location': backendDownloadUrl,
-        'X-Request-ID': requestId,
-      }
+        Location: backendDownloadUrl,
+        "X-Request-ID": requestId,
+      },
     });
-
   } catch (error) {
-    return createErrorResponse(
-      'Internal server error. Please try again later.',
-      { status: 500, requestId }
-    );
+    return createErrorResponse("Internal server error. Please try again later.", {
+      status: 500,
+      requestId,
+    });
   }
 };
 
@@ -42,9 +37,9 @@ export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 };

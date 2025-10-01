@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { ValidationResults } from "../components/ValidationResults";
+import { ORCHESTRATION_API_URL } from "../constants";
 
 // Get job ID from query parameters
 const jobId = Astro.url.searchParams.get("job");
@@ -11,7 +12,6 @@ if (!jobId) {
 }
 
 // Get validation result from backend API
-const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || "http://localhost:3001";
 let validationData = null;
 
 try {

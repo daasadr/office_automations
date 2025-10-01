@@ -1,11 +1,12 @@
 name: office-automation_
 
 include:
-  - ./docker/postgres/postgres.yml
-  - ./docker/minio/minio.yml
-  - ./docker/temporal/temporal.yml
   - ./docker/orchestration/orchestration.yml
-  - ./docker/workers/workers.yml
+  # Unused services for current simple workflow:
+  # - ./docker/postgres/postgres.yml
+  # - ./docker/minio/minio.yml
+  # - ./docker/temporal/temporal.yml
+  # - ./docker/workers/workers.yml
   # - ./docker/keydb/keydb.yml
   # - ./docker/mailhog/mailhog.yml
   # - ./docker/directus/directus.yml

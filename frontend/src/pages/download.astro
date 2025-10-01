@@ -1,18 +1,18 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 
 // Get job ID from query parameters
-const jobId = Astro.url.searchParams.get('job');
+const jobId = Astro.url.searchParams.get("job");
 
 if (!jobId) {
-  return Astro.redirect('/', 302);
+  return Astro.redirect("/", 302);
 }
 
 // Get validation result from backend API
-const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || 'http://localhost:3001';
+const ORCHESTRATION_API_URL = import.meta.env.ORCHESTRATION_API_URL || "http://localhost:3001";
 let validationData = null;
 
 try {
@@ -22,27 +22,27 @@ try {
     validationData = result.validationResult;
   }
 } catch (error) {
-  console.error('Error fetching validation data:', error);
+  console.error("Error fetching validation data:", error);
 }
 
 // Simulate completed job data for demo
 const hasError = false;
-const errorMessage = '';
+const errorMessage = "";
 
 const jobData = {
   id: jobId,
-  originalFileName: 'sample-data.csv',
+  originalFileName: "sample-data.csv",
   completedAt: new Date().toISOString(),
-  processingTime: '2 minutes 34 seconds',
+  processingTime: "2 minutes 34 seconds",
   results: [
     {
-      id: 'processed-data',
-      name: 'Zpracovaná data',
-      description: 'Váš původní soubor se zpracovanými daty',
-      fileName: 'processed-sample-data.csv',
-      fileSize: '2.4 MB',
+      id: "processed-data",
+      name: "Zpracovaná data",
+      description: "Váš původní soubor se zpracovanými daty",
+      fileName: "processed-sample-data.csv",
+      fileSize: "2.4 MB",
       downloadUrl: `/api/download/${jobId}/processed-data.csv`,
-      type: 'primary'
+      type: "primary",
     },
     // {
     //   id: 'summary-report',
@@ -67,8 +67,8 @@ const jobData = {
     recordsProcessed: 15847,
     recordsValidated: 15720,
     recordsWithErrors: 127,
-    processingEngine: 'Directus v9.2.1'
-  }
+    processingEngine: "Directus v9.2.1",
+  },
 };
 ---
 
@@ -331,15 +331,88 @@ const jobData = {
 </BaseLayout>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
-    const downloadAllBtn = document.getElementById('download-all');
-    const shareResultsBtn = document.getElementById('share-results');
-    const saveToAccountBtn = document.getElementById('save-to-account');
+  async function generateExcelFile() {
+    console.log('=== DOWNLOAD PAGE LOADED ===');
+    console.log('User agent:', navigator.userAgent);
+    console.log('Page URL:', window.location.href);
+    console.log('Document ready state:', document.readyState);
+    
+    // Generate Excel file when page loads
+    const jobId = new URLSearchParams(window.location.search).get('job');
+    console.log('JobId from URL:', jobId);
+    
+    if (jobId) {
+      try {
+        console.log('Starting Excel file generation for job:', jobId);
+        console.log('Making POST request to /api/generate-excel...');
+        
+        const response = await fetch('/api/generate-excel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobId }),
+        });
+
+        console.log('Response received:');
+        console.log('- Status:', response.status);
+        console.log('- Status text:', response.statusText);
+        console.log('- Headers:', Object.fromEntries(response.headers.entries()));
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('SUCCESS: Excel file generated');
+          console.log('- Filename:', result.filename);
+          console.log('- Download URL:', result.downloadUrl);
+          console.log('- Full result:', result);
+          
+          // Store the download URL for later use
+          const excelData = {
+            filename: result.filename,
+            downloadUrl: result.downloadUrl,
+            timestamp: Date.now()
+          };
+          
+          sessionStorage.setItem(`excel_${jobId}`, JSON.stringify(excelData));
+          console.log('Excel data stored in sessionStorage:', excelData);
+          
+          // Verify storage
+          const stored = sessionStorage.getItem(`excel_${jobId}`);
+          console.log('Verification - stored data:', stored);
+          
+          // Update the download link immediately after generation
+          updateExcelDownloadLink(jobId);
+        } else {
+          console.error('ERROR: Failed to generate Excel file');
+          console.error('- Status:', response.status);
+          console.error('- Status text:', response.statusText);
+          
+          try {
+            const errorText = await response.text();
+            console.error('- Response body:', errorText);
+          } catch (e) {
+            console.error('- Could not read response body:', e);
+          }
+        }
+      } catch (error) {
+        console.error('EXCEPTION: Error generating Excel file');
+        console.error('- Error type:', typeof error);
+        console.error('- Error message:', error instanceof Error ? error.message : String(error));
+        console.error('- Error stack:', error instanceof Error ? error.stack : 'No stack available');
+        console.error('- Full error object:', error);
+      }
+    } else {
+      console.warn('No jobId found in URL parameters');
+      console.log('Current URL:', window.location.href);
+      console.log('Search params:', window.location.search);
+    }
+    
+    console.log('=== DOWNLOAD PAGE EXCEL GENERATION COMPLETE ===');
+  }
+
+  function updateExcelDownloadLink(jobId: string | null) {
     const excelDownloadLink = document.getElementById('excel-download-link');
     const excelDownloadText = document.getElementById('excel-download-text');
-    
-    // Set up Excel download link
-    const jobId = new URLSearchParams(window.location.search).get('job');
     
     if (jobId && excelDownloadLink && excelDownloadText) {
       // Check if Excel file was generated
@@ -351,6 +424,8 @@ const jobData = {
           (excelDownloadLink as HTMLAnchorElement).href = downloadUrl;
           (excelDownloadLink as HTMLAnchorElement).download = filename;
           excelDownloadText.textContent = 'Stáhnout Excel';
+          excelDownloadLink.style.opacity = '1';
+          excelDownloadLink.style.pointerEvents = 'auto';
         } catch (error) {
           console.error('Error parsing Excel data from sessionStorage:', error);
           excelDownloadText.textContent = 'Excel nedostupný';
@@ -384,6 +459,38 @@ const jobData = {
         }, 2000);
       }
     }
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    const downloadAllBtn = document.getElementById('download-all');
+    const shareResultsBtn = document.getElementById('share-results');
+    const saveToAccountBtn = document.getElementById('save-to-account');
+    
+    // Get job ID from URL
+    const jobId = new URLSearchParams(window.location.search).get('job');
+    
+    // Generate Excel file when page loads
+    generateExcelFile();
+    
+    // Set up Excel download link (will be updated after generation)
+    updateExcelDownloadLink(jobId);
+  });
+
+  // Try multiple event listeners to ensure the script runs
+  document.addEventListener('DOMContentLoaded', generateExcelFile);
+  
+  // If the page is already loaded, run immediately
+  if (document.readyState === 'loading') {
+    // Document still loading
+  } else {
+    // Document already loaded
+    generateExcelFile();
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    const downloadAllBtn = document.getElementById('download-all');
+    const shareResultsBtn = document.getElementById('share-results');
+    const saveToAccountBtn = document.getElementById('save-to-account');
 
     // Download all files functionality
     if (downloadAllBtn) {

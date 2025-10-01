@@ -1,14 +1,15 @@
 # Office Automations - Document Processing System
 
-A comprehensive document processing system for automating PDF document validation and Excel conversion workflows, built with microservices architecture using Docker, Temporal workflows, and modern web technologies.
+A streamlined document processing system for automating PDF document validation and Excel conversion workflows. Currently focused on waste management documentation ("průběžná evidence odpadů") with AI-powered content validation.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
-  - [System Components](#system-components)
+  - [Current System Components](#current-system-components)
   - [Technology Stack](#technology-stack)
   - [Data Flow](#data-flow)
+  - [Planned Features](#planned-features)
 - [Quick Start](#quick-start)
   - [Prerequisites](#prerequisites)
   - [Environment Setup](#environment-setup)
@@ -16,61 +17,65 @@ A comprehensive document processing system for automating PDF document validatio
 - [Development](#development)
   - [Project Structure](#project-structure)
   - [Available Commands](#available-commands)
-  - [Service Management](#service-management)
 - [Services](#services)
   - [Frontend Application](#frontend-application)
   - [Backend Services](#backend-services)
-  - [Infrastructure Services](#infrastructure-services)
 - [Configuration](#configuration)
 - [API Documentation](#api-documentation)
-- [Monitoring & Logging](#monitoring--logging)
 - [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-This office automation system processes PDF documents, validates their content, and converts them to Excel format. It's designed to handle waste management documentation ("průběžná evidence odpadů") with intelligent content validation and automated workflow processing.
+This office automation system processes PDF documents, validates their content using AI, and converts them to Excel format. The current implementation focuses on a simple, efficient workflow optimized for waste management documentation processing.
 
 **Note:** This system is currently designed to operate behind a company VPN for security purposes and is not intended for direct public internet exposure.
 
-### Key Features
+### Current Features
 
-- **PDF Document Processing**: Upload, validate, and convert PDF documents to Excel
-- **Intelligent Content Validation**: AI-powered document analysis and validation
-- **Workflow Automation**: Temporal-based workflow orchestration
-- **Multi-format Support**: PDF, images, and various document formats
-- **Real-time Processing**: WebSocket-based progress tracking
-- **Email Integration**: Automated email collection and processing
-- **Scalable Architecture**: Microservices with horizontal scaling capabilities
+- **PDF Document Processing**: Upload and validate PDF documents
+- **AI-Powered Content Validation**: Gemini API integration for intelligent document analysis
+- **Excel Generation**: Automated conversion of validated data to Excel format
+- **Real-time Processing Status**: Track processing progress with job management
+- **Modern Web Interface**: Responsive frontend built with Astro and React
+- **Type-Safe Development**: Full TypeScript implementation
+
+### Key Capabilities
+
+- Processes Czech waste management documents ("průběžná evidence odpadů")
+- Extracts structured data from PDF documents using AI
+- Validates document completeness and accuracy
+- Generates formatted Excel reports
+- Handles multiple document formats (PDF focus)
+- In-memory job tracking and status reporting
 
 ## Architecture
 
-### System Components
+### Current System Components
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │  Orchestration  │    │    Workers      │
-│   (Astro)       │◄──►│      API        │◄──►│   (Temporal)    │
-│                 │    │   (Express)     │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                        │                        │
-         │                        │                        │
-         ▼                        ▼                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    Directus     │    │   PostgreSQL    │    │     MinIO       │
-│     (CMS)       │◄──►│   (Database)    │    │  (File Storage) │
-│                 │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                        │                        │
-         │                        │                        │
-         ▼                        ▼                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│     KeyDB       │    │    Temporal     │    │   Email         │
-│   (Redis Cache) │    │  (Workflows)    │    │  Collector      │
-│                 │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │  Orchestration  │
+│   (Astro)       │◄──►│      API        │
+│                 │    │   (Express)     │
+└─────────────────┘    └─────────────────┘
+         │                        │
+         │                        │
+         ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐
+│   Gemini AI     │    │   In-Memory     │
+│  (Google API)   │◄──►│  Job Storage    │
+│                 │    │                 │
+└─────────────────┘    └─────────────────┘
 ```
+
+**Current Architecture:**
+- **Frontend**: Astro-based web application for file upload and result display
+- **Orchestration API**: Express.js server handling PDF processing and Excel generation
+- **Gemini AI**: Google's Generative AI for document content analysis
+- **Job Management**: In-memory job tracking and status management
 
 ### Technology Stack
 
@@ -83,45 +88,63 @@ This office automation system processes PDF documents, validates their content, 
 
 **Backend:**
 - **Node.js** - Runtime environment
-- **Express.js** - Orchestration API server
-- **Temporal** - Workflow orchestration engine
+- **Express.js** - API server and request handling
 - **TypeScript** - Type-safe development
-
-**Data & Storage:**
-- **PostgreSQL** - Primary database
-- **MinIO** - S3-compatible object storage
-- **KeyDB** - Redis-compatible cache/session store
-- **Directus** - Headless CMS and admin interface
-
-**Infrastructure:**
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-- **MailHog** - Email testing (development)
+- **Multer** - File upload handling
+- **Winston** - Structured logging
 
 **AI & Processing:**
-- **OpenAI API** - Document analysis and validation
-- **Anthropic Claude** - Alternative LLM provider
-- **Tesseract.js** - OCR processing
-- **Sharp** - Image processing
-- **PDF-Parse** - PDF content extraction
+- **Google Gemini API** - Document analysis and content extraction
+- **XLSX** - Excel file generation and manipulation
+
+**Infrastructure:**
+- **Docker** - Containerization (orchestration API only)
 
 ### Data Flow
 
-1. **Document Upload** → Frontend uploads files to Orchestration API
-2. **Workflow Initiation** → API triggers Temporal workflow
-3. **Document Processing** → Workers handle OCR, validation, and conversion
-4. **Content Analysis** → AI services analyze and validate document content
-5. **Result Generation** → Excel files generated and stored in MinIO
-6. **Notification** → Users notified of completion via email/UI
+1. **Document Upload** → User uploads PDF via frontend interface
+2. **Job Creation** → API creates processing job with unique ID
+3. **AI Processing** → Gemini API analyzes PDF content and extracts data
+4. **Validation** → System validates extracted data against required fields
+5. **Excel Generation** → XLSX library creates formatted Excel file
+6. **Result Delivery** → User downloads generated Excel file
+
+### Planned Features
+
+As the application grows, the following components are planned for implementation:
+
+**Advanced Workflow Management:**
+- **Temporal** - Robust workflow orchestration engine
+- **PostgreSQL** - Persistent data storage
+- **MinIO** - S3-compatible object storage for file management
+
+**Enhanced Processing:**
+- **Multi-stage Workflows** - Classification, extraction, validation, and delivery
+- **Human-in-the-loop** - Manual review and approval processes
+- **OCR Integration** - Tesseract.js for image-based document processing
+
+**Content Management:**
+- **Directus CMS** - Headless CMS and admin interface
+- **Advanced Schema Management** - Flexible document type definitions
+
+**Communication & Integration:**
+- **Email Integration** - Automated email collection and processing
+- **Webhook Support** - Real-time notifications and integrations
+- **KeyDB/Redis** - Caching and session management
+
+**Monitoring & Operations:**
+- **Advanced Logging** - Centralized log aggregation
+- **Health Monitoring** - Comprehensive service health checks
+- **Performance Metrics** - Detailed processing analytics
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Docker** (v20.0+) and **Docker Compose** (v2.0+)
+- **Docker** (v20.0+) for containerized API deployment
 - **Node.js** (v18+) for local development
 - **Git** for version control
-- **Make** (optional, for convenience commands)
+- **Google Gemini API Key** for document processing
 
 ### Environment Setup
 
@@ -133,71 +156,55 @@ This office automation system processes PDF documents, validates their content, 
 
 2. **Set up environment variables:**
    ```bash
-   # Copy environment template
-   cp backend/ENVIRONMENT.md backend/.env
+   # Backend API environment
+   cd backend/orchestration-api
+   cp .env.example .env
    
-   # Edit the .env file with your settings
-   nano backend/.env
+   # Edit with your settings
+   nano .env
    ```
 
-3. **Generate required security keys:**
-   ```bash
-   # Generate Directus KEY (32 characters)
-   openssl rand -hex 16
-   
-   # Generate Directus SECRET
-   openssl rand -base64 32
-   
-   # Generate API keys
-   openssl rand -hex 32
-   ```
-
-4. **Configure required environment variables:**
+3. **Configure required environment variables:**
    ```bash
    # Minimum required variables:
-   PROJECT_PREFIX=office-automation_
-   POSTGRES_PASSWORD=your_secure_password
-   KEYDB_PASSWORD=your_redis_password
-   MINIO_ACCESS_KEY=your_minio_key
-   MINIO_SECRET_KEY=your_minio_secret
-   ADMIN_EMAIL=admin@yourcompany.com
-   ADMIN_PASSWORD=your_admin_password
-   KEY=your_32_char_directus_key
-   SECRET=your_directus_secret
-   API_SECRET_KEY=your_api_secret
-   WEBHOOK_SECRET=your_webhook_secret
+   GEMINI_API_KEY=your_gemini_api_key
+   PORT=3001
+   NODE_ENV=development
+   LOG_LEVEL=info
+   CORS_ORIGIN=http://localhost:3000,http://localhost:4321
    ```
 
 ### Running the Application
 
-1. **Start all services:**
-   ```bash
-   cd backend
-   make start
-   # or
-   docker compose up -d
-   ```
+**Option 1: Docker (Recommended for API)**
+```bash
+# Start the orchestration API
+cd backend
+docker compose up -d
 
-2. **Import Directus schema:**
-   ```bash
-   make import-schema
-   # or for quick setup
-   make quick-import
-   ```
+# Start frontend development server
+cd ../frontend
+npm install
+npm run dev
+```
 
-3. **Start frontend development server:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+**Option 2: Local Development**
+```bash
+# Start the API locally
+cd backend/orchestration-api
+npm install
+npm run dev
 
-4. **Access the applications:**
-   - **Frontend Application**: http://localhost:4321
-   - **Directus Admin**: http://localhost:8055
-   - **Temporal UI**: http://localhost:8085
-   - **MinIO Console**: http://localhost:9001
-   - **Orchestration API**: http://localhost:3001
+# Start frontend in another terminal
+cd frontend
+npm install
+npm run dev
+```
+
+**Access the applications:**
+- **Frontend Application**: http://localhost:4321
+- **Orchestration API**: http://localhost:3001
+- **API Health Check**: http://localhost:3001/health
 
 ## Development
 
@@ -207,82 +214,62 @@ This office automation system processes PDF documents, validates their content, 
 office_automations/
 ├── backend/                      # Backend services
 │   ├── docker/                   # Docker service configurations
-│   │   ├── postgres/            # Database configuration
-│   │   ├── temporal/            # Workflow engine
-│   │   ├── directus/            # CMS configuration
-│   │   ├── minio/               # Object storage
-│   │   ├── keydb/               # Cache/session store
-│   │   ├── orchestration/       # API orchestration service
-│   │   ├── workers/             # Worker services
-│   │   └── email-collector/     # Email processing
-│   ├── orchestration-api/       # Express.js API server
+│   │   └── orchestration/        # API orchestration service
+│   ├── orchestration-api/        # Express.js API server
 │   │   ├── src/
-│   │   │   ├── routes/          # API endpoints
-│   │   │   ├── middleware/      # Custom middleware
-│   │   │   ├── temporal/        # Temporal client & workflows
-│   │   │   └── utils/           # Utilities
+│   │   │   ├── routes/           # API endpoints
+│   │   │   ├── services/         # Business logic (LLM, Excel, Jobs)
+│   │   │   ├── middleware/       # Custom middleware
+│   │   │   └── utils/            # Utilities and logging
 │   │   └── package.json
-│   ├── workers/                 # Temporal workers
-│   │   ├── src/
-│   │   │   ├── activities/      # Temporal activities
-│   │   │   ├── workflows/       # Workflow definitions
-│   │   │   └── workers/         # Worker implementations
-│   │   └── package.json
-│   ├── extensions/              # Directus extensions
-│   ├── schema/                  # Database schemas
-│   ├── scripts/                 # Utility scripts
-│   ├── docker-compose.yml       # Main compose file
-│   └── Makefile                 # Development commands
-├── frontend/                    # Astro frontend application
+│   └── docker-compose.yml        # Main compose file
+├── frontend/                     # Astro frontend application
 │   ├── src/
-│   │   ├── components/          # React components
-│   │   ├── pages/               # Astro pages & API routes
-│   │   ├── layouts/             # Page layouts
-│   │   ├── lib/                 # Utilities & integrations
-│   │   └── styles/              # CSS styles
-│   ├── public/                  # Static assets
+│   │   ├── components/           # React components
+│   │   ├── pages/                # Astro pages & API routes
+│   │   ├── layouts/              # Page layouts
+│   │   ├── lib/                  # Utilities & integrations
+│   │   └── styles/               # CSS styles
+│   ├── public/                   # Static assets
 │   ├── package.json
 │   └── astro.config.mjs
-└── README.md                    # This file
+└── README.md                     # This file
+```
+
+**Removed/Planned Components:**
+```
+backend/
+├── workers/                      # [PLANNED] Temporal workers
+├── extensions/                   # [PLANNED] Directus extensions
+├── schema/                       # [PLANNED] Database schemas
+└── scripts/                      # [PLANNED] Utility scripts
 ```
 
 ### Available Commands
 
-**Backend (from `/backend` directory):**
+**Backend API (from `/backend/orchestration-api` directory):**
 ```bash
-make start              # Start all services
-make stop               # Stop all services  
-make logs               # View all logs
-make status             # Check service status
-make import-schema      # Import Directus schema
-make backup             # Backup current schema
-make clean              # Clean containers and volumes
-make health             # Check service health
-make dev-setup          # Complete development setup
+npm install            # Install dependencies
+npm run dev            # Start development server
+npm run build          # Build TypeScript
+npm start              # Start production server
+npm test               # Run tests
+```
+
+**Docker (from `/backend` directory):**
+```bash
+docker compose up -d   # Start API container
+docker compose logs    # View API logs
+docker compose down    # Stop API container
 ```
 
 **Frontend (from `/frontend` directory):**
 ```bash
-npm run dev             # Start development server
-npm run build           # Build for production
-npm run preview         # Preview production build
-npm run check           # Run Astro checks
-```
-
-### Service Management
-
-**Individual service logs:**
-```bash
-make logs-directus      # Directus logs
-make logs-temporal      # Temporal logs  
-make logs-workers       # Worker logs
-make logs-orchestration # API logs
-make logs-email         # Email collector logs
-```
-
-**Database access:**
-```bash
-make db                 # Connect to PostgreSQL
+npm install            # Install dependencies
+npm run dev            # Start development server
+npm run build          # Build for production
+npm run preview        # Preview production build
+npm run check          # Run Astro checks
 ```
 
 ## Services
@@ -294,88 +281,67 @@ make db                 # Connect to PostgreSQL
 **Purpose:** User interface for document upload and processing
 
 **Key Features:**
-- File upload with drag & drop
-- Real-time processing status
-- Download processed files
-- Responsive design
-- Accessibility compliant
+- File upload with drag & drop support
+- Real-time processing status tracking
+- Download processed Excel files
+- Responsive design with modern UI
+- Accessibility compliant components
 
 ### Backend Services
 
 #### Orchestration API
 **Technology:** Express.js + TypeScript
 **Port:** 3001
-**Purpose:** Central API for workflow coordination
+**Purpose:** Central API for document processing workflow
 
-**Security Features:**
-- HMAC-SHA256 webhook signature validation
-- Replay attack prevention with timestamp verification
-- Timing-safe signature comparison
-- Request authentication and payload integrity verification
-- obscure backend services
+**Current Endpoints:**
+- `POST /documents/validate-pdf` - Upload and validate PDF documents
+- `GET /documents/status/:jobId` - Check processing status
+- `POST /documents/generate-excel` - Generate Excel from validation results
+- `GET /documents/download/:jobId/:filename` - Download generated Excel
+- `GET /documents/jobs` - List all processing jobs (admin)
+- `GET /health` - Health check and service status
 
-**Endpoints:**
-- `POST /webhooks/directus` - Directus webhook handler
-- `POST /workflows/start` - Start processing workflow
-- `GET /workflows/:id/status` - Check workflow status
-- `GET /health` - Health check
-
-#### Workers
-**Technology:** Temporal Workers + TypeScript
-**Purpose:** Background task processing
-
-**Worker Types:**
-- **Classification Worker** - Document type classification
-- **Extraction Worker** - Content extraction and OCR
-- **Validation Worker** - AI-powered content validation
-- **Export Worker** - Excel file generation
-- **Delivery Worker** - File delivery and notification
-- **Notification Worker** - Email and webhook notifications
-
-#### Email Collector
-**Purpose:** Automated email processing and attachment handling
-
-**Features:**
-- IMAP/Gmail API/Microsoft Graph support
-- Attachment filtering and validation
-- Automatic workflow triggering
-
-### Infrastructure Services
-
-#### PostgreSQL
-**Port:** 5432
-**Purpose:** Primary database for all services
-
-#### Directus CMS
-**Port:** 8055
-**Purpose:** Headless CMS and admin interface
-
-#### Temporal
-**Ports:** 7233 (gRPC), 8085 (UI)
-**Purpose:** Workflow orchestration engine
-
-#### MinIO
-**Ports:** 9000 (API), 9001 (Console)
-**Purpose:** S3-compatible object storage
-
-#### KeyDB
-**Port:** 6379
-**Purpose:** Redis-compatible cache and session store
-
-#### MailHog (Development)
-**Port:** 8025
-**Purpose:** Email testing in development
+**Key Features:**
+- PDF file upload with validation (10MB limit)
+- Gemini AI integration for content analysis
+- In-memory job tracking and status management
+- Excel file generation with structured data
+- CORS support for frontend integration
+- Structured logging with Winston
 
 ## Configuration
 
-All configuration is managed through environment variables. See `backend/ENVIRONMENT.md` for complete documentation.
+### Environment Variables
 
-**Critical Settings:**
-- **Database**: PostgreSQL connection settings
-- **Storage**: MinIO/S3 configuration
-- **AI Services**: OpenAI and Anthropic API keys
-- **Email**: SMTP and IMAP settings
-- **Security**: JWT secrets and API keys
+**Required:**
+- `GEMINI_API_KEY` - Google Gemini API key for document processing
+- `PORT` - API server port (default: 3001)
+- `NODE_ENV` - Environment mode (development/production)
+- `LOG_LEVEL` - Logging level (info/debug/warn/error)
+- `CORS_ORIGIN` - Allowed CORS origins for frontend access
+
+**Example `.env` file:**
+```bash
+GEMINI_API_KEY=your_gemini_api_key_here
+PORT=3001
+NODE_ENV=development
+LOG_LEVEL=info
+CORS_ORIGIN=http://localhost:3000,http://localhost:4321
+```
+
+### Gemini API Configuration
+
+The system uses Google's Gemini AI for document processing. You'll need:
+
+1. **Google Cloud Project** with Gemini API enabled
+2. **API Key** with appropriate permissions
+3. **Model Selection** (default: gemini-2.5-flash)
+
+**Optional Gemini Settings:**
+```bash
+GEMINI_MODEL=gemini-2.5-flash  # AI model to use
+```
 
 ## API Documentation
 
@@ -383,117 +349,167 @@ All configuration is managed through environment variables. See `backend/ENVIRON
 
 **Base URL:** `http://localhost:3001`
 
-**Authentication:** Bearer token or API key
-
 **Key Endpoints:**
 
+#### Upload and Validate PDF
 ```http
-POST /workflows/start
-Content-Type: application/json
-Authorization: Bearer <token>
+POST /documents/validate-pdf
+Content-Type: multipart/form-data
 
-{
-  "fileUrl": "string",
-  "filename": "string", 
-  "metadata": {
-    "source": "upload|email",
-    "priority": "high|normal|low"
-  }
-}
-```
-
-```http
-GET /workflows/{workflowId}/status
-Authorization: Bearer <token>
+FormData:
+- file: PDF file (max 10MB)
 
 Response:
 {
-  "id": "string",
-  "status": "running|completed|failed",
-  "progress": 0-100,
-  "result": {
-    "outputFiles": ["url1", "url2"],
-    "validationResults": {...}
+  "success": true,
+  "jobId": "job_1234567890_abc123",
+  "provider": "gemini"
+}
+```
+
+#### Check Processing Status
+```http
+GET /documents/status/{jobId}
+
+Response:
+{
+  "jobId": "job_1234567890_abc123",
+  "status": "completed|processing|failed",
+  "fileName": "document.pdf",
+  "fileSize": 1024,
+  "provider": "gemini",
+  "error": null,
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:01:00.000Z",
+  "validationResult": {
+    "present": ["field1", "field2"],
+    "missing": ["field3"],
+    "confidence": 85.5,
+    "extracted_data": [...],
+    "provider": "gemini"
   }
 }
 ```
 
-## Monitoring & Logging
+#### Generate Excel File
+```http
+POST /documents/generate-excel
+Content-Type: application/json
 
-**Service Health Checks:**
-```bash
-make health
+{
+  "jobId": "job_1234567890_abc123"
+}
+
+Response: Excel file download
 ```
 
-**Log Aggregation:**
-- All services use structured JSON logging
-- Logs are accessible via Docker Compose
-- Winston logger with configurable levels
+#### Download Excel File
+```http
+GET /documents/download/{jobId}/{filename}
 
-**Monitoring Endpoints:**
-- Temporal UI: http://localhost:8085
-- MinIO Console: http://localhost:9001
-- Directus Admin: http://localhost:8055
+Response: Excel file download
+```
+
+#### Health Check
+```http
+GET /health
+
+Response:
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "services": {
+    "api": "running",
+    "gemini": "configured|not_configured"
+  }
+}
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Services won't start:**
+**API won't start:**
 ```bash
-# Check service status
-make status
+# Check if port is available
+lsof -i :3001
 
-# View logs for issues
-make logs
+# Check environment variables
+cd backend/orchestration-api
+cat .env
 
-# Clean and restart
-make clean
-make start
+# Check logs
+npm run dev
+# or with Docker
+docker compose logs orchestration-api
 ```
 
-**Database connection issues:**
+**Gemini API issues:**
 ```bash
-# Check PostgreSQL container
-docker compose logs postgres
+# Verify API key is set
+echo $GEMINI_API_KEY
 
-# Verify environment variables
-docker compose config
+# Check API health
+curl http://localhost:3001/health
+
+# Test with a small PDF file first
 ```
 
-**Temporal workflow issues:**
+**Frontend connection issues:**
 ```bash
-# Check Temporal UI
-open http://localhost:8085
+# Check CORS configuration
+# Ensure frontend URL is in CORS_ORIGIN
 
-# View worker logs
-make logs-workers
+# Verify API is running
+curl http://localhost:3001/health
+
+# Check browser console for errors
 ```
 
-**File upload/storage issues:**
+**File upload issues:**
 ```bash
-# Check MinIO status
-docker compose logs minio
-
-# Verify bucket configuration
-curl http://localhost:9000/minio/health/live
+# Check file size (max 10MB)
+# Verify file type (PDF only currently)
+# Check server logs for detailed errors
 ```
 
-### Performance Tuning
+### Performance Notes
 
-**Worker Scaling:**
-```bash
-# Adjust worker replicas in docker-compose.yml
-WORKER_CLASSIFY_REPLICAS=4
-WORKER_LLM_REPLICAS=2
-```
+**Current Limitations:**
+- In-memory job storage (jobs lost on restart)
+- Single-threaded processing
+- No persistent file storage
 
-**Database Optimization:**
-```bash
-# Tune PostgreSQL settings in docker/postgres/config/postgresql.conf
-shared_buffers = 256MB
-max_connections = 100
-```
+**Optimization Tips:**
+- Use smaller PDF files when possible
+- Monitor Gemini API rate limits
+- Consider implementing job persistence for production use
+
+## Roadmap
+
+### Phase 1: Current Implementation ✅
+- **PDF Processing**: Upload and AI-powered validation
+- **Excel Generation**: Structured data export
+- **Simple Workflow**: Direct API processing
+- **Basic UI**: File upload and download interface
+
+### Phase 2: Enhanced Processing (Planned)
+- **Temporal Integration**: Robust workflow orchestration
+- **Database Persistence**: PostgreSQL for job and result storage
+- **File Storage**: MinIO for document and result management
+- **Advanced Validation**: Multi-stage processing pipeline
+
+### Phase 3: Advanced Features (Planned)
+- **Directus CMS**: Admin interface and content management
+- **Human-in-the-loop**: Manual review and approval workflows
+- **Email Integration**: Automated document collection
+- **OCR Support**: Image-based document processing
+
+### Phase 4: Enterprise Features (Future)
+- **Multi-tenant Support**: Organization and user management
+- **Advanced Analytics**: Processing metrics and reporting
+- **API Integrations**: Third-party system connections
+- **Scalability**: Horizontal scaling and load balancing
 
 ## Contributing
 
@@ -507,15 +523,14 @@ max_connections = 100
 **Development Workflow:**
 ```bash
 # Start development environment
-make dev-setup
+cd backend/orchestration-api
+npm run dev
+
+# Start frontend
+cd frontend
+npm run dev
 
 # Make changes and test locally
-npm run dev    # Frontend
-make logs      # Monitor backend
-
-# Run tests
-npm test
-
 # Build and verify
 npm run build
 ```

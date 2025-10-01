@@ -2,10 +2,10 @@ name: office-automation_
 
 include:
   - ./docker/postgres/postgres.yml
-  - ./docker/keydb/keydb.yml
   - ./docker/minio/minio.yml
-  - ./docker/mailhog/mailhog.yml
-  - ./docker/directus/directus.yml
   - ./docker/temporal/temporal.yml
   - ./docker/orchestration/orchestration.yml
   - ./docker/workers/workers.yml
+  # - ./docker/keydb/keydb.yml
+  # - ./docker/mailhog/mailhog.yml
+  # - ./docker/directus/directus.yml

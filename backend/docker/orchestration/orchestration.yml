@@ -41,12 +41,12 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
     ports:
       - "${ORCHESTRATION_PORT:-3001}:3001"
-    # depends_on:
-      # temporal:
-        # condition: service_healthy
-      # directus:
-        # condition: service_healthy
+    depends_on:
+      directus:
+        condition: service_healthy
       # postgres:
+        # condition: service_healthy
+      # temporal:
         # condition: service_healthy
     restart: unless-stopped
     healthcheck:

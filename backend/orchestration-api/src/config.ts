@@ -10,6 +10,10 @@ interface EnvironmentConfig {
   cors: {
     origin: string[];
   };
+  directus: {
+    url: string;
+    token: string;
+  };
   gemini: {
     apiKey?: string;
     model: string;
@@ -60,12 +64,19 @@ function createConfig(): EnvironmentConfig {
     process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:4321"
   );
 
+  const directusUrl = process.env.DIRECTUS_URL || "http://localhost:8055";
+  const directusToken = process.env.DIRECTUS_TOKEN || process.env.DIRECTUS_API_TOKEN || "";
+
   return {
     port,
     nodeEnv,
     logLevel,
     cors: {
       origin: corsOrigin,
+    },
+    directus: {
+      url: directusUrl,
+      token: directusToken,
     },
     gemini: {
       apiKey: process.env.GEMINI_API_KEY,
@@ -83,7 +94,9 @@ export const config = createConfig();
 
 // Validate required environment variables
 const requiredEnvVars = ["GEMINI_API_KEY"];
+const optionalEnvVars = ["DIRECTUS_URL", "DIRECTUS_TOKEN"];
 const missingEnvVars: string[] = [];
+const missingOptionalEnvVars: string[] = [];
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
@@ -91,9 +104,22 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+for (const envVar of optionalEnvVars) {
+  if (!process.env[envVar]) {
+    missingOptionalEnvVars.push(envVar);
+  }
+}
+
 if (missingEnvVars.length > 0) {
   console.warn(`Warning: Missing required environment variables: ${missingEnvVars.join(", ")}`);
   console.warn("The application may not function correctly without these variables.");
+}
+
+if (missingOptionalEnvVars.length > 0) {
+  console.warn(
+    `Warning: Missing optional environment variables: ${missingOptionalEnvVars.join(", ")}`
+  );
+  console.warn("Some features may be limited without these variables.");
 }
 
 // Log configuration in development
@@ -103,6 +129,8 @@ if (config.nodeEnv === "development") {
     nodeEnv: config.nodeEnv,
     logLevel: config.logLevel,
     corsOrigin: config.cors.origin,
+    directusUrl: config.directus.url,
+    directusConfigured: Boolean(config.directus.token),
     geminiConfigured: Boolean(config.gemini.apiKey),
     geminiModel: config.gemini.model,
     jobCleanup: config.jobCleanup,

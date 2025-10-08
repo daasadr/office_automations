@@ -34,7 +34,7 @@
     {
       "collection": "processing_jobs",
       "meta": {
-        "icon": "hourglass",
+        "icon": "pending_actions",
         "display_template": "{{job_id}} - {{status}}",
         "sort_field": "created_at"
       },
@@ -42,7 +42,7 @@
     },
     {
       "collection": "artifacts",
-      "meta": { "icon": "imagesmode", "sort_field": "created_at" },
+      "meta": { "icon": "perm_media", "sort_field": "created_at" },
       "schema": { "name": "artifacts" }
     },
     {
@@ -75,14 +75,14 @@
       "schema": { "name": "integration_targets" }
     },
     {
-      "collection": "document_schemas",
-      "meta": { "icon": "schema", "display_template": "{{schema_name}} v{{version}}" },
-      "schema": { "name": "document_schemas" }
+      "collection": "schema_definitions",
+      "meta": { "icon": "schema", "display_template": "{{schema_key}} v{{version}}" },
+      "schema": { "name": "schema_definitions" }
     },
     {
-      "collection": "master_entities",
-      "meta": { "icon": "business", "display_template": "{{name}} ({{entity_type}})" },
-      "schema": { "name": "master_entities" }
+      "collection": "master_vendors",
+      "meta": { "icon": "business", "display_template": "{{name}}" },
+      "schema": { "name": "master_vendors" }
     },
     {
       "collection": "activity_log",

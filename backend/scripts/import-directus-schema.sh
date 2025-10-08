@@ -11,7 +11,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Configuration
 CONTAINER_NAME="${PROJECT_PREFIX:-office-automation_}-directus"
-SCHEMA_FILE="$PROJECT_ROOT/automation/directus/directus11_schema_snapshot.json"
+SCHEMA_FILE="$PROJECT_ROOT/docker/directus/schema/directus11_schema_snapshot_simplified.json"
 BACKUP_DIR="/directus/snapshots"
 CONTAINER_SCHEMA_PATH="/directus/snapshots/schema_import.json"
 
@@ -42,7 +42,7 @@ log_error() {
 # Check if schema file exists
 if [ ! -f "$SCHEMA_FILE" ]; then
     log_error "Schema file not found: $SCHEMA_FILE"
-    log_error "Expected location: automation/directus/directus11_schema_snapshot.json"
+    log_error "Expected location: docker/directus/schema/directus11_schema_snapshot.json"
     log_error "Current working directory: $(pwd)"
     log_error "Project root: $PROJECT_ROOT"
     exit 1

@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 CONTAINER_NAME="${PROJECT_PREFIX:-office-automation_}-directus"
-SCHEMA_FILE="$PROJECT_ROOT/automation/directus/directus11_schema_snapshot.json"
+SCHEMA_FILE="$PROJECT_ROOT/docker/directus/schema/directus11_schema_snapshot.json"
 
 echo "🚀 Quick importing Directus schema..."
 

@@ -1,31 +1,34 @@
 import { createDirectus, rest, staticToken } from "@directus/sdk";
 import { config } from "../../config";
 import { logger } from "../../utils/logger";
-
-/**
- * Directus Schema Definition
- * Define your collections and their types here
- *
- * Example:
- * type DirectusSchema = {
- *   users: User[];
- *   documents: Document[];
- * }
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DirectusSchema = Record<string, any>;
+import type { DirectusSchema } from "./types";
 
 /**
  * Create and configure Directus client
  */
 function createDirectusClient() {
+  // ATTEMPT LOG
+  logger.info("[Directus] Attempting to initialize Directus client", {
+    operation: "createDirectusClient",
+    hasUrl: !!config.directus.url,
+    hasToken: !!config.directus.token,
+  });
+
   if (!config.directus.url) {
-    logger.warn("Directus URL not configured. Directus client will not be available.");
+    logger.warn("[Directus] Directus URL not configured. Directus client will not be available.", {
+      operation: "createDirectusClient",
+    });
     return null;
   }
 
   if (!config.directus.token) {
-    logger.warn("Directus token not configured. Directus client will not be fully functional.");
+    logger.warn(
+      "[Directus] Directus token not configured. Directus client will not be fully functional.",
+      {
+        operation: "createDirectusClient",
+        url: config.directus.url,
+      }
+    );
   }
 
   try {
@@ -34,11 +37,21 @@ function createDirectusClient() {
       .with(rest())
       .with(staticToken(config.directus.token));
 
-    logger.info(`Directus client initialized successfully. URL: ${config.directus.url}`);
+    // SUCCESS LOG
+    logger.info("[Directus] Directus client initialized successfully", {
+      operation: "createDirectusClient",
+      url: config.directus.url,
+    });
 
     return client;
   } catch (error) {
-    logger.error("Failed to initialize Directus client:", error);
+    // ERROR LOG
+    logger.error("[Directus] Failed to initialize Directus client", {
+      operation: "createDirectusClient",
+      url: config.directus.url,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return null;
   }
 }
@@ -60,9 +73,20 @@ export function isDirectusAvailable(): boolean {
  */
 export function requireDirectus() {
   if (!directusClient) {
+    // ERROR LOG
+    logger.error("[Directus] Directus client is not initialized", {
+      operation: "requireDirectus",
+      hasUrl: !!config.directus.url,
+      hasToken: !!config.directus.token,
+    });
     throw new Error(
       "Directus client is not initialized. Check DIRECTUS_URL and DIRECTUS_TOKEN environment variables."
     );
   }
+
+  logger.debug("[Directus] Directus client access granted", {
+    operation: "requireDirectus",
+  });
+
   return directusClient;
 }

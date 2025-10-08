@@ -20,6 +20,20 @@
 
 export { directusClient, isDirectusAvailable, requireDirectus } from "./client";
 
+// Export document service
+export { directusDocumentService, DirectusDocumentService } from "./documentService";
+
+// Export types
+export type {
+  SourceDocument,
+  Response,
+  GeneratedDocument,
+  FoundationDocument,
+  DocumentVersion,
+  DirectusFile,
+  DirectusSchema,
+} from "./types";
+
 // Re-export commonly used Directus SDK functions for convenience
 export {
   readItems,

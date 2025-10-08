@@ -13,6 +13,10 @@ export interface JobData {
   error?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Directus IDs for tracking
+  directusSourceDocumentId?: string;
+  directusResponseId?: string;
+  directusGeneratedDocumentId?: string;
 }
 
 // Configuration for job cleanup

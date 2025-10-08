@@ -1,4 +1,606 @@
-Design and architecture of this app
+# Frontend Architecture & Technical Specifications
 
-general
-- app UI is in Czech language
+## 1. TECH STACK OVERVIEW
+- **Framework**: Astro 4.4+ with SSR (Server-Side Rendering)
+- **UI Library**: React 18 (islands architecture via @astrojs/react)
+- **Styling**: Tailwind CSS 3.4+ with custom design system
+- **Type System**: TypeScript 5.4+ (strict mode enabled)
+- **Component Library**: Radix UI primitives (accessible, unstyled)
+- **Icons**: Lucide React
+- **Logging**: Pino (server-side), custom client logger (browser)
+- **Build Tool**: Vite (via Astro)
+- **Node Adapter**: @astrojs/node (standalone mode)
+- **Backend Integration**: Directus SDK, REST APIs
+
+## 2. PROJECT STRUCTURE PATTERNS
+
+### File Organization
+```
+src/
+├── components/          # React components
+│   ├── ui/             # Radix-based design system components
+│   └── *.tsx           # Feature components (PascalCase)
+├── layouts/            # Astro layout templates
+│   └── *.astro         # Base layouts
+├── pages/              # File-based routing
+│   ├── api/            # API routes (server endpoints)
+│   └── *.astro         # Page components
+├── lib/                # Shared utilities
+│   ├── logger.ts       # Server-side logging (Pino)
+│   ├── client-logger.ts # Client-side logging
+│   ├── utils.ts        # cn() utility for class merging
+│   └── middleware.ts   # API middleware
+├── styles/
+│   └── globals.css     # Global styles, CSS variables
+└── constants.ts        # App-wide constants
+```
+
+### Naming Conventions
+- **React Components**: PascalCase (e.g., `UploadForm.tsx`, `ProcessingOverlay.tsx`)
+- **Astro Pages**: lowercase with hyphens if needed (e.g., `index.astro`, `upload.astro`)
+- **Utilities/Services**: camelCase (e.g., `logger.ts`, `client-logger.ts`)
+- **API Routes**: lowercase, RESTful structure (e.g., `health.ts`, `validate-pdf.ts`)
+- **Types/Interfaces**: PascalCase with descriptive names (e.g., `ServiceStatus`, `HealthResponse`)
+
+## 3. ASTRO CONFIGURATION
+
+### Output Mode: Server (SSR)
+- **Adapter**: @astrojs/node in standalone mode
+- **Port**: 4321 (development)
+- **Host**: true (allows external connections)
+
+### Integrations
+1. **React**: For interactive components (islands)
+2. **Tailwind**: CSS utility framework with `applyBaseStyles: false` (custom base in globals.css)
+
+### Key Astro Patterns
+- Use `.astro` for static/SEO pages (SSR by default)
+- Use React (`.tsx`) for interactive components with `client:*` directives
+- Leverage Astro's partial hydration (islands architecture)
+
+## 4. TYPESCRIPT CONFIGURATION
+
+### Compiler Options
+- **Target**: ES2022
+- **Module**: ESNext
+- **Strict Mode**: Enabled
+- **moduleResolution**: node
+- **Types**: ["astro/client", "node"]
+
+### Type Safety Rules
+- All function parameters must be typed
+- Avoid `any` - use `unknown` or proper types
+- Use type guards for runtime checks
+- Export interfaces for public APIs
+- Use `Omit`, `Pick`, `Partial` for type composition
+
+## 5. STYLING APPROACH
+
+### Tailwind CSS + shadcn/ui Design System
+- **CSS Variables**: HSL-based color system in `globals.css`
+- **Dark Mode**: Automatic via `prefers-color-scheme`
+- **Utility Function**: `cn()` from `lib/utils.ts` for merging classes
+  ```typescript
+  cn("base-classes", condition && "conditional-classes", className)
+  ```
+
+### Design Tokens (CSS Variables)
+- Primary, secondary, muted, accent, destructive colors
+- Background, foreground, border colors
+- Semantic naming: `--primary`, `--primary-foreground`, etc.
+- Border radius: `--radius` (0.5rem default)
+
+### Component Styling Pattern
+```tsx
+import { cn } from "@/lib/utils"
+import { cva, type VariantProps } from "class-variance-authority"
+
+const variants = cva("base-classes", {
+  variants: { /* ... */ },
+  defaultVariants: { /* ... */ }
+})
+```
+
+### Responsive Design
+- Mobile-first approach
+- Container-based layouts with centering
+- Use Tailwind breakpoints: `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+
+## 6. COMPONENT ARCHITECTURE
+
+### React Component Pattern
+```tsx
+import { useState, useCallback } from "react"
+import { useLogger } from "../lib/client-logger"
+
+export function ComponentName() {
+  const [state, setState] = useState<Type>(initialValue)
+  const log = useLogger("ComponentName")
+  
+  const handleAction = useCallback(() => {
+    log.userAction("action_name", { metadata })
+    // logic
+  }, [dependencies])
+  
+  return (
+    <div className={cn("base-classes")}>
+      {/* JSX */}
+    </div>
+  )
+}
+```
+
+### Astro Component Pattern
+```astro
+---
+export interface Props {
+  title: string
+  description?: string
+}
+
+const { title, description = "default" } = Astro.props
+---
+
+<div>
+  <h1>{title}</h1>
+  {description && <p>{description}</p>}
+</div>
+
+<style>
+  /* Scoped styles if needed */
+</style>
+```
+
+### Radix UI Integration
+- Import from `@radix-ui/react-*` packages
+- Wrap in styled components in `src/components/ui/`
+- Follow shadcn/ui patterns for consistency
+- Always use `forwardRef` for custom components wrapping Radix
+
+## 7. STATE MANAGEMENT
+
+### Local State
+- Use React hooks: `useState`, `useReducer`
+- `useCallback` and `useMemo` for optimization
+- `useRef` for DOM references and mutable values
+
+### Form State
+- Controlled components pattern
+- File input with hidden input + custom UI
+- Validation before submission
+- Loading states with button disabled state
+
+### No Global State Library
+- Current app doesn't require Redux/Zustand
+- Use URL params for shareable state (e.g., `?job=123`)
+- Server state via fetch in API routes
+
+## 8. API ROUTES PATTERN
+
+### File Location
+```
+src/pages/api/
+├── health.ts
+├── validate-pdf.ts
+├── status/
+│   └── [jobId].ts       # Dynamic route
+└── download/
+    └── [jobId]/
+        └── [filename].ts
+```
+
+### API Route Structure
+```typescript
+import type { APIRoute } from "astro"
+import { withLogging, createLoggedResponse } from "@/lib/middleware"
+
+const handler: APIRoute = async ({ request, params }) => {
+  const requestId = generateRequestId()
+  
+  try {
+    // Business logic
+    const data = await processRequest()
+    
+    return createLoggedResponse(data, {
+      status: 200,
+      requestId,
+      headers: { "X-Response-Time": "..." }
+    })
+  } catch (error) {
+    // Error handling with logging
+    return createLoggedResponse(
+      { error: "Message" },
+      { status: 500, requestId }
+    )
+  }
+}
+
+export const GET = withLogging(handler)
+export const POST = withLogging(handler)
+
+// CORS support
+export const OPTIONS: APIRoute = async () => {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  })
+}
+```
+
+### Request/Response Patterns
+- Always include `requestId` for tracing
+- Use typed interfaces for request/response bodies
+- Return consistent error structure
+- Log all requests via `withLogging` middleware
+- Use `loggedFetch` for backend API calls
+
+## 9. LOGGING STRATEGY
+
+### Server-Side Logging (Pino)
+```typescript
+import logger, { createRequestLogger, logBackendRequest } from "@/lib/logger"
+
+const requestLogger = createRequestLogger(requestId, method, url)
+requestLogger.info({ metadata }, "Message")
+
+// Backend API logging
+logBackendRequest({
+  endpoint: "/api/endpoint",
+  method: "POST",
+  requestId,
+  duration,
+  statusCode: response.status
+})
+```
+
+### Client-Side Logging (React)
+```typescript
+import { useLogger } from "@/lib/client-logger"
+
+const log = useLogger("ComponentName")
+
+log.info("Message", { metadata })
+log.error("Error occurred", error, { metadata })
+log.userAction("button_click", { buttonId: "submit" })
+log.performance("operation", duration)
+```
+
+### Log Levels
+- **debug**: Development-only detailed logs
+- **info**: Normal operational events
+- **warn**: Unexpected but handled situations
+- **error**: Errors requiring attention
+
+### What to Log
+- ✅ User actions (clicks, form submissions)
+- ✅ API requests/responses with duration
+- ✅ File uploads with progress
+- ✅ Performance metrics
+- ✅ Errors with full context
+- ❌ Sensitive data (passwords, tokens)
+- ❌ Large payloads (summarize instead)
+
+## 10. BEST PRACTICES
+
+### A11Y (Accessibility)
+1. **Semantic HTML**: Use proper tags (`<main>`, `<nav>`, `<article>`, etc.)
+2. **ARIA Attributes**: 
+   - `aria-label` for icon buttons
+   - `aria-busy` during loading
+   - `role="progressbar"` for progress indicators
+   - `aria-hidden` for decorative elements
+3. **Keyboard Navigation**: 
+   - All interactive elements accessible via keyboard
+   - Visible focus states (`focus-visible:ring-2`)
+4. **Skip Links**: 
+   - `<a href="#main-content" class="skip-link">` for screen readers
+   - CSS: `.skip-link { position: absolute; top: -40px }` with `:focus` state
+5. **Color Contrast**: Meet WCAG AA standards (4.5:1 for text)
+6. **Motion**: Respect `prefers-reduced-motion`
+   ```css
+   @media (prefers-reduced-motion: reduce) {
+     *, *::before, *::after {
+       animation-duration: 0.01ms !important;
+       transition-duration: 0.01ms !important;
+     }
+   }
+   ```
+7. **Form Labels**: Always associate labels with inputs
+8. **Error Messages**: Clear, actionable error messages
+9. **Loading States**: Indicate processing with `aria-busy`
+10. **High Contrast**: Support `prefers-contrast: high`
+
+### Performance
+1. **Images**: Use `loading="lazy"` and appropriate formats (WebP)
+2. **Fonts**: Preload critical fonts, use `font-display: swap`
+3. **Code Splitting**: Leverage Astro's automatic code splitting
+4. **React Islands**: Only hydrate interactive components with `client:*` directives
+   - `client:load` - immediate hydration
+   - `client:visible` - hydrate when in viewport
+   - `client:idle` - hydrate when browser idle
+5. **Bundle Size**: Monitor with `npm run build` output
+6. **CSS**: Purge unused Tailwind classes (automatic)
+7. **API Calls**: Implement timeouts, retry logic
+8. **Caching**: Use appropriate cache headers
+
+### Security
+1. **Input Validation**: Always validate on server-side
+2. **File Uploads**: 
+   - Check MIME types server-side
+   - Enforce size limits
+   - Sanitize filenames
+3. **CORS**: Explicit allow-lists (not "*" in production)
+4. **Error Messages**: Don't leak sensitive info in errors
+5. **Logging**: Redact sensitive fields (`password`, `token`, etc.)
+6. **Dependencies**: Regular `npm audit` and updates
+
+### Error Handling
+1. **Try-Catch**: Wrap async operations
+2. **Error Boundaries**: Use in React components
+3. **User Feedback**: Clear, non-technical error messages in Czech
+4. **Logging**: Log all errors with context
+5. **Fallbacks**: Graceful degradation
+6. **Request IDs**: Include in error responses for support
+
+### Code Quality
+1. **ESLint/Biome**: Use project linter config
+2. **TypeScript Strict**: No `any`, proper typing
+3. **DRY Principle**: Extract reusable logic
+4. **Single Responsibility**: One concern per function/component
+5. **Comments**: Explain "why", not "what"
+6. **Constants**: Use `constants.ts` for magic values
+7. **Destructuring**: Destructure props and complex objects
+
+## 11. CODE STYLE & CONVENTIONS
+
+### Import Organization
+```typescript
+// 1. External dependencies
+import { useState } from "react"
+import type { APIRoute } from "astro"
+
+// 2. Internal dependencies (absolute paths)
+import { logger } from "@/lib/logger"
+import { Button } from "@/components/ui/button"
+
+// 3. Relative imports (if needed)
+import { helperFunction } from "./utils"
+
+// 4. Types (can be grouped or inline)
+import type { CustomType } from "./types"
+```
+
+### Function Declarations
+```typescript
+// Named exports preferred
+export function ComponentName() { /* ... */ }
+export const utilityFunction = () => { /* ... */ }
+
+// Arrow functions for callbacks
+const handleClick = useCallback(() => { /* ... */ }, [deps])
+```
+
+### Async/Await
+```typescript
+// Always use async/await over .then()
+async function fetchData() {
+  try {
+    const response = await fetch(url)
+    const data = await response.json()
+    return data
+  } catch (error) {
+    log.error("Fetch failed", error)
+    throw error
+  }
+}
+```
+
+### Conditional Rendering
+```typescript
+// Short-circuit for simple conditions
+{isLoading && <Loader />}
+
+// Ternary for if/else
+{isSuccess ? <Success /> : <Error />}
+
+// Early returns in functions
+if (!data) return null
+return <Component data={data} />
+```
+
+## 12. LANGUAGE REQUIREMENTS
+
+### User Interface: Czech (cs-CZ)
+- **All UI text**: Buttons, labels, messages, placeholders in Czech
+- **Error messages**: User-friendly Czech messages
+- **Success messages**: Positive feedback in Czech
+- **HTML lang attribute**: `<html lang="cs">`
+- **Meta descriptions**: Czech for SEO
+
+### Examples
+```typescript
+// ✅ Good
+<button>Nahrát soubor</button>
+alert("Soubor je příliš velký. Maximální velikost je 10MB.")
+
+// ❌ Bad
+<button>Upload file</button>
+alert("File is too large. Maximum size is 10MB.")
+```
+
+### Code Comments: English
+- Code comments should be in English
+- Variable names in English
+- Function names in English
+- Only UI strings in Czech
+
+### Date/Time Formatting
+- Use Czech locale: `toLocaleString('cs-CZ')`
+- ISO format for APIs: `new Date().toISOString()`
+
+## 13. ENVIRONMENT & CONFIGURATION
+
+### Environment Variables
+```typescript
+// Access in .astro or API routes
+const apiUrl = import.meta.env.ORCHESTRATION_API_URL
+
+// Define in env.d.ts
+interface ImportMetaEnv {
+  readonly ORCHESTRATION_API_URL: string
+}
+```
+
+### Constants Pattern
+```typescript
+// constants.ts
+export const ORCHESTRATION_API_URL = 
+  import.meta.env.ORCHESTRATION_API_URL || "http://localhost:3001"
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+export const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  // ...
+} as const
+```
+
+## 14. PROGRESSIVE ENHANCEMENT
+
+### JavaScript-Optional Features
+- Forms work without JS when possible
+- Use `<form>` with proper `action` and `method`
+- Enhance with JavaScript for better UX
+- Mark enhanced forms with `data-enhance` attribute
+
+### View Transitions (Optional)
+```typescript
+// Detect support
+const hasViewTransitions = 'startViewTransition' in document
+
+// Apply conditionally
+if (hasViewTransitions) {
+  // Use native view transitions
+} else {
+  // Fallback to CSS animations
+}
+```
+
+## 15. TESTING MINDSET
+
+### Manual Testing Checklist
+- ✅ Keyboard navigation works
+- ✅ Screen reader announces correctly
+- ✅ Forms validate properly
+- ✅ Error states display
+- ✅ Loading states appear
+- ✅ Works without JavaScript (where applicable)
+- ✅ Responsive on mobile/tablet/desktop
+- ✅ Dark mode looks good
+- ✅ High contrast mode works
+- ✅ Czech text is correct and natural
+
+## 16. COMMON PATTERNS REFERENCE
+
+### File Upload Component
+```tsx
+const [selectedFile, setSelectedFile] = useState<File | null>(null)
+const fileInputRef = useRef<HTMLInputElement>(null)
+
+// Validation
+if (file.type !== "application/pdf") { /* error */ }
+if (file.size > MAX_FILE_SIZE) { /* error */ }
+
+// Hidden input pattern
+<input ref={fileInputRef} type="file" className="hidden" />
+<div onClick={() => fileInputRef.current?.click()}>
+  Custom upload UI
+</div>
+```
+
+### Loading States
+```tsx
+const [isSubmitting, setIsSubmitting] = useState(false)
+
+<button 
+  disabled={isSubmitting}
+  aria-busy={isSubmitting}
+>
+  {isSubmitting ? (
+    <><Loader2 className="animate-spin" /> Zpracování...</>
+  ) : (
+    <><Upload /> Nahrát</>
+  )}
+</button>
+```
+
+### API Response Pattern
+```typescript
+// Success response
+return createLoggedResponse(
+  { success: true, data, jobId, requestId },
+  { status: 200, requestId }
+)
+
+// Error response
+return createLoggedResponse(
+  { error: "Chyba při zpracování", details, requestId },
+  { status: 400, requestId }
+)
+```
+
+### Fetch with Timeout
+```typescript
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+const response = await fetch(url, {
+  signal: controller.signal,
+  // ... other options
+})
+
+clearTimeout(timeoutId)
+```
+
+## 17. QUICK DECISION TREE
+
+**When to use .astro vs .tsx?**
+- Static content, SEO-focused → `.astro`
+- Interactive, stateful UI → `.tsx` (React)
+- API endpoint → `.ts` in `pages/api/`
+
+**When to use client: directives?**
+- `client:load` → Critical interactive component (e.g., form)
+- `client:visible` → Below-fold interactive content
+- `client:idle` → Non-critical enhancement
+- No directive → Static rendering (default)
+
+**CSS-in-JS or Tailwind?**
+- Always Tailwind utilities
+- Use `cn()` for conditional classes
+- Use `cva()` for component variants
+- Scoped `<style>` in `.astro` files only for unique animations
+
+**Where to validate?**
+- Client: UX feedback (instant validation)
+- Server: Security (always validate again)
+- Both: Best practice
+
+---
+
+## SUMMARY
+
+This frontend is a **modern, accessible, performant SSR application** built with:
+- Astro for SSR and static generation
+- React for interactive components (islands)
+- Tailwind + Radix UI for styling
+- TypeScript for type safety
+- Czech UI with accessibility as priority
+- Comprehensive logging on server & client
+- File-based routing with API routes
+- Progressive enhancement principles
+
+**Key Principles**: Accessibility-first, performance-optimized, type-safe, well-logged, Czech localization, progressive enhancement.

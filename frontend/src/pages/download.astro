@@ -1,26 +1,40 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { ORCHESTRATION_API_URL } from "../constants";
 import ExcelDownloadButton from "../components/ExcelDownloadButton";
+import { FoundationDocumentProcessor } from "../components/FoundationDocumentProcessor";
+import { ORCHESTRATION_API_URL } from "../constants";
 
-// Get job ID from query parameters
+// Get document UUID or job ID from query parameters
+const documentId = Astro.url.searchParams.get("doc");
 const jobId = Astro.url.searchParams.get("job");
 
-if (!jobId) {
+// If neither is present, redirect to home
+if (!documentId && !jobId) {
   return Astro.redirect("/", 302);
 }
 
 // Get validation result from backend API
-let validationData = null;
+let validationData: any = null;
+let sourceDocumentId: string | undefined = undefined;
 
 try {
-  const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`);
-  if (response.ok) {
-    const result = await response.json();
-    validationData = result.validationResult;
+  // Prefer document UUID (persists after restart) over job ID (in-memory)
+  if (documentId) {
+    const response = await fetch(
+      `${ORCHESTRATION_API_URL}/documents/status-by-source/${documentId}`
+    );
+    if (response.ok) {
+      const result = await response.json();
+      validationData = result.validationResult;
+      sourceDocumentId = documentId;
+    }
+  } else if (jobId) {
+    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`);
+    if (response.ok) {
+      const result = await response.json();
+      validationData = result.validationResult;
+      sourceDocumentId = result.directusSourceDocumentId;
+    }
   }
 } catch (error) {
   console.error("Error fetching validation data:", error);
@@ -44,11 +58,12 @@ try {
         </div>
     
         <div class="max-w-6xl mx-auto space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stažení souboru</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <!-- Excel Download Section -->
+          <div class="bg-card text-card-foreground rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+              <h3 class="text-2xl font-semibold leading-none tracking-tight">Stažení souboru</h3>
+            </div>
+            <div class="p-6 pt-0 space-y-4">
               <!-- Excel Download - Primary Option -->
               {validationData && validationData.extracted_data && validationData.extracted_data.length > 0 && (
                 <div class="flex items-center justify-between p-4 border border-primary bg-primary/5 rounded-lg">
@@ -64,16 +79,34 @@ try {
                       <h3 class="font-semibold">Excel soubor s extrahovanými daty</h3>
                       <p class="text-sm text-muted-foreground mb-1">Strukturovaná data z PDF organizovaná podle kódů odpadů</p>
                       <div class="flex gap-4 text-sm text-muted-foreground">
-                        <span class="font-mono">odpady_{jobId}_{new Date().toISOString().split('T')[0]}.xlsx</span>
-                    <Badge variant="default">Více listů</Badge>
+                        <span class="font-mono whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">odpady_{sourceDocumentId || jobId}_{new Date().toISOString().split('T')[0]}.xlsx</span>
+                        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">Více listů</span>
                       </div>
                     </div>
                   </div>
-                  <ExcelDownloadButton client:load jobId={jobId} />
+                  <ExcelDownloadButton client:load documentId={sourceDocumentId ?? undefined} jobId={jobId ?? undefined} />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          <!-- Foundation Document Processing Section -->
+          {validationData && validationData.extracted_data && validationData.extracted_data.length > 0 && (
+            <FoundationDocumentProcessor client:load documentId={sourceDocumentId ?? undefined} jobId={jobId ?? undefined} />
+          )}
+
+          <!-- Additional Actions -->
+          <div class="flex justify-center pt-8">
+            <a
+              href="/upload"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
+              Nahrát jiný dokument
+            </a>
+          </div>
         </div>
       </>
   </div>

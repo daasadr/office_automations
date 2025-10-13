@@ -138,11 +138,16 @@ export function UploadForm() {
         filename: selectedFile.name,
         duration,
         jobId: result.jobId,
+        directusSourceDocumentId: result.directusSourceDocumentId,
         requestId: result.requestId,
       });
 
-      // Redirect to check page with job ID
-      window.location.href = `/check?job=${result.jobId}`;
+      // Redirect to check page with document UUID (persists after restart)
+      // Fall back to job ID if document UUID is not available
+      const redirectParam = result.directusSourceDocumentId
+        ? `doc=${result.directusSourceDocumentId}`
+        : `job=${result.jobId}`;
+      window.location.href = `/check?${redirectParam}`;
     } catch (error) {
       const duration = Date.now() - startTime;
 

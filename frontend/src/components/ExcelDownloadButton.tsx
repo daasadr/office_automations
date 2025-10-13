@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useId, type FC } from "react";
 import { useLogger } from "../lib/client-logger";
 
 export interface ExcelDownloadButtonProps {
-  jobId: string;
+  documentId?: string;
+  jobId?: string;
   className?: string;
   disabled?: boolean;
 }
@@ -15,6 +16,7 @@ export interface ExcelDownloadState {
 }
 
 export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
+  documentId,
   jobId,
   className = "",
   disabled = false,
@@ -26,18 +28,18 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
   const textId = useId();
 
   const generateExcelFile = useCallback(async () => {
-    logger.info("Starting Excel file generation", { jobId });
+    logger.info("Starting Excel file generation", { documentId, jobId });
     setState({ status: "generating" });
 
     try {
-      logger.debug("Making POST request to /api/generate-excel", { jobId });
+      logger.debug("Making POST request to /api/generate-excel", { documentId, jobId });
 
       const response = await fetch("/api/generate-excel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ jobId }),
+        body: JSON.stringify({ documentId, jobId }),
       });
 
       logger.debug("Response received", {
@@ -84,22 +86,25 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  }, [jobId, logger]);
+  }, [documentId, jobId, logger]);
 
   useEffect(() => {
-    logger.mount({ jobId });
+    logger.mount({ documentId, jobId });
     return () => logger.unmount();
-  }, [jobId, logger]);
+  }, [documentId, jobId, logger]);
 
-  // Reset hasAttempted when jobId changes
+  // Reset hasAttempted when documentId or jobId changes
   useEffect(() => {
+    if (!documentId && !jobId) {
+      return;
+    }
     setHasAttempted(false);
-  }, []);
+  }, [documentId, jobId]);
 
   useEffect(() => {
-    if (!jobId) {
-      logger.warn("No jobId provided");
-      setState({ status: "unavailable", error: "No job ID provided" });
+    if (!documentId && !jobId) {
+      logger.warn("Neither documentId nor jobId provided");
+      setState({ status: "unavailable", error: "No document ID or job ID provided" });
       return;
     }
 
@@ -108,7 +113,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       setHasAttempted(true);
       generateExcelFile();
     }
-  }, [jobId, hasAttempted, generateExcelFile, logger]);
+  }, [documentId, jobId, hasAttempted, generateExcelFile, logger]);
 
   const handleDownloadClick = () => {
     if (state.status === "ready" && state.downloadUrl) {
@@ -120,7 +125,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
   };
 
   const handleRetryClick = () => {
-    logger.userAction("excel_retry_clicked", { jobId });
+    logger.userAction("excel_retry_clicked", { documentId, jobId });
     setHasAttempted(false);
     // Don't call generateExcelFile directly, let the useEffect handle it
   };

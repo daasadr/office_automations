@@ -3,37 +3,120 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { ValidationResults } from "../components/ValidationResults";
 import { ORCHESTRATION_API_URL } from "../constants";
 
-// Get job ID from query parameters
+// Get document UUID or job ID from query parameters
+const documentId = Astro.url.searchParams.get("doc");
 const jobId = Astro.url.searchParams.get("job");
 
-// If no job ID is present, redirect to upload page
-if (!jobId) {
+// If neither is present, redirect to upload page
+if (!documentId && !jobId) {
   return Astro.redirect("/upload", 302);
 }
 
-// Get validation result from backend API
-let validationData = null;
+// Get validation result from backend API with retry logic for document UUID
+let validationData: any = null;
+let sourceDocumentId: string | undefined = undefined;
+const maxRetries = 5;
+const retryDelay = 1000; // 1 second
+
+async function fetchWithRetry(url: string, retries: number): Promise<any> {
+  console.log(`[check.astro] Fetching validation data from: ${url}`);
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`[check.astro] Attempt ${i + 1}/${retries}`);
+      const response = await fetch(url);
+      console.log(`[check.astro] Response status: ${response.status}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`[check.astro] Response data:`, {
+          hasValidationResult: !!data.validationResult,
+          hasPresent: !!data.validationResult?.present,
+          hasMissing: !!data.validationResult?.missing,
+          hasConfidence: typeof data.validationResult?.confidence !== "undefined",
+          status: data.status,
+        });
+
+        // Check if we have validation result with actual data
+        // Must have present, missing, and confidence fields
+        if (
+          data.validationResult &&
+          data.validationResult.present !== undefined &&
+          data.validationResult.missing !== undefined &&
+          data.validationResult.confidence !== undefined
+        ) {
+          console.log(`[check.astro] Valid validation data found on attempt ${i + 1}`);
+          return data;
+        } else {
+          console.log(`[check.astro] Validation result exists but incomplete/invalid`);
+        }
+      }
+      // If not ready yet and we have retries left, wait and try again
+      if (i < retries - 1) {
+        console.log(`[check.astro] Data not ready, waiting ${retryDelay}ms before retry...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    } catch (error) {
+      console.error(`[check.astro] Fetch attempt ${i + 1} failed:`, error);
+      if (i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+  console.error(`[check.astro] Failed to fetch validation data after ${retries} attempts`);
+  return null;
+}
 
 try {
-  const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`);
-  if (response.ok) {
-    validationData = await response.json();
+  // Prefer document UUID (persists after restart) over job ID (in-memory)
+  if (documentId) {
+    // Use retry logic for document UUID as LLM response might not be saved yet
+    validationData = await fetchWithRetry(
+      `${ORCHESTRATION_API_URL}/documents/status-by-source/${documentId}`,
+      maxRetries
+    );
+    sourceDocumentId = documentId;
+  } else if (jobId) {
+    // Job ID should have immediate data available (in-memory)
+    const response = await fetch(`${ORCHESTRATION_API_URL}/documents/status/${jobId}`);
+    if (response.ok) {
+      validationData = await response.json();
+      sourceDocumentId = validationData.directusSourceDocumentId;
+    }
   }
 } catch (error) {
   console.error("Error fetching validation data:", error);
 }
 
-// If no validation data found, redirect to upload page
-if (!validationData || !validationData.validationResult) {
-  return Astro.redirect("/upload", 302);
+// If no validation data found after retries, show loading page instead of redirecting
+// Check for complete validation data with required fields
+const hasValidationData =
+  validationData &&
+  validationData.validationResult &&
+  validationData.validationResult.present !== undefined &&
+  validationData.validationResult.missing !== undefined &&
+  validationData.validationResult.confidence !== undefined;
+
+console.log("[check.astro] Final validation check:", {
+  hasValidationData,
+  validationDataExists: !!validationData,
+  validationResultExists: !!validationData?.validationResult,
+});
+
+// Extract the data from the backend response if available
+let present, missing, confidence;
+if (hasValidationData) {
+  ({ present, missing, confidence } = validationData.validationResult);
+  console.log("[check.astro] Extracted validation data:", {
+    presentCount: present?.length,
+    missingCount: missing?.length,
+    confidence,
+  });
 }
 
-// Extract the data from the backend response
-const {
-  present: presentItems,
-  missing: missingItems,
-  confidence: confidenceScore,
-} = validationData.validationResult;
+// Determine which parameter to use for redirect (prefer document UUID)
+const downloadUrl = sourceDocumentId
+  ? `/download?doc=${sourceDocumentId}`
+  : `/download?job=${jobId}`;
 ---
 
 <BaseLayout title="Kontrola dokumentu" currentStep="check">
@@ -45,38 +128,133 @@ const {
       </p>
     </div>
     
-    <div class="max-w-6xl mx-auto space-y-8">
-      <!-- Validation Results -->
-      <ValidationResults 
-        client:load
-        present={presentItems}
-        missing={missingItems}
-        confidence={confidenceScore}
-      />
+    {!hasValidationData ? (
+      <!-- Processing State -->
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-8">
+          <div class="text-center space-y-6">
+            <!-- Animated spinner -->
+            <div class="flex justify-center">
+              <div class="relative">
+                <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-        <a
-          href="/upload"
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors min-w-48"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-          </svg>
-          Nahrát jiný dokument
-        </a>
+            <!-- Status message -->
+            <div>
+              <h2 class="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                Analyzuji dokument...
+              </h2>
+              <p class="text-blue-800 dark:text-blue-200">
+                Používám AI pro extrakci dat z PDF dokumentu
+              </p>
+            </div>
+
+            <!-- Progress steps -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-left">
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Soubor nahrán</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-pulse">
+                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Zpracování s AI modelem...</span>
+                </div>
+                <div class="flex items-center gap-3 opacity-50">
+                  <div class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">Validace výsledků</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info text -->
+            <div class="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+              <p>
+                Toto může trvat 10-30 sekund v závislosti na velikosti dokumentu.
+              </p>
+              <p class="text-xs">
+                Stránka se automaticky obnoví každé 2 sekundy.
+              </p>
+            </div>
+          </div>
+        </div>
         
-        <a
-          href={`/download?job=${jobId}`}
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl min-w-48"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-          </svg>
-          Pokračovat ke stažení
-        </a>
+        <!-- Alternative actions -->
+        <div class="flex justify-center gap-4 mt-8">
+          <button
+            onclick="window.location.reload()"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Obnovit nyní
+          </button>
+          
+          <a
+            href="/upload"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Zpět
+          </a>
+        </div>
+        
+        <script>
+          // Auto-reload every 2 seconds until we have data
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        </script>
       </div>
-    </div>
+    ) : (
+      <!-- Validation Results -->
+      <div class="max-w-6xl mx-auto space-y-8">
+        <ValidationResults 
+          client:load
+          present={present}
+          missing={missing}
+          confidence={confidence}
+        />
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
+          <a
+            href="/upload"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors min-w-48"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            Nahrát jiný dokument
+          </a>
+          
+          <a
+            href={downloadUrl}
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl min-w-48"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+            Pokračovat ke stažení
+          </a>
+        </div>
+      </div>
+    )}
   </div>
 </BaseLayout>
 

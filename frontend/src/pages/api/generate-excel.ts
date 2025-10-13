@@ -8,10 +8,10 @@ const generateExcelHandler: APIRoute = async ({ request }) => {
   const timer = new RequestTimer();
 
   try {
-    const { jobId } = await request.json();
+    const { documentId, jobId } = await request.json();
 
-    if (!jobId) {
-      return createErrorResponse("Job ID is required", { status: 400, requestId });
+    if (!documentId && !jobId) {
+      return createErrorResponse("Document ID or Job ID is required", { status: 400, requestId });
     }
 
     // Forward the request to the backend orchestration API to generate Excel
@@ -20,7 +20,7 @@ const generateExcelHandler: APIRoute = async ({ request }) => {
       headers: {
         "Content-Type": CONTENT_TYPE_JSON,
       },
-      body: JSON.stringify({ jobId }),
+      body: JSON.stringify({ documentId, jobId }),
       requestId,
     });
 
@@ -39,10 +39,13 @@ const generateExcelHandler: APIRoute = async ({ request }) => {
     // Extract filename from Content-Disposition header
     const contentDisposition = backendResponse.headers.get("Content-Disposition");
     const filenameMatch = contentDisposition?.match(/filename="([^"]+)"/);
-    const filename = filenameMatch?.[1] || `odpady_${jobId}.xlsx`;
+    const identifier = documentId || jobId;
+    const filename = filenameMatch?.[1] || `odpady_${identifier}.xlsx`;
 
     // Return JSON response with download URL pointing to frontend proxy
-    const downloadUrl = `/api/download/${jobId}/${filename}`;
+    const downloadUrl = documentId
+      ? `/api/download-by-doc/${documentId}/${filename}`
+      : `/api/download/${jobId}/${filename}`;
 
     return new Response(
       JSON.stringify({

@@ -1,14 +1,22 @@
-import { useState } from "react";
-import { FileSpreadsheet, Loader2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  FileSpreadsheet,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Download,
+  Check,
+  X,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useLogger } from "../lib/client-logger";
-import { ORCHESTRATION_API_URL } from "../constants";
 
 interface FoundationDocumentProcessorProps {
   documentId?: string;
   jobId?: string;
+  autoTrigger?: boolean;
 }
 
 interface ProcessingResult {
@@ -34,137 +42,188 @@ interface ProcessingResult {
 export function FoundationDocumentProcessor({
   documentId,
   jobId,
+  autoTrigger = false,
 }: FoundationDocumentProcessorProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [statusUpdateSuccess, setStatusUpdateSuccess] = useState<"approved" | "rejected" | null>(
+    null
+  );
   const log = useLogger("FoundationDocumentProcessor");
+  const hasTriggeredRef = useRef(false);
 
-  const handleProcess = async (isReprocess = false) => {
-    log.userAction(isReprocess ? "foundation_reprocess_start" : "foundation_process_start", {
-      jobId,
-      documentId,
+  // Auto-trigger processing on mount if autoTrigger is true
+  useEffect(() => {
+    const triggerProcessing = async () => {
+      if (autoTrigger && !hasTriggeredRef.current) {
+        hasTriggeredRef.current = true;
+        log.info("Auto-triggering foundation document processing", { documentId, jobId });
+
+        // Inline the processing call to avoid handleProcess dependency
+        try {
+          const response = await fetch("/api/process-foundation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId, sourceDocumentId: documentId }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setResult(data);
+          } else {
+            const errorData = await response.json();
+            setError(errorData.error || "Failed to process foundation document");
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Unknown error occurred");
+        }
+      }
+    };
+
+    triggerProcessing();
+  }, [autoTrigger, documentId, jobId, log]);
+
+  const handleDownload = async () => {
+    if (!result) return;
+
+    log.userAction("foundation_document_download", {
+      foundationDocumentId: result.foundationDocument.id,
     });
-    setIsProcessing(true);
-    setError(null);
-    if (!isReprocess) {
-      setResult(null);
-    }
-
-    const startTime = Date.now();
+    setIsDownloading(true);
 
     try {
-      log.info("Processing foundation document", { jobId, documentId });
+      log.info("Downloading foundation document", {
+        foundationDocumentId: result.foundationDocument.id,
+      });
 
-      const response = await fetch("/api/process-foundation", {
+      const response = await fetch("/api/download-foundation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ jobId, sourceDocumentId: documentId }),
+        body: JSON.stringify({
+          foundationDocumentId: result.foundationDocument.id,
+        }),
       });
 
-      const duration = Date.now() - startTime;
+      if (!response.ok) {
+        throw new Error("Failed to download foundation document");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${result.foundationDocument.title}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      log.info("Foundation document downloaded successfully", {
+        foundationDocumentId: result.foundationDocument.id,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Download failed";
+      log.error(
+        "Foundation document download failed",
+        err instanceof Error ? err : new Error(errorMessage)
+      );
+      alert(`Download failed: ${errorMessage}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (status: "approved" | "rejected") => {
+    if (!result) return;
+
+    log.userAction(`foundation_document_${status}`, {
+      foundationDocumentId: result.foundationDocument.id,
+    });
+    setIsUpdatingStatus(true);
+    setStatusUpdateSuccess(null);
+
+    try {
+      log.info(`Updating foundation document status to ${status}`, {
+        foundationDocumentId: result.foundationDocument.id,
+        status,
+      });
+
+      const response = await fetch("/api/update-foundation-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          foundationDocumentId: result.foundationDocument.id,
+          status,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.error || "Failed to process foundation document";
-
-        log.error("Foundation processing failed", new Error(errorMessage), {
-          jobId,
-          statusCode: response.status,
-          duration,
-          details: errorData.details,
-        });
-
-        throw new Error(errorMessage);
+        throw new Error(errorData.error || "Failed to update status");
       }
 
-      const data: ProcessingResult = await response.json();
+      await response.json();
 
-      log.info(
-        isReprocess
-          ? "Foundation document reprocessed successfully"
-          : "Foundation document processed successfully",
-        {
-          jobId,
-          duration,
-          foundationDocumentId: data.foundationDocument.id,
-          sheetsModified: data.processing.sheetsModified.length,
-          extractedDataCount: data.processing.extractedDataCount,
-          isReprocess,
-        }
-      );
+      log.info(`Foundation document status updated to ${status}`, {
+        foundationDocumentId: result.foundationDocument.id,
+        status,
+      });
 
-      setResult(data);
+      setStatusUpdateSuccess(status);
+
+      // Update result to reflect new status
+      setResult({
+        ...result,
+        foundationDocument: {
+          ...result.foundationDocument,
+          status: status,
+        },
+      });
     } catch (err) {
-      const duration = Date.now() - startTime;
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-
+      const errorMessage = err instanceof Error ? err.message : "Status update failed";
       log.error(
-        "Foundation processing error",
-        err instanceof Error ? err : new Error(errorMessage),
-        {
-          jobId,
-          duration,
-        }
+        "Foundation document status update failed",
+        err instanceof Error ? err : new Error(errorMessage)
       );
-
-      setError(errorMessage);
+      alert(`Status update failed: ${errorMessage}`);
     } finally {
-      setIsProcessing(false);
+      setIsUpdatingStatus(false);
     }
   };
 
   return (
-    <Card className="border-2 border-primary/20">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <FileSpreadsheet className="w-6 h-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Foundation Document Processing</CardTitle>
-              <CardDescription className="mt-1">
-                Augment your approved foundation Excel document with extracted data
-              </CardDescription>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
+    <Card className="border-none">
       <CardContent className="space-y-4">
-        {/* Initial State */}
+        {/* Processing State */}
         {!result && !error && (
           <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <h4 className="font-semibold text-sm">What this does:</h4>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Retrieves your last approved foundation document</li>
-                <li>Finds sheets matching waste codes and company IDs</li>
-                <li>Adds extracted data to the appropriate rows</li>
-                <li>Saves as a new draft for your review</li>
-              </ul>
+            <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+              <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                  Zpracovávám zakládací dokument...
+                </h4>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                  Probíhá augmentace schváleného dokumentu extrahovanými daty
+                </p>
+              </div>
             </div>
 
-            <Button
-              onClick={() => handleProcess(false)}
-              disabled={isProcessing}
-              className="w-full sm:w-auto"
-              size="lg"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Foundation Document...
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  Process Foundation Document
-                </>
-              )}
-            </Button>
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <h4 className="font-semibold text-sm">Proces augmentace:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Načítání posledního schváleného zakládacího dokumentu</li>
+                <li>Vyhledávání listů odpovídajících kódům odpadů a IČO</li>
+                <li>Přidávání extrahovaných dat do příslušných řádků</li>
+                <li>Ukládání jako nový koncept pro kontrolu</li>
+              </ul>
+            </div>
           </div>
         )}
 
@@ -183,22 +242,76 @@ export function FoundationDocumentProcessor({
               </div>
             </div>
 
-            {/* Document Details */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="p-4 border rounded-lg space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">New Document</div>
-                <div className="font-semibold">{result.foundationDocument.title}</div>
-                <Badge variant="outline" className="mt-1">
-                  {result.foundationDocument.status}
-                </Badge>
+            {/* Success Message if status was updated */}
+            {statusUpdateSuccess && (
+              <div
+                className={`flex items-start gap-3 p-4 rounded-lg ${
+                  statusUpdateSuccess === "approved"
+                    ? "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900"
+                    : "bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900"
+                }`}
+              >
+                <CheckCircle
+                  className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                    statusUpdateSuccess === "approved"
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-orange-600 dark:text-orange-400"
+                  }`}
+                />
+                <div className="flex-1">
+                  <h4
+                    className={`font-semibold ${
+                      statusUpdateSuccess === "approved"
+                        ? "text-green-900 dark:text-green-100"
+                        : "text-orange-900 dark:text-orange-100"
+                    }`}
+                  >
+                    {statusUpdateSuccess === "approved"
+                      ? "Dokument schválen!"
+                      : "Dokument odmítnut"}
+                  </h4>
+                  <p
+                    className={`text-sm mt-1 ${
+                      statusUpdateSuccess === "approved"
+                        ? "text-green-800 dark:text-green-200"
+                        : "text-orange-800 dark:text-orange-200"
+                    }`}
+                  >
+                    {statusUpdateSuccess === "approved"
+                      ? "Zakládací dokument byl úspěšně schválen a je nyní aktivní."
+                      : "Zakládací dokument byl odmítnut a zůstává jako koncept."}
+                  </p>
+                </div>
               </div>
+            )}
 
-              <div className="p-4 border rounded-lg space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Based On</div>
-                <div className="font-semibold">{result.foundationDocument.basedOn.title}</div>
-                <Badge variant="secondary" className="mt-1">
-                  approved
-                </Badge>
+            {/* Download Button */}
+            <div className="p-4 border-2 border-primary/20 bg-primary/5 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-1">Stáhnout augmentovaný dokument</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Před schválením si prosím stáhněte dokument a zkontrolujte změny
+                  </p>
+                </div>
+                <Button
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  size="lg"
+                  variant="default"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Stahuji...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Stáhnout dokument
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
 
@@ -240,52 +353,81 @@ export function FoundationDocumentProcessor({
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="default"
-                size="lg"
-                className="flex-1"
-                onClick={() => {
-                  const directusUrl = ORCHESTRATION_API_URL.replace(":3001", ":8055");
-                  window.open(`${directusUrl}/admin/content/foundation_documents`, "_blank");
-                }}
-              >
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Open in Directus
-              </Button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">New Document</div>
+                <div className="font-semibold">{result.foundationDocument.title}</div>
+                <Badge variant="outline" className="mt-1">
+                  {result.foundationDocument.status}
+                </Badge>
+              </div>
 
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => handleProcess(true)}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Reprocessing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Reprocess
-                  </>
+              {/* Approve/Reject Actions */}
+              {result.foundationDocument.status !== "approved" &&
+                result.foundationDocument.status !== "rejected" && (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        Zkontrolujte změny a potvrďte
+                      </h4>
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        Stáhněte si dokument, zkontrolujte doplněná data a pokud jsou správná,
+                        schvalte dokument. V případě chyb dokument odmítněte a obnovte stránku pro
+                        nové vygenerování.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={() => handleUpdateStatus("approved")}
+                        disabled={isUpdatingStatus}
+                        size="lg"
+                        variant="default"
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isUpdatingStatus ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Zpracovávám...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            Přijmout (Schválit)
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={() => handleUpdateStatus("rejected")}
+                        disabled={isUpdatingStatus}
+                        size="lg"
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        {isUpdatingStatus ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Zpracovávám...
+                          </>
+                        ) : (
+                          <>
+                            <X className="mr-2 h-4 w-4" />
+                            Odmítnout
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </Button>
             </div>
 
-            <div className="text-xs text-muted-foreground p-3 bg-muted rounded space-y-2">
-              <p>
-                <strong>Note:</strong> The document has been saved as a draft. Please review it in
-                Directus and approve when ready. You can download the file directly from Directus or
-                access it via the Directus API.
-              </p>
-              <p>
-                <strong>Reprocess:</strong> Use the reprocess button to regenerate the augmented
-                document with the current backend logic. This is useful after bug fixes or when you
-                want to apply updated processing rules to the same source data.
-              </p>
+            <div className="p-4 border rounded-lg space-y-2">
+              <div className="text-sm font-medium text-muted-foreground">Based On</div>
+              <div className="font-semibold">{result.foundationDocument.basedOn.title}</div>
+              <Badge variant="secondary" className="mt-1">
+                approved
+              </Badge>
             </div>
           </div>
         )}
@@ -302,24 +444,21 @@ export function FoundationDocumentProcessor({
             </div>
 
             <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <h4 className="font-semibold text-sm">Common Issues:</h4>
+              <h4 className="font-semibold text-sm">Možné příčiny:</h4>
               <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>No approved foundation document found in Directus</li>
-                <li>Approved document doesn't have an Excel file attached</li>
-                <li>Sheet names don't match the expected pattern (waste code + IČO)</li>
-                <li>Required column headers are missing</li>
+                <li>V Directus nebyl nalezen žádný schválený zakládací dokument</li>
+                <li>Schválený dokument nemá připojený Excel soubor</li>
+                <li>Názvy listů neodpovídají očekávanému formátu (kód odpadu + IČO)</li>
+                <li>V dokumentu chybí požadované záhlaví sloupců</li>
               </ul>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={() => {
-                setError(null);
-                setResult(null);
-              }}
-            >
-              Try Again
-            </Button>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Pro opakování:</strong> Obnovte stránku (F5) a dokument bude automaticky
+                zpracován znovu.
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

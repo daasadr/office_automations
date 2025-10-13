@@ -3,11 +3,17 @@
  * Handles CRUD operations for document-related collections in Directus
  */
 
-import { createItem, readItems, updateItem, uploadFiles } from "@directus/sdk";
+import { createItem, readItems, updateItem, uploadFiles, readAssetRaw } from "@directus/sdk";
 import { createHash } from "crypto";
 import { requireDirectus } from "./client";
 import { logger } from "../../utils/logger";
-import type { SourceDocument, Response, GeneratedDocument, DirectusFile } from "./types";
+import type {
+  SourceDocument,
+  Response,
+  GeneratedDocument,
+  DirectusFile,
+  FoundationDocument,
+} from "./types";
 
 /**
  * File Upload Options
@@ -681,6 +687,224 @@ export class DirectusDocumentService {
         stack: error instanceof Error ? error.stack : undefined,
       });
       return [];
+    }
+  }
+
+  /**
+   * Retrieves the last approved foundation document
+   */
+  async getLastApprovedFoundationDocument(): Promise<FoundationDocument | null> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to retrieve last approved foundation document", {
+      operation: "getLastApprovedFoundationDocument",
+    });
+
+    try {
+      const client = requireDirectus();
+
+      const documents = await client.request(
+        readItems("foundation_documents", {
+          filter: {
+            status: { _eq: "approved" },
+          },
+          sort: ["-created_at"],
+          limit: 1,
+        })
+      );
+
+      const result =
+        documents && documents.length > 0 ? (documents[0] as FoundationDocument) : null;
+
+      // SUCCESS LOG
+      if (result) {
+        logger.info("[Directus] Last approved foundation document retrieved successfully", {
+          operation: "getLastApprovedFoundationDocument",
+          documentId: result.id,
+          title: result.title,
+        });
+      } else {
+        logger.warn("[Directus] No approved foundation document found", {
+          operation: "getLastApprovedFoundationDocument",
+        });
+      }
+
+      return result;
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Failed to retrieve last approved foundation document", {
+        operation: "getLastApprovedFoundationDocument",
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Downloads a file from Directus by file ID
+   */
+  async downloadFile(fileId: string): Promise<Buffer | null> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to download file", {
+      operation: "downloadFile",
+      fileId,
+    });
+
+    try {
+      const client = requireDirectus();
+
+      // Download file as raw stream
+      const fileStream = await client.request(readAssetRaw(fileId));
+
+      // Convert ReadableStream to Buffer
+      const reader = fileStream.getReader();
+      const chunks: Uint8Array[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) chunks.push(value);
+      }
+
+      // Concatenate all chunks into a single buffer
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      const buffer = Buffer.alloc(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        buffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      // SUCCESS LOG
+      logger.info("[Directus] File downloaded successfully", {
+        operation: "downloadFile",
+        fileId,
+        size: buffer.length,
+      });
+
+      return buffer;
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Failed to download file", {
+        operation: "downloadFile",
+        fileId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Creates a foundation document record and uploads the associated file
+   */
+  async createFoundationDocument(options: {
+    title: string;
+    file: FileUploadOptions;
+    sourceDocumentId?: string;
+    docType?: string;
+    status?: FoundationDocument["status"];
+    contentJson?: Record<string, unknown>;
+    notes?: string;
+  }): Promise<FoundationDocument> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to create foundation document", {
+      operation: "createFoundationDocument",
+      title: options.title,
+      mimetype: options.file.mimetype,
+      size: options.file.buffer.length,
+      status: options.status || "draft",
+    });
+
+    try {
+      const client = requireDirectus();
+
+      // Upload file first
+      const uploadedFile = await this.uploadFile({
+        ...options.file,
+        title: options.title,
+      });
+
+      // Create foundation document record
+      const foundationDocument: Partial<FoundationDocument> = {
+        title: options.title,
+        file: uploadedFile.id,
+        source_document: options.sourceDocumentId,
+        doc_type: options.docType,
+        status: options.status || "draft",
+        content_json: options.contentJson,
+        notes: options.notes,
+      };
+
+      const created = await client.request(createItem("foundation_documents", foundationDocument));
+
+      // SUCCESS LOG
+      logger.info("[Directus] Foundation document created successfully", {
+        operation: "createFoundationDocument",
+        documentId: created.id,
+        title: options.title,
+        fileId: uploadedFile.id,
+        status: foundationDocument.status,
+      });
+
+      return created as FoundationDocument;
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Foundation document creation failed", {
+        operation: "createFoundationDocument",
+        title: options.title,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw new Error(
+        `Foundation document creation failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Updates foundation document status
+   */
+  async updateFoundationDocumentStatus(
+    documentId: string,
+    status: FoundationDocument["status"]
+  ): Promise<FoundationDocument> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to update foundation document status", {
+      operation: "updateFoundationDocumentStatus",
+      documentId,
+      newStatus: status,
+    });
+
+    try {
+      const client = requireDirectus();
+
+      const updated = await client.request(
+        updateItem("foundation_documents", documentId, {
+          status,
+        })
+      );
+
+      // SUCCESS LOG
+      logger.info("[Directus] Foundation document status updated successfully", {
+        operation: "updateFoundationDocumentStatus",
+        documentId,
+        status,
+      });
+
+      return updated as FoundationDocument;
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Foundation document status update failed", {
+        operation: "updateFoundationDocumentStatus",
+        documentId,
+        status,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw new Error(
+        `Foundation document status update failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 }

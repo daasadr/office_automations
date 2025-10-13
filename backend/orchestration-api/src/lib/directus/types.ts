@@ -63,9 +63,10 @@ export interface GeneratedDocument {
 export interface FoundationDocument {
   id?: string;
   source_document?: string; // UUID reference to source_documents
+  file?: string; // UUID reference to directus_files
   title: string;
   doc_type?: string;
-  status?: "draft" | "in_review" | "approved" | "published";
+  status?: "draft" | "in_review" | "approved" | "rejected" | "published";
   content_json?: Record<string, unknown>;
   notes?: string;
   created_at?: string;

@@ -741,6 +741,59 @@ export class DirectusDocumentService {
   }
 
   /**
+   * Retrieves a foundation document by ID
+   */
+  async getFoundationDocument(documentId: string): Promise<FoundationDocument | null> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to retrieve foundation document", {
+      operation: "getFoundationDocument",
+      documentId,
+    });
+
+    try {
+      const client = requireDirectus();
+
+      const documents = await client.request(
+        readItems("foundation_documents", {
+          filter: {
+            id: { _eq: documentId },
+          },
+          limit: 1,
+        })
+      );
+
+      const result =
+        documents && documents.length > 0 ? (documents[0] as FoundationDocument) : null;
+
+      // SUCCESS LOG
+      if (result) {
+        logger.info("[Directus] Foundation document retrieved successfully", {
+          operation: "getFoundationDocument",
+          documentId: result.id,
+          title: result.title,
+          status: result.status,
+        });
+      } else {
+        logger.warn("[Directus] Foundation document not found", {
+          operation: "getFoundationDocument",
+          documentId,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Failed to retrieve foundation document", {
+        operation: "getFoundationDocument",
+        documentId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return null;
+    }
+  }
+
+  /**
    * Downloads a file from Directus by file ID
    */
   async downloadFile(fileId: string): Promise<Buffer | null> {

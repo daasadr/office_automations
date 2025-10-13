@@ -1,8 +1,14 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import ExcelDownloadButton from "../components/ExcelDownloadButton";
 import { FoundationDocumentProcessor } from "../components/FoundationDocumentProcessor";
 import { ORCHESTRATION_API_URL } from "../constants";
+
+interface ValidationResult {
+  present?: string[];
+  missing?: string[];
+  confidence?: number;
+  extracted_data?: unknown[];
+}
 
 // Get document UUID or job ID from query parameters
 const documentId = Astro.url.searchParams.get("doc");
@@ -14,7 +20,7 @@ if (!documentId && !jobId) {
 }
 
 // Get validation result from backend API
-let validationData: any = null;
+let validationData: ValidationResult | null = null;
 let sourceDocumentId: string | undefined = undefined;
 
 try {
@@ -41,74 +47,57 @@ try {
 }
 ---
 
-<BaseLayout title="Stažení výsledků" currentStep="download">
+<BaseLayout title="Zpracování zakládacího dokumentu" currentStep="download">
   <div class="container mx-auto py-8">
-      <>
-        <div class="text-center mb-8">
-          <div class="text-primary w-20 h-20 mx-auto mb-6" aria-hidden="true">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22,4 12,14.01 9,11.01"></polyline>
-            </svg>
-          </div>
-          <h1 class="text-4xl font-bold tracking-tight mb-4">Zpracování dokončeno!</h1>
-          <p class="text-lg text-muted-foreground">
-            Váš soubor byl úspěšně zpracován. Stáhněte si výsledky níže.
+    <div class="text-center mb-8">
+      <div class="text-primary w-20 h-20 mx-auto mb-6" aria-hidden="true">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14,2 14,8 20,8"></polyline>
+          <path d="M8 13h2m-2 4h4m-4-8h4"></path>
+        </svg>
+      </div>
+      <h1 class="text-4xl font-bold tracking-tight mb-4">Augmentace dokumentu</h1>
+      <p class="text-lg text-muted-foreground">
+        Probíhá automatické doplnění extrahovaných dat do zakládacího dokumentu
+      </p>
+    </div>
+
+    <div class="max-w-6xl mx-auto space-y-8">
+      {validationData && validationData.extracted_data && validationData.extracted_data.length > 0 ? (
+        <FoundationDocumentProcessor 
+          client:load 
+          documentId={sourceDocumentId ?? undefined} 
+          jobId={jobId ?? undefined}
+          autoTrigger={true}
+        />
+      ) : (
+        <div class="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg p-6 text-center">
+          <p class="text-yellow-800 dark:text-yellow-200">
+            Nebyla nalezena žádná extrahovaná data pro zpracování.
           </p>
+          <a
+            href="/upload"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 mt-4 text-base font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            Nahrát jiný dokument
+          </a>
         </div>
-    
-        <div class="max-w-6xl mx-auto space-y-8">
-          <!-- Excel Download Section -->
-          <div class="bg-card text-card-foreground rounded-lg border shadow-sm">
-            <div class="flex flex-col space-y-1.5 p-6">
-              <h3 class="text-2xl font-semibold leading-none tracking-tight">Stažení souboru</h3>
-            </div>
-            <div class="p-6 pt-0 space-y-4">
-              <!-- Excel Download - Primary Option -->
-              {validationData && validationData.extracted_data && validationData.extracted_data.length > 0 && (
-                <div class="flex items-center justify-between p-4 border border-primary bg-primary/5 rounded-lg">
-                  <div class="flex items-center gap-4 flex-1">
-                    <div class="text-primary" aria-hidden="true">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14,2 14,8 20,8"></polyline>
-                        <path d="M8 13h2m-2 4h4m-4-8h4"></path>
-                      </svg>
-                    </div>
-                    <div class="flex-1">
-                      <h3 class="font-semibold">Excel soubor s extrahovanými daty</h3>
-                      <p class="text-sm text-muted-foreground mb-1">Strukturovaná data z PDF organizovaná podle kódů odpadů</p>
-                      <div class="flex gap-4 text-sm text-muted-foreground">
-                        <span class="font-mono whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">odpady_{sourceDocumentId || jobId}_{new Date().toISOString().split('T')[0]}.xlsx</span>
-                        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">Více listů</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ExcelDownloadButton client:load documentId={sourceDocumentId ?? undefined} jobId={jobId ?? undefined} />
-                </div>
-              )}
-            </div>
-          </div>
+      )}
 
-          <!-- Foundation Document Processing Section -->
-          {validationData && validationData.extracted_data && validationData.extracted_data.length > 0 && (
-            <FoundationDocumentProcessor client:load documentId={sourceDocumentId ?? undefined} jobId={jobId ?? undefined} />
-          )}
-
-          <!-- Additional Actions -->
-          <div class="flex justify-center pt-8">
-            <a
-              href="/upload"
-              class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-              Nahrát jiný dokument
-            </a>
-          </div>
-        </div>
-      </>
+      <!-- Additional Actions -->
+      <div class="flex justify-center pt-8">
+        <a
+          href="/upload"
+          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Nahrát jiný dokument
+        </a>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 

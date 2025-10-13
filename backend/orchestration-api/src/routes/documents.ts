@@ -983,4 +983,131 @@ router.post("/process-foundation", async (req, res) => {
   }
 });
 
+// Download foundation document by ID
+router.get("/download-foundation/:foundationDocumentId", async (req, res) => {
+  try {
+    const { foundationDocumentId } = req.params;
+
+    if (!isDirectusAvailable()) {
+      return res.status(503).json({
+        error: "Directus is not available. This endpoint requires Directus integration.",
+      });
+    }
+
+    logger.info("Downloading foundation document", { foundationDocumentId });
+
+    // Get foundation document from Directus
+    const foundationDoc = await directusDocumentService.getFoundationDocument(foundationDocumentId);
+
+    if (!foundationDoc) {
+      return res.status(404).json({
+        error: "Foundation document not found",
+        foundationDocumentId,
+      });
+    }
+
+    if (!foundationDoc.file) {
+      return res.status(404).json({
+        error: "Foundation document has no file attached",
+        foundationDocumentId,
+      });
+    }
+
+    logger.info("Fetching foundation document file", {
+      foundationDocumentId,
+      fileId: foundationDoc.file,
+    });
+
+    // Download the file from Directus
+    const fileBuffer = await directusDocumentService.downloadFile(foundationDoc.file);
+
+    if (!fileBuffer) {
+      return res.status(500).json({
+        error: "Failed to download foundation document file",
+        foundationDocumentId,
+        fileId: foundationDoc.file,
+      });
+    }
+
+    const filename = `${foundationDoc.title}.xlsx`;
+
+    res.set({
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Length": fileBuffer.length.toString(),
+    });
+
+    logger.info("Foundation document downloaded successfully", {
+      foundationDocumentId,
+      fileSize: fileBuffer.length,
+    });
+
+    res.send(fileBuffer);
+  } catch (error) {
+    logger.error("Error downloading foundation document:", error);
+    res.status(500).json({
+      error: "Failed to download foundation document",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Update foundation document status (approve/reject)
+router.post("/update-foundation-status", async (req, res) => {
+  try {
+    const { foundationDocumentId, status } = req.body;
+
+    if (!foundationDocumentId) {
+      return res.status(400).json({
+        error: "Foundation document ID is required",
+      });
+    }
+
+    if (!status || !["approved", "rejected", "draft"].includes(status)) {
+      return res.status(400).json({
+        error: "Invalid status. Must be 'approved', 'rejected', or 'draft'",
+      });
+    }
+
+    if (!isDirectusAvailable()) {
+      return res.status(503).json({
+        error: "Directus is not available. This endpoint requires Directus integration.",
+      });
+    }
+
+    logger.info("Updating foundation document status", {
+      foundationDocumentId,
+      status,
+    });
+
+    // Update foundation document status in Directus
+    const updatedDoc = await directusDocumentService.updateFoundationDocumentStatus(
+      foundationDocumentId,
+      status as "approved" | "rejected" | "draft"
+    );
+
+    logger.info("Foundation document status updated successfully", {
+      foundationDocumentId,
+      status,
+      documentTitle: updatedDoc.title,
+    });
+
+    res.json({
+      success: true,
+      foundationDocument: {
+        id: updatedDoc.id,
+        title: updatedDoc.title,
+        status: updatedDoc.status,
+      },
+      message: `Foundation document status updated to ${status}`,
+    });
+  } catch (error) {
+    logger.error("Error updating foundation document status:", error);
+    res.status(500).json({
+      error: "Failed to update foundation document status",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
 export { router as documentRouter };

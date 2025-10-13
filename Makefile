@@ -4,19 +4,25 @@
 .PHONY: help start stop logs status import-schema quick-import clean backup dev-setup health db
 .PHONY: frontend-dev frontend-build frontend-preview frontend-check frontend-install
 .PHONY: lint format check install-deps
+.PHONY: dev-mode prod-mode start-dev start-prod rebuild-orchestration
 
 # Default target
 help:
 	@echo "Available commands:"
 	@echo ""
 	@echo "🏗️  Backend Services:"
-	@echo "  make start         - Start all backend services"
-	@echo "  make stop          - Stop all backend services"
-	@echo "  make restart       - Restart all backend services"
-	@echo "  make logs          - View all service logs"
-	@echo "  make status        - Check service status"
-	@echo "  make health        - Run health checks"
-	@echo "  make clean         - Remove all containers and volumes"
+	@echo "  make start              - Start all backend services"
+	@echo "  make stop               - Stop all backend services"
+	@echo "  make restart            - Restart all backend services"
+	@echo "  make logs               - View all service logs"
+	@echo "  make status             - Check service status"
+	@echo "  make health             - Run health checks"
+	@echo "  make clean              - Remove all containers and volumes"
+	@echo ""
+	@echo "🔧 Orchestration API Development:"
+	@echo "  make start-dev          - Start orchestration in DEV mode (hot-reload)"
+	@echo "  make start-prod         - Start orchestration in PROD mode (optimized)"
+	@echo "  make rebuild-orchestration - Rebuild orchestration API container"
 	@echo ""
 	@echo "📋 Schema Management:"
 	@echo "  make import-schema - Import Directus schema (interactive)"
@@ -50,6 +56,25 @@ stop:
 	cd backend && docker compose down
 
 restart: stop start
+
+# Orchestration API Development Modes
+start-dev:
+	@echo "🔧 Starting Orchestration API in DEVELOPMENT mode (hot-reload)..."
+	@echo "📝 Code changes will automatically restart the server"
+	cd backend && docker compose -f docker-compose.yml -f docker/orchestration/orchestration.dev.yml up -d orchestration-api
+	@echo "✅ Development mode started!"
+	@echo "📊 View logs: make logs-orchestration"
+
+start-prod:
+	@echo "🚀 Starting Orchestration API in PRODUCTION mode (optimized)..."
+	cd backend && docker compose -f docker-compose.yml -f docker/orchestration/orchestration.prod.yml up -d orchestration-api
+	@echo "✅ Production mode started!"
+	@echo "📊 View logs: make logs-orchestration"
+
+rebuild-orchestration:
+	@echo "🔨 Rebuilding Orchestration API container..."
+	cd backend && docker compose build orchestration-api
+	@echo "✅ Rebuild complete!"
 
 # Monitoring
 logs:

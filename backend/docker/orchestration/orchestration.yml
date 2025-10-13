@@ -3,9 +3,8 @@ services:
     build:
       context: ../../orchestration-api
       dockerfile: Dockerfile
+      target: ${DOCKER_BUILD_TARGET:-production}
     container_name: ${PROJECT_PREFIX}-orchestration-api
-    env_file:
-      - ../../.env
     environment:
       # Temporal connection
       TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
@@ -22,7 +21,7 @@ services:
       # Directus connection
       DIRECTUS_URL: http://${PROJECT_PREFIX}-directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
-      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}x
       
       # API settings
       PORT: 3001
@@ -43,7 +42,7 @@ services:
       - "${ORCHESTRATION_PORT:-3001}:3001"
     depends_on:
       directus:
-        condition: service_healthy
+        condition: service_started
       # postgres:
         # condition: service_healthy
       # temporal:

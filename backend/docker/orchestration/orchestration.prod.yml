@@ -1,0 +1,11 @@
+services:
+  orchestration-api:
+    build:
+      target: production
+    volumes: []  # Disable volume mounts for production
+    restart: always
+
+
+
+
+

@@ -14,9 +14,39 @@ import {
   getAllJobs,
 } from "../services/jobService";
 import { directusDocumentService, isDirectusAvailable } from "../lib/directus";
+import type { Response } from "../lib/directus/types";
 import type { LLMResponseSchema } from "../llmResponseSchema";
 
 const router = Router();
+
+// Helper function to filter responses by age (8 hours)
+const RESPONSE_MAX_AGE_HOURS = 8;
+const RESPONSE_MAX_AGE_MS = RESPONSE_MAX_AGE_HOURS * 60 * 60 * 1000;
+
+// Minimal type for filtering responses by created_at
+type FilterableResponse = Pick<Response, "id" | "created_at"> & Partial<Response>;
+
+function filterRecentResponses<T extends FilterableResponse>(responses: T[]): T[] {
+  const now = Date.now();
+  const cutoffTime = now - RESPONSE_MAX_AGE_MS;
+
+  return responses.filter((response) => {
+    if (!response.created_at) return false;
+    const responseTime = new Date(response.created_at).getTime();
+    const isRecent = responseTime > cutoffTime;
+
+    if (!isRecent) {
+      logger.debug("Filtering out old response", {
+        responseId: response.id,
+        createdAt: response.created_at,
+        ageHours: Math.round((now - responseTime) / (60 * 60 * 1000)),
+        maxAgeHours: RESPONSE_MAX_AGE_HOURS,
+      });
+    }
+
+    return isRecent;
+  });
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -63,7 +93,7 @@ router.post("/validate-pdf", upload.single("file"), async (req, res) => {
     const jobId = generateJobId();
     createJob(jobId, req.file.originalname, req.file.size);
 
-    // Step 1: Save file to Directus (if available)
+    // Step 1: Save file to Directus (if available) - REQUIRED
     let sourceDocumentId: string | undefined;
     if (isDirectusAvailable()) {
       try {
@@ -84,33 +114,58 @@ router.post("/validate-pdf", upload.single("file"), async (req, res) => {
           sourceDocumentId,
         });
       } catch (directusError) {
-        logger.warn("Failed to save source document to Directus, continuing without it", {
+        logger.error("Failed to save source document to Directus", {
           jobId,
           error: directusError,
         });
+        return res.status(500).json({
+          error: "Failed to save document",
+          details: directusError instanceof Error ? directusError.message : "Unknown error",
+        });
       }
+    } else {
+      return res.status(503).json({
+        error: "Directus is not available. Document upload requires Directus integration.",
+      });
     }
 
-    // Step 2: Use Gemini for native PDF processing (no image conversion needed)
-    try {
-      logger.info(`Processing PDF with Gemini (provider: ${provider})`, { jobId });
-      const startTime = Date.now();
-      const validationResult = await validateDocumentContent(
-        new Uint8Array(req.file.buffer).buffer,
-        { provider: "gemini" }
-      );
-      const processingTimeMs = Date.now() - startTime;
+    // Step 2: Return immediately with document ID
+    logger.info("Document uploaded, returning document ID", {
+      jobId,
+      sourceDocumentId,
+    });
 
-      // Complete the job
-      completeJob(jobId, validationResult, "gemini");
+    // Send response immediately
+    res.json({
+      success: true,
+      jobId: jobId,
+      provider: "gemini",
+      directusSourceDocumentId: sourceDocumentId,
+      status: "processing",
+      message: "Document uploaded successfully. Processing started.",
+    });
 
-      // Step 3: Save LLM response to Directus (if available and source document was created)
-      if (isDirectusAvailable() && sourceDocumentId) {
+    // Step 3: Process asynchronously (don't await, let it run in background)
+    // Using setImmediate to ensure response is sent first
+    setImmediate(async () => {
+      try {
+        logger.info(`Starting async PDF processing with Gemini`, { jobId, sourceDocumentId });
+        const startTime = Date.now();
+        const validationResult = await validateDocumentContent(
+          new Uint8Array(req.file!.buffer).buffer,
+          { provider: "gemini" }
+        );
+        const processingTimeMs = Date.now() - startTime;
+
+        // Complete the job
+        completeJob(jobId, validationResult, "gemini");
+
+        // Save LLM response to Directus
         try {
           logger.info("Saving LLM response to Directus", { jobId, sourceDocumentId });
           const response = await directusDocumentService.createResponse({
-            sourceDocumentId,
-            prompt: "PDF document validation and data extraction", // Could be more detailed
+            sourceDocumentId: sourceDocumentId!,
+            prompt: "PDF document validation and data extraction",
             responseJson: {
               present: validationResult.present,
               missing: validationResult.missing,
@@ -118,59 +173,56 @@ router.post("/validate-pdf", upload.single("file"), async (req, res) => {
               extracted_data: validationResult.extracted_data,
             },
             modelName: "gemini-2.5-flash",
-            tokenCount: undefined, // Gemini API doesn't return token count in the same way
+            tokenCount: undefined,
             processingTimeMs,
             status: "completed",
           });
           updateJob(jobId, { directusResponseId: response.id });
 
           // Update source document status
-          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId, "completed");
+          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId!, "completed");
 
           logger.info("LLM response saved to Directus", {
             jobId,
+            sourceDocumentId,
             responseId: response.id,
           });
         } catch (directusError) {
-          logger.warn("Failed to save LLM response to Directus", {
+          logger.error("Failed to save LLM response to Directus", {
             jobId,
+            sourceDocumentId,
             error: directusError,
           });
         }
-      }
 
-      logger.info("PDF validation completed successfully with Gemini", { jobId });
+        logger.info("PDF validation completed successfully with Gemini", {
+          jobId,
+          sourceDocumentId,
+          processingTimeMs,
+        });
+      } catch (geminiError) {
+        logger.error("Gemini PDF validation failed", {
+          jobId,
+          sourceDocumentId,
+          error: geminiError,
+        });
+        failJob(
+          jobId,
+          geminiError instanceof Error ? geminiError.message : "PDF validation failed"
+        );
 
-      return res.json({
-        success: true,
-        jobId: jobId,
-        provider: "gemini",
-        directusSourceDocumentId: sourceDocumentId,
-      });
-    } catch (geminiError) {
-      logger.error("Gemini PDF validation failed", { jobId, error: geminiError });
-      failJob(jobId, geminiError instanceof Error ? geminiError.message : "PDF validation failed");
-
-      // Update Directus status if document was created
-      if (isDirectusAvailable() && sourceDocumentId) {
+        // Update Directus status
         try {
-          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId, "failed");
+          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId!, "failed");
         } catch (directusError) {
           logger.warn("Failed to update source document status in Directus", {
             jobId,
+            sourceDocumentId,
             error: directusError,
           });
         }
       }
-
-      return res.status(500).json({
-        error: "PDF validation failed",
-        details:
-          geminiError instanceof Error
-            ? geminiError.message
-            : "Unknown error occurred during PDF processing",
-      });
-    }
+    });
   } catch (error) {
     logger.error("Error processing PDF validation:", error);
 
@@ -186,7 +238,116 @@ router.post("/validate-pdf", upload.single("file"), async (req, res) => {
   }
 });
 
-// Get job status
+// Get document status by source document UUID (persists after restart)
+// NOTE: This route MUST come before /status/:jobId to avoid matching confusion
+router.get("/status-by-source/:sourceDocumentId", async (req, res) => {
+  try {
+    const { sourceDocumentId } = req.params;
+
+    // Check if Directus is available
+    if (!isDirectusAvailable()) {
+      return res.status(503).json({
+        error: "Directus is not available. This endpoint requires Directus integration.",
+      });
+    }
+
+    logger.info("Fetching document status by source document ID", { sourceDocumentId });
+
+    // Get source document
+    const sourceDocument = await directusDocumentService.getSourceDocument(sourceDocumentId);
+    if (!sourceDocument) {
+      return res.status(404).json({
+        error: "Source document not found",
+        sourceDocumentId,
+      });
+    }
+
+    // Get latest response for this source document (only recent ones within 8 hours)
+    const allResponses =
+      await directusDocumentService.getResponsesBySourceDocument(sourceDocumentId);
+    const responses = filterRecentResponses(allResponses || []);
+
+    let validationResult = null;
+    if (responses && responses.length > 0) {
+      // Sort by created_at to get the latest response
+      const latestResponse = responses.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      })[0];
+
+      logger.info("Using recent response", {
+        sourceDocumentId,
+        responseId: latestResponse.id,
+        responseAge: Math.round(
+          (Date.now() - new Date(latestResponse.created_at || 0).getTime()) / (60 * 1000)
+        ),
+        ageUnit: "minutes",
+      });
+
+      if (latestResponse.response_json) {
+        const responseData = latestResponse.response_json as any;
+        // Only include validationResult if it has the required fields
+        if (
+          responseData.present !== undefined &&
+          responseData.missing !== undefined &&
+          responseData.confidence !== undefined
+        ) {
+          validationResult = responseData;
+          logger.info("Valid response data found", {
+            sourceDocumentId,
+            responseId: latestResponse.id,
+            hasExtractedData: !!responseData.extracted_data,
+          });
+        } else {
+          logger.warn("Response data incomplete, treating as not ready", {
+            sourceDocumentId,
+            responseId: latestResponse.id,
+            hasPresent: responseData.present !== undefined,
+            hasMissing: responseData.missing !== undefined,
+            hasConfidence: responseData.confidence !== undefined,
+          });
+        }
+      }
+    }
+
+    // Return document status
+    const response = {
+      sourceDocumentId: sourceDocument.id,
+      status: sourceDocument.processing_status || "completed",
+      fileName: sourceDocument.title,
+      fileSize: sourceDocument.bytes,
+      createdAt: sourceDocument.created_at,
+      updatedAt: sourceDocument.updated_at,
+      directusSourceDocumentId: sourceDocument.id,
+      validationResult: validationResult
+        ? {
+            present: validationResult.present,
+            missing: validationResult.missing,
+            confidence: validationResult.confidence,
+            extracted_data: validationResult.extracted_data,
+            provider: validationResult.provider,
+          }
+        : null,
+    };
+
+    logger.info("Returning document status", {
+      sourceDocumentId,
+      hasValidationResult: !!validationResult,
+      status: response.status,
+    });
+
+    res.json(response);
+  } catch (error) {
+    logger.error("Error getting document status by source ID:", error);
+    res.status(500).json({
+      error: "Failed to get document status",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Get job status by job ID (in-memory, doesn't persist after restart)
 router.get("/status/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -229,76 +390,6 @@ router.get("/status/:jobId", async (req, res) => {
   }
 });
 
-// Get document status by source document UUID (persists after restart)
-router.get("/status-by-source/:sourceDocumentId", async (req, res) => {
-  try {
-    const { sourceDocumentId } = req.params;
-
-    // Check if Directus is available
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
-
-    logger.info("Fetching document status by source document ID", { sourceDocumentId });
-
-    // Get source document
-    const sourceDocument = await directusDocumentService.getSourceDocument(sourceDocumentId);
-    if (!sourceDocument) {
-      return res.status(404).json({
-        error: "Source document not found",
-        sourceDocumentId,
-      });
-    }
-
-    // Get latest response for this source document
-    const responses = await directusDocumentService.getResponsesBySourceDocument(sourceDocumentId);
-
-    let validationResult = null;
-    if (responses && responses.length > 0) {
-      // Sort by created_at to get the latest response
-      const latestResponse = responses.sort((a, b) => {
-        const dateA = new Date(a.created_at || 0).getTime();
-        const dateB = new Date(b.created_at || 0).getTime();
-        return dateB - dateA;
-      })[0];
-
-      if (latestResponse.response_json) {
-        validationResult = latestResponse.response_json;
-      }
-    }
-
-    // Return document status
-    const response = {
-      sourceDocumentId: sourceDocument.id,
-      status: sourceDocument.processing_status || "completed",
-      fileName: sourceDocument.title,
-      fileSize: sourceDocument.bytes,
-      createdAt: sourceDocument.created_at,
-      updatedAt: sourceDocument.updated_at,
-      directusSourceDocumentId: sourceDocument.id,
-      validationResult: validationResult
-        ? {
-            present: (validationResult as any).present,
-            missing: (validationResult as any).missing,
-            confidence: (validationResult as any).confidence,
-            extracted_data: (validationResult as any).extracted_data,
-            provider: (validationResult as any).provider,
-          }
-        : null,
-    };
-
-    res.json(response);
-  } catch (error) {
-    logger.error("Error getting document status by source ID:", error);
-    res.status(500).json({
-      error: "Failed to get document status",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
-
 // Generate Excel file from job results
 router.post("/generate-excel", async (req, res) => {
   try {
@@ -316,7 +407,9 @@ router.post("/generate-excel", async (req, res) => {
       try {
         logger.info("Fetching validation data from Directus by document ID", { documentId });
 
-        const responses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+        const allResponses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+        const responses = filterRecentResponses(allResponses || []);
+
         if (responses && responses.length > 0) {
           // Get latest response
           const latestResponse = responses.sort((a, b) => {
@@ -381,8 +474,10 @@ router.post("/generate-excel", async (req, res) => {
     // Save generated document to Directus (if available and we have document ID)
     if (isDirectusAvailable() && documentId) {
       try {
-        // Get latest response to associate with generated document
-        const responses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+        // Get latest response to associate with generated document (only recent ones)
+        const allResponses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+        const responses = filterRecentResponses(allResponses || []);
+
         if (responses && responses.length > 0) {
           const latestResponse = responses.sort((a, b) => {
             const dateA = new Date(a.created_at || 0).getTime();
@@ -520,12 +615,14 @@ router.get("/download-by-doc/:documentId/:filename", async (req, res) => {
 
     logger.info("Downloading Excel by document ID", { documentId, filename });
 
-    // Get latest response for this document
-    const responses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+    // Get latest response for this document (only recent ones within 8 hours)
+    const allResponses = await directusDocumentService.getResponsesBySourceDocument(documentId);
+    const responses = filterRecentResponses(allResponses || []);
 
     if (!responses || responses.length === 0) {
       return res.status(404).json({
-        error: "No responses found for this document",
+        error: "No recent responses found for this document",
+        message: `Responses must be within the last ${RESPONSE_MAX_AGE_HOURS} hours`,
       });
     }
 
@@ -693,15 +790,17 @@ router.post("/process-foundation", async (req, res) => {
     let usedResponseId: string | undefined;
 
     if (sourceDocumentId) {
-      // Get latest response for this source document
+      // Get latest response for this source document (only recent ones within 8 hours)
       logger.info("Fetching latest response for source document", { sourceDocumentId });
-      const responses =
+      const allResponses =
         await directusDocumentService.getResponsesBySourceDocument(sourceDocumentId);
+      const responses = filterRecentResponses(allResponses || []);
 
       if (!responses || responses.length === 0) {
         return res.status(404).json({
-          error: "No responses found for this source document",
+          error: "No recent responses found for this source document",
           sourceDocumentId,
+          message: `Responses must be within the last ${RESPONSE_MAX_AGE_HOURS} hours`,
         });
       }
 

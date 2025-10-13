@@ -244,6 +244,35 @@ make db            # Connect to PostgreSQL
 
 ## Development
 
+### Development Mode (Hot-Reloading)
+
+The Orchestration API supports development mode with automatic hot-reloading:
+
+**Quick Start - Development Mode:**
+```bash
+# Set development mode in .env
+echo "DOCKER_BUILD_TARGET=development" >> .env
+
+# Start services with development override
+cd backend
+docker-compose -f docker-compose.yml -f docker/orchestration/orchestration.dev.yml up orchestration-api
+```
+
+**Quick Start - Production Mode:**
+```bash
+# Use default production build (or explicitly set in .env)
+echo "DOCKER_BUILD_TARGET=production" >> .env
+
+# Start services normally
+docker-compose up orchestration-api
+```
+
+**For detailed information**, see [Orchestration API Development Guide](./orchestration-api/DEVELOPMENT.md)
+
+**Key differences:**
+- **Development**: Code changes auto-reload, source mounted as volume
+- **Production**: Optimized build, compiled code, smaller image size
+
 ### Adding New Activities
 
 1. Define activity interface in `orchestration-api/src/temporal/activities.ts`

@@ -1,10 +1,36 @@
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
 
 WORKDIR /app
+
+# Install dumb-init for proper signal handling and curl for health checks
+RUN apk add --no-cache dumb-init curl
 
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
+
+# Development stage
+FROM base AS development
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci && npm cache clean --force
+
+# Create src directory (will be overridden by volume mount)
+RUN mkdir -p src
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the application in development mode with hot reload
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["npm", "run", "dev"]
+
+# Builder stage
+FROM base AS builder
 
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci && npm cache clean --force
@@ -21,7 +47,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 
 # Install dumb-init for proper signal handling and curl for health checks
-RUN apk add --no-cache dumb-init curl
+RUN apk add --no-cache dumb-init curl bash
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useLogger } from "../lib/client-logger";
+import { ORCHESTRATION_API_URL } from "../constants";
 
 interface FoundationDocumentProcessorProps {
   documentId?: string;
@@ -98,31 +99,23 @@ export function FoundationDocumentProcessor({
         foundationDocumentId: result.foundationDocument.id,
       });
 
-      const response = await fetch("/api/download-foundation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          foundationDocumentId: result.foundationDocument.id,
-        }),
-      });
+      // Download directly from backend to avoid proxy corruption
+      const downloadUrl = `${ORCHESTRATION_API_URL}/documents/download-foundation/${result.foundationDocument.id}`;
 
-      if (!response.ok) {
-        throw new Error("Failed to download foundation document");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Use a hidden link to trigger download
       const a = document.createElement("a");
-      a.href = url;
+      a.href = downloadUrl;
       a.download = `${result.foundationDocument.title}.xlsx`;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
 
-      log.info("Foundation document downloaded successfully", {
+      // Clean up after a short delay
+      setTimeout(() => {
+        document.body.removeChild(a);
+      }, 100);
+
+      log.info("Foundation document download triggered", {
         foundationDocumentId: result.foundationDocument.id,
       });
     } catch (err) {

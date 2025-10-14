@@ -13,14 +13,18 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["astro/client", "node"]
+    "types": ["astro/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/pages/*": ["src/pages/*"],
+      "@/layouts/*": ["src/layouts/*"],
+      "@/constants": ["src/constants.ts"]
+    }
   },
-  "include": [
-    "src/**/*",
-    "**/*.astro"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "**/*.astro"],
+  "exclude": ["node_modules", "dist"]
 }

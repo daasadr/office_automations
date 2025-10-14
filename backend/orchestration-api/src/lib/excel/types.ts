@@ -1,4 +1,4 @@
-import type { ValidationResult } from "../../services/llmService";
+import type { ValidationResult } from "../../services/llm";
 import type { ExtractedData as LLMExtractedData } from "../../llmResponseSchema";
 
 export interface GenerateExcelInput {

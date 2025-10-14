@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import type { ValidationResult } from "./llmService";
+import type { ValidationResult } from "./llm";
 
 export interface JobData {
   jobId: string;

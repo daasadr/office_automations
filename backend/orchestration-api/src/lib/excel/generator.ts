@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { logger } from "../../utils/logger";
-import type { ValidationResult } from "../../services/llmService";
+import type { ValidationResult } from "../../services/llm";
 import type { ExtractedData } from "../../services/types";
 import type { GenerateExcelInput, GenerateExcelResult } from "./types";
 import {

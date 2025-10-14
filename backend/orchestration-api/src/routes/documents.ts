@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { logger } from "../utils/logger";
 import { validateDocumentContent } from "../services/llmService";
-import { generateExcelFile, augmentExcelWithData } from "../services/excelService";
+import { generateExcelFile, augmentExcelWithData } from "../lib/excel";
 import {
   createJob,
   updateJob,

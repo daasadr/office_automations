@@ -915,11 +915,19 @@ router.post("/process-foundation", async (req, res) => {
     logger.info("Excel file augmented successfully", {
       sheetsModified: augmentResult.sheetsModified,
       bufferSize: augmentResult.buffer.length,
+      recordsAdded: augmentResult.recordsAdded,
+      duplicatesSkipped: augmentResult.duplicatesSkipped.length,
     });
 
     // Generate filename for the augmented document
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split("T")[0];
     const newFilename = `${lastApprovedDoc.title.replace(/\.[^/.]+$/, "")}_augmented_${timestamp}.xlsx`;
+
+    // Build notes including duplicate information
+    let notes = `Augmented from foundation document "${lastApprovedDoc.title}" with ${llmResponseData.extracted_data.length} extracted data items. Sheets modified: ${augmentResult.sheetsModified.join(", ")}.`;
+    if (augmentResult.duplicatesSkipped.length > 0) {
+      notes += ` Skipped ${augmentResult.duplicatesSkipped.length} duplicate records.`;
+    }
 
     // Save as new draft foundation document
     const newFoundationDoc = await directusDocumentService.createFoundationDocument({
@@ -940,12 +948,14 @@ router.post("/process-foundation", async (req, res) => {
           responseId: usedResponseId || responseId || undefined,
           sourceDocumentId: actualSourceDocumentId,
           extractedDataCount: llmResponseData.extracted_data.length,
+          recordsAdded: augmentResult.recordsAdded,
+          duplicatesSkipped: augmentResult.duplicatesSkipped.length,
           sheetsModified: augmentResult.sheetsModified,
           confidence: llmResponseData.confidence,
         },
         augmentedAt: new Date().toISOString(),
       },
-      notes: `Augmented from foundation document "${lastApprovedDoc.title}" with ${llmResponseData.extracted_data.length} extracted data items. Sheets modified: ${augmentResult.sheetsModified.join(", ")}.`,
+      notes,
     });
 
     logger.info("New draft foundation document created", {
@@ -969,6 +979,8 @@ router.post("/process-foundation", async (req, res) => {
       processing: {
         sheetsModified: augmentResult.sheetsModified,
         extractedDataCount: llmResponseData.extracted_data.length,
+        recordsAdded: augmentResult.recordsAdded,
+        duplicatesSkipped: augmentResult.duplicatesSkipped,
         confidence: llmResponseData.confidence,
         sourceDocumentId: actualSourceDocumentId,
         responseId: usedResponseId || responseId,

@@ -20,6 +20,12 @@ interface FoundationDocumentProcessorProps {
   autoTrigger?: boolean;
 }
 
+interface DuplicateRecord {
+  date: string;
+  wasteAmount: string;
+  sheetName: string;
+}
+
 interface ProcessingResult {
   success: boolean;
   foundationDocument: {
@@ -34,6 +40,8 @@ interface ProcessingResult {
   processing: {
     sheetsModified: string[];
     extractedDataCount: number;
+    recordsAdded: number;
+    duplicatesSkipped: DuplicateRecord[];
     confidence: number;
     sourceDocumentId?: string;
     responseId?: string;
@@ -367,21 +375,51 @@ export function FoundationDocumentProcessor({
                 </div>
               )}
 
+            {/* Duplicate Warning */}
+            {result.processing.duplicatesSkipped &&
+              result.processing.duplicatesSkipped.length > 0 && (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                        Duplikáty přeskočeny
+                      </h4>
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                        {result.processing.duplicatesSkipped.length} záznamů bylo přeskočeno,
+                        protože stejné datum a množství odpadu již v dokumentu existují:
+                      </p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {result.processing.duplicatesSkipped.map((dup, idx) => (
+                          <div
+                            key={`${dup.sheetName}-${dup.date}-${dup.wasteAmount}`}
+                            className="text-xs p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded border border-yellow-300 dark:border-yellow-700"
+                          >
+                            <span className="font-medium">{dup.sheetName}:</span> {dup.date} •{" "}
+                            {dup.wasteAmount}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {/* Processing Statistics */}
             <div className="p-4 border rounded-lg space-y-3">
               <h4 className="font-semibold">Detaily zpracování</h4>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <div className="text-2xl font-bold text-primary">
-                    {result.processing.sheetsModified.length}
+                    {result.processing.recordsAdded || 0}
                   </div>
-                  <div className="text-sm text-muted-foreground">Upravených listů</div>
+                  <div className="text-sm text-muted-foreground">Přidaných záznamů</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-primary">
                     {result.processing.extractedDataCount}
                   </div>
-                  <div className="text-sm text-muted-foreground">Datových položek</div>
+                  <div className="text-sm text-muted-foreground">Celkem extrahováno</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-primary">

@@ -339,10 +339,23 @@ export async function generateExcelFile(input: GenerateExcelInput): Promise<Gene
  * Augments an existing Excel file with extracted data using xlsx-populate
  * Finds the appropriate sheet and adds records to it with consistent formatting
  */
+interface DuplicateRecord {
+  date: string;
+  wasteAmount: string;
+  sheetName: string;
+}
+
 export async function augmentExcelWithData(
   excelBuffer: Buffer,
   extractedDataArray: LLMExtractedData[]
-): Promise<{ success: boolean; buffer?: Buffer; error?: string; sheetsModified: string[] }> {
+): Promise<{
+  success: boolean;
+  buffer?: Buffer;
+  error?: string;
+  sheetsModified: string[];
+  duplicatesSkipped: DuplicateRecord[];
+  recordsAdded: number;
+}> {
   try {
     logger.info("Starting Excel augmentation with xlsx-populate", {
       dataCount: extractedDataArray.length,
@@ -367,6 +380,8 @@ export async function augmentExcelWithData(
     // Load workbook with xlsx-populate
     const wb = await XlsxPopulate.fromDataAsync(excelBuffer);
     const sheetsModified: string[] = [];
+    const duplicatesSkipped: DuplicateRecord[] = [];
+    let recordsAdded = 0;
 
     for (let dataIndex = 0; dataIndex < extractedDataArray.length; dataIndex++) {
       const extractedData = extractedDataArray[dataIndex];
@@ -665,9 +680,50 @@ export async function augmentExcelWithData(
       logger.info(`Found ${tabulka.length} records to process`);
       logger.info("First record structure:", JSON.stringify(tabulka[0], null, 2));
 
+      // Helper function to check if record already exists
+      const isDuplicateRecord = (dateValue: any, wasteAmount: any): boolean => {
+        // Scan existing rows to find duplicates
+        for (let existingRow = headerRowNum + 1; existingRow < firstEmptyRowNum; existingRow++) {
+          const existingDateCell = sheet.row(existingRow).cell(colDatum);
+          const existingWasteCell = sheet.row(existingRow).cell(colDatum + 1);
+
+          const existingDate = existingDateCell.value();
+          const existingWaste = existingWasteCell.value();
+
+          // Compare dates (handle both serial numbers and strings)
+          let datesMatch = false;
+          if (typeof dateValue === "number" && typeof existingDate === "number") {
+            datesMatch = Math.abs(dateValue - existingDate) < 0.01; // Allow small floating point differences
+          } else {
+            datesMatch = String(dateValue) === String(existingDate);
+          }
+
+          // Compare waste amounts (handle both numbers and strings)
+          let wastesMatch = false;
+          if (typeof wasteAmount === "number" && typeof existingWaste === "number") {
+            wastesMatch = Math.abs(wasteAmount - existingWaste) < 0.01; // Allow small floating point differences
+          } else {
+            const wasteStr = String(wasteAmount).replace(",", ".").trim();
+            const existingWasteStr = String(existingWaste).replace(",", ".").trim();
+            wastesMatch = wasteStr === existingWasteStr;
+          }
+
+          if (datesMatch && wastesMatch) {
+            logger.info("Duplicate record found", {
+              existingRow,
+              date: existingDate,
+              wasteAmount: existingWaste,
+            });
+            return true;
+          }
+        }
+        return false;
+      };
+
+      let recordsAddedInThisSheet = 0;
       for (let i = 0; i < tabulka.length; i++) {
         const record = tabulka[i];
-        const rowNum = firstEmptyRowNum + i;
+        const rowNum = firstEmptyRowNum + recordsAddedInThisSheet;
 
         logger.info("─".repeat(60));
         logger.info(`STEP 4.${i + 1}: Processing record ${i + 1}/${tabulka.length}`);
@@ -745,6 +801,50 @@ export async function augmentExcelWithData(
             record: JSON.stringify(record),
           });
           continue; // Skip this record if no date
+        }
+
+        // Parse date to check for duplicates
+        let dateValueForCheck: any = datumFormatted;
+        try {
+          const dateParts = datumFormatted.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+          if (dateParts) {
+            const day = parseInt(dateParts[1], 10);
+            const month = parseInt(dateParts[2], 10);
+            const year = parseInt(dateParts[3], 10);
+            const jsDate = new Date(year, month - 1, day);
+            const excelEpoch = new Date(1899, 11, 30);
+            const diffTime = jsDate.getTime() - excelEpoch.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            dateValueForCheck = diffDays;
+          }
+        } catch (error) {
+          // Use string comparison as fallback
+        }
+
+        // Convert quantity for duplicate check
+        let quantityForCheck: any = vznik;
+        if (vznik && typeof vznik === "string") {
+          const numericValue = parseFloat(vznik.replace(",", "."));
+          if (!isNaN(numericValue)) {
+            quantityForCheck = numericValue;
+          }
+        }
+
+        // Check for duplicates before adding
+        if (isDuplicateRecord(dateValueForCheck, quantityForCheck)) {
+          logger.warn("⚠️ Skipping duplicate record", {
+            date: datumFormatted,
+            wasteAmount: vznik,
+            sheetName: sheet.name(),
+          });
+
+          duplicatesSkipped.push({
+            date: datumFormatted,
+            wasteAmount: vznik || "",
+            sheetName: sheet.name(),
+          });
+
+          continue; // Skip this duplicate record
         }
 
         // Write date with proper formatting
@@ -827,15 +927,22 @@ export async function augmentExcelWithData(
           colDatum,
           colWasteAmount,
         });
+
+        recordsAddedInThisSheet++;
+        recordsAdded++;
       }
 
       logger.info("✅ STEP 4 COMPLETE: All records processed", {
         recordsProcessed: tabulka.length,
+        recordsAdded: recordsAddedInThisSheet,
+        duplicatesSkipped: tabulka.length - recordsAddedInThisSheet,
         startRow: firstEmptyRowNum,
-        endRow: firstEmptyRowNum + tabulka.length - 1,
+        endRow: firstEmptyRowNum + recordsAddedInThisSheet - 1,
       });
 
-      sheetsModified.push(sheet.name());
+      if (recordsAddedInThisSheet > 0) {
+        sheetsModified.push(sheet.name());
+      }
     }
 
     // Write back to buffer
@@ -847,10 +954,18 @@ export async function augmentExcelWithData(
       sheetsModified,
       bufferSize: outBuffer.length,
       totalDataItemsProcessed: extractedDataArray.length,
+      recordsAdded,
+      duplicatesSkipped: duplicatesSkipped.length,
     });
     logger.info("=".repeat(80));
 
-    return { success: true, buffer: outBuffer, sheetsModified };
+    return {
+      success: true,
+      buffer: outBuffer,
+      sheetsModified,
+      duplicatesSkipped,
+      recordsAdded,
+    };
   } catch (error) {
     // Comprehensive error logging
     const errorDetails = {
@@ -871,6 +986,8 @@ export async function augmentExcelWithData(
           ? error.message
           : String(error) || "Unknown Excel augmentation error",
       sheetsModified: [],
+      duplicatesSkipped: [],
+      recordsAdded: 0,
     };
   }
 }

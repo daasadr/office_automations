@@ -234,10 +234,10 @@ export function FoundationDocumentProcessor({
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 space-y-2">
                 <h4 className="font-semibold text-green-900 dark:text-green-100">
-                  Foundation Document Processed Successfully!
+                  Zakládací dokument úspěšně zpracován!
                 </h4>
                 <p className="text-sm text-green-800 dark:text-green-200">
-                  A new draft foundation document has been created and saved to Directus.
+                  Nový koncept zakládacího dokumentu byl vytvořen a uložen do Directus.
                 </p>
               </div>
             </div>
@@ -376,31 +376,31 @@ export function FoundationDocumentProcessor({
 
             {/* Processing Statistics */}
             <div className="p-4 border rounded-lg space-y-3">
-              <h4 className="font-semibold">Processing Details</h4>
+              <h4 className="font-semibold">Detaily zpracování</h4>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <div className="text-2xl font-bold text-primary">
                     {result.processing.sheetsModified.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Sheets Modified</div>
+                  <div className="text-sm text-muted-foreground">Upravených listů</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-primary">
                     {result.processing.extractedDataCount}
                   </div>
-                  <div className="text-sm text-muted-foreground">Data Items</div>
+                  <div className="text-sm text-muted-foreground">Datových položek</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-primary">
                     {result.processing.confidence.toFixed(1)}%
                   </div>
-                  <div className="text-sm text-muted-foreground">Confidence</div>
+                  <div className="text-sm text-muted-foreground">Důvěryhodnost</div>
                 </div>
               </div>
 
               {result.processing.sheetsModified.length > 0 && (
                 <div className="pt-2 border-t">
-                  <div className="text-sm font-medium mb-2">Modified Sheets:</div>
+                  <div className="text-sm font-medium mb-2">Upravené listy:</div>
                   <div className="flex flex-wrap gap-2">
                     {result.processing.sheetsModified.map((sheet) => (
                       <Badge key={sheet} variant="secondary">
@@ -414,7 +414,7 @@ export function FoundationDocumentProcessor({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="p-4 border rounded-lg space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">New Document</div>
+                <div className="text-sm font-medium text-muted-foreground">Nový dokument</div>
                 <div className="font-semibold">{result.foundationDocument.title}</div>
                 <Badge variant="outline" className="mt-1">
                   {result.foundationDocument.status}
@@ -422,10 +422,10 @@ export function FoundationDocumentProcessor({
               </div>
 
               <div className="p-4 border rounded-lg space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Based On</div>
+                <div className="text-sm font-medium text-muted-foreground">Založeno na</div>
                 <div className="font-semibold">{result.foundationDocument.basedOn.title}</div>
                 <Badge variant="secondary" className="mt-1">
-                  approved
+                  schváleno
                 </Badge>
               </div>
             </div>
@@ -438,7 +438,7 @@ export function FoundationDocumentProcessor({
             <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-semibold text-red-900 dark:text-red-100">Processing Failed</h4>
+                <h4 className="font-semibold text-red-900 dark:text-red-100">Zpracování selhalo</h4>
                 <p className="text-sm text-red-800 dark:text-red-200 mt-1">{error}</p>
               </div>
             </div>

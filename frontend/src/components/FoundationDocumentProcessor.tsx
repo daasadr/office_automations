@@ -315,6 +315,65 @@ export function FoundationDocumentProcessor({
               </div>
             </div>
 
+            {/* Approve/Reject Actions */}
+            {result.foundationDocument.status !== "approved" &&
+              result.foundationDocument.status !== "rejected" && (
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      Zkontrolujte změny a potvrďte
+                    </h4>
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      Stáhněte si dokument, zkontrolujte doplněná data a pokud jsou správná,
+                      schvalte dokument. V případě chyb dokument odmítněte a obnovte stránku pro
+                      nové vygenerování.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={() => handleUpdateStatus("approved")}
+                      disabled={isUpdatingStatus}
+                      size="lg"
+                      variant="default"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {isUpdatingStatus ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Zpracovávám...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Přijmout (Schválit)
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={() => handleUpdateStatus("rejected")}
+                      disabled={isUpdatingStatus}
+                      size="lg"
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      {isUpdatingStatus ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Zpracovávám...
+                        </>
+                      ) : (
+                        <>
+                          <X className="mr-2 h-4 w-4" />
+                          Odmítnout
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
             {/* Processing Statistics */}
             <div className="p-4 border rounded-lg space-y-3">
               <h4 className="font-semibold">Processing Details</h4>
@@ -362,72 +421,13 @@ export function FoundationDocumentProcessor({
                 </Badge>
               </div>
 
-              {/* Approve/Reject Actions */}
-              {result.foundationDocument.status !== "approved" &&
-                result.foundationDocument.status !== "rejected" && (
-                  <div className="space-y-3">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                        Zkontrolujte změny a potvrďte
-                      </h4>
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        Stáhněte si dokument, zkontrolujte doplněná data a pokud jsou správná,
-                        schvalte dokument. V případě chyb dokument odmítněte a obnovte stránku pro
-                        nové vygenerování.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={() => handleUpdateStatus("approved")}
-                        disabled={isUpdatingStatus}
-                        size="lg"
-                        variant="default"
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        {isUpdatingStatus ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Zpracovávám...
-                          </>
-                        ) : (
-                          <>
-                            <Check className="mr-2 h-4 w-4" />
-                            Přijmout (Schválit)
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        onClick={() => handleUpdateStatus("rejected")}
-                        disabled={isUpdatingStatus}
-                        size="lg"
-                        variant="destructive"
-                        className="flex-1"
-                      >
-                        {isUpdatingStatus ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Zpracovávám...
-                          </>
-                        ) : (
-                          <>
-                            <X className="mr-2 h-4 w-4" />
-                            Odmítnout
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-            </div>
-
-            <div className="p-4 border rounded-lg space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Based On</div>
-              <div className="font-semibold">{result.foundationDocument.basedOn.title}</div>
-              <Badge variant="secondary" className="mt-1">
-                approved
-              </Badge>
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">Based On</div>
+                <div className="font-semibold">{result.foundationDocument.basedOn.title}</div>
+                <Badge variant="secondary" className="mt-1">
+                  approved
+                </Badge>
+              </div>
             </div>
           </div>
         )}

@@ -4,7 +4,6 @@ import { useLogger } from "@/lib/client-logger";
 import { ORCHESTRATION_API_URL } from "@/constants";
 import type { FoundationDocumentProcessorProps, ProcessingResult } from "./types";
 import { ProcessingState } from "./components/ProcessingState";
-import { SuccessMessage } from "./components/SuccessMessage";
 import { StatusUpdateMessage } from "./components/StatusUpdateMessage";
 import { DownloadSection } from "./components/DownloadSection";
 import { ApprovalActions } from "./components/ApprovalActions";
@@ -12,6 +11,8 @@ import { DuplicatesWarning } from "./components/DuplicatesWarning";
 import { ProcessingStatistics } from "./components/ProcessingStatistics";
 import { DocumentInfoCards } from "./components/DocumentInfoCards";
 import { ErrorState } from "./components/ErrorState";
+import { ExtractedRecordsDetail } from "./components/ExtractedRecordsDetail";
+import { SheetsNotFoundWarning } from "./components/SheetsNotFoundWarning";
 
 export function FoundationDocumentProcessor({
   documentId,
@@ -176,8 +177,6 @@ export function FoundationDocumentProcessor({
         {/* Processing Result */}
         {result && (
           <div className="space-y-4">
-            <SuccessMessage />
-
             {/* Success Message if status was updated */}
             {statusUpdateSuccess && <StatusUpdateMessage status={statusUpdateSuccess} />}
 
@@ -196,12 +195,21 @@ export function FoundationDocumentProcessor({
             {/* Duplicate Warning */}
             <DuplicatesWarning duplicates={result.processing.duplicatesSkipped} />
 
+            {/* Sheets Not Found Warning */}
+            <SheetsNotFoundWarning sheetsNotFound={result.processing.sheetsNotFound} />
+
             {/* Processing Statistics */}
             <ProcessingStatistics
               recordsAdded={result.processing.recordsAdded}
               extractedDataCount={result.processing.extractedDataCount}
               confidence={result.processing.confidence}
               sheetsModified={result.processing.sheetsModified}
+            />
+
+            {/* Extracted Records Detail */}
+            <ExtractedRecordsDetail
+              extractedRecords={result.processing.extractedRecordsDetail}
+              duplicatesSkipped={result.processing.duplicatesSkipped}
             />
 
             {/* Document Info Cards */}

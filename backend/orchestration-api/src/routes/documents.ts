@@ -963,6 +963,43 @@ router.post("/process-foundation", async (req, res) => {
       title: newFoundationDoc.title,
     });
 
+    // Build detailed records info for frontend display
+    const extractedRecordsDetail = llmResponseData.extracted_data.map((extractedItem) => {
+      const kodOdpadu = extractedItem["kód odpadu"] || (extractedItem as any).kod_odpadu;
+      const odberatelIco =
+        extractedItem.odběratel?.IČO ||
+        (extractedItem as any).odberatel?.ico ||
+        (extractedItem as any).odberatel?.IČO ||
+        "";
+      const sheetName = `${kodOdpadu} ${odberatelIco}`.trim();
+
+      // Get table data from various possible field names
+      const tabulka =
+        extractedItem.tabulka ||
+        (extractedItem as any).tabulka_evidence ||
+        (extractedItem as any).tabulka_pohybu ||
+        [];
+
+      return {
+        sheetName,
+        kodOdpadu,
+        nazevOdpadu:
+          extractedItem["název/druh odpadu"] || (extractedItem as any).nazev_druhu_odpadu || "",
+        odberatel: {
+          ico: odberatelIco,
+          nazev: extractedItem.odběratel?.název || (extractedItem as any).odberatel?.nazev || "",
+        },
+        records: tabulka.map((record: any) => ({
+          poradoveCislo: record["pořadové číslo"] || record.poradove_cislo || 0,
+          datumVzniku: record["datum vzniku"] || record.datum_vzniku || record.datum || "",
+          mnozstviVznikleho:
+            record["množství vzniklého odpadu"] || record.mnozstvi_vznikleho_odpadu || "",
+          mnozstviPredaneho:
+            record["množství předaného odpadu"] || record.mnozstvi_predaneho_odpadu || "",
+        })),
+      };
+    });
+
     // Return success response
     res.json({
       success: true,
@@ -981,9 +1018,11 @@ router.post("/process-foundation", async (req, res) => {
         extractedDataCount: llmResponseData.extracted_data.length,
         recordsAdded: augmentResult.recordsAdded,
         duplicatesSkipped: augmentResult.duplicatesSkipped,
+        sheetsNotFound: augmentResult.sheetsNotFound,
         confidence: llmResponseData.confidence,
         sourceDocumentId: actualSourceDocumentId,
         responseId: usedResponseId || responseId,
+        extractedRecordsDetail,
       },
     });
   } catch (error) {

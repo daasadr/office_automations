@@ -21,12 +21,23 @@ export interface AugmentExcelResult {
   sheetsModified: string[];
   duplicatesSkipped: DuplicateRecord[];
   recordsAdded: number;
+  sheetsNotFound: SheetNotFound[];
 }
 
 export interface DuplicateRecord {
   date: string;
   wasteAmount: string;
   sheetName: string;
+}
+
+export interface SheetNotFound {
+  kodOdpadu: string;
+  nazevOdpadu: string;
+  odberatelIco: string;
+  odberatelNazev: string;
+  puvodceIco: string;
+  puvodceNazev: string;
+  targetSheetName: string;
 }
 
 export type { LLMExtractedData };

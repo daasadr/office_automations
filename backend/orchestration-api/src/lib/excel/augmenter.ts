@@ -1,7 +1,7 @@
 // @ts-ignore - xlsx-populate doesn't have TypeScript definitions
 import * as XlsxPopulate from "xlsx-populate";
 import { logger } from "../../utils/logger";
-import type { LLMExtractedData, AugmentExcelResult, DuplicateRecord } from "./types";
+import type { LLMExtractedData, AugmentExcelResult, DuplicateRecord, SheetNotFound } from "./types";
 import { dateStringToDate, cleanQuantityString } from "./utils";
 
 /**
@@ -22,6 +22,7 @@ export async function augmentExcelWithData(
     const wb = await XlsxPopulate.fromDataAsync(excelBuffer);
     const sheetsModified: string[] = [];
     const duplicatesSkipped: DuplicateRecord[] = [];
+    const sheetsNotFound: SheetNotFound[] = [];
     let recordsAdded = 0;
 
     for (let dataIndex = 0; dataIndex < extractedDataArray.length; dataIndex++) {
@@ -34,45 +35,211 @@ export async function augmentExcelWithData(
 
       // Handle both Czech names and snake_case names
       const kodOdpadu = extractedData["kód odpadu"] || (extractedData as any).kod_odpadu;
+
+      // Helper function to extract all potential IČO numbers from the data
+      const extractAllPotentialIcos = (
+        obj: any,
+        foundIcos: Set<string> = new Set()
+      ): Set<string> => {
+        if (!obj || typeof obj !== "object") return foundIcos;
+
+        for (const [key, value] of Object.entries(obj)) {
+          const keyLower = key.toLowerCase();
+
+          // Check if this is an ICO field
+          if ((keyLower.includes("ico") || keyLower === "ičo") && typeof value === "string") {
+            // Clean up the IČO - remove dots, spaces, and ellipsis
+            const cleaned = value.replace(/\./g, "").replace(/\s/g, "").replace(/…/g, "");
+
+            // Extract 8-digit numbers (Czech IČO format)
+            const matches = cleaned.match(/\d{8}/g);
+            if (matches) {
+              matches.forEach((ico) => foundIcos.add(ico));
+            }
+
+            // Also try the cleaned value itself if it looks like an IČO
+            if (/^\d{6,8}$/.test(cleaned)) {
+              foundIcos.add(cleaned.padStart(8, "0"));
+            }
+          }
+
+          // Also search for 8-digit numbers in any string value (addresses, names, etc.)
+          if (typeof value === "string") {
+            const allEightDigits = value.match(/\d{8}/g);
+            if (allEightDigits) {
+              allEightDigits.forEach((ico) => {
+                // Validate it looks like a Czech IČO (starts with non-zero, reasonable range)
+                if (ico[0] !== "0" && parseInt(ico) >= 10000000 && parseInt(ico) <= 99999999) {
+                  foundIcos.add(ico);
+                }
+              });
+            }
+          }
+
+          // Recursively search nested objects
+          if (typeof value === "object") {
+            extractAllPotentialIcos(value, foundIcos);
+          }
+        }
+
+        return foundIcos;
+      };
+
+      // Extract primary IČO values
       const odberatelIco =
         extractedData.odběratel?.IČO ||
         (extractedData as any).odberatel?.ico ||
         (extractedData as any).odberatel?.IČO ||
         "";
-      const targetSheetName = `${kodOdpadu} ${odberatelIco}`.trim();
+
+      const puvod =
+        extractedData.původce || (extractedData as any).puvod || (extractedData as any).původce;
+      const puvodceIco = puvod?.IČO || (puvod as any)?.ico || (puvod as any)?.IČO || "";
+
+      // Extract all potential IČO numbers from the entire data structure
+      const allPotentialIcos = extractAllPotentialIcos(extractedData);
+
+      // Remove truncated or incomplete IČOs from the set
+      const cleanOdberatel = odberatelIco.replace(/\./g, "").replace(/…/g, "").replace(/\s/g, "");
+      const cleanPuvodce = puvodceIco.replace(/\./g, "").replace(/…/g, "").replace(/\s/g, "");
+
+      // Create target sheet name variations to try
+      // Priority order: 1) odběratel, 2) původce, 3) any other IČO found
+      const targetVariations: Array<{ ico: string; source: string }> = [];
+
+      // Add odběratel if it's complete
+      if (cleanOdberatel && cleanOdberatel.length >= 6 && !/…/.test(odberatelIco)) {
+        targetVariations.push({ ico: cleanOdberatel, source: "odběratel" });
+        allPotentialIcos.delete(cleanOdberatel); // Remove to avoid duplicates
+      }
+
+      // Add původce if it's complete
+      if (cleanPuvodce && cleanPuvodce.length >= 6 && !/…/.test(puvodceIco)) {
+        targetVariations.push({ ico: cleanPuvodce, source: "původce" });
+        allPotentialIcos.delete(cleanPuvodce); // Remove to avoid duplicates
+      }
+
+      // Add any other complete IČO numbers found in the data
+      allPotentialIcos.forEach((ico) => {
+        if (ico.length === 8) {
+          targetVariations.push({ ico, source: "discovered" });
+        }
+      });
 
       logger.info("STEP 1: Searching for sheet", {
         kodOdpadu,
         odberatelIco,
-        targetSheetName,
+        puvodceIco,
+        allDiscoveredIcos: Array.from(allPotentialIcos),
+        targetVariations: targetVariations.map((v) => `${kodOdpadu} ${v.ico} (${v.source})`),
         extractedDataKeys: Object.keys(extractedData),
       });
+
+      // Helper function to normalize sheet names (handle multiple spaces, leading/trailing spaces)
+      const normalizeSheetName = (name: string): string => {
+        return name.trim().replace(/\s+/g, " "); // Replace multiple spaces with single space
+      };
+
+      // Helper function to try finding a sheet with a specific IČO
+      const tryFindSheet = (ico: string): any => {
+        const targetSheetName = `${kodOdpadu} ${ico}`.trim();
+        const normalizedTarget = normalizeSheetName(targetSheetName);
+
+        // Try exact match first
+        let foundSheet = wb.sheet(targetSheetName);
+        if (foundSheet) {
+          logger.info("Found sheet by exact match", { sheetName: targetSheetName });
+          return foundSheet;
+        }
+
+        // Try normalized match
+        foundSheet = allSheets.find((s: any) => {
+          const sheetName = s.name();
+          const normalizedSheetName = normalizeSheetName(sheetName);
+
+          // Check if normalized names match exactly
+          if (normalizedSheetName === normalizedTarget) {
+            logger.info("Found sheet by normalized exact match", {
+              originalSheetName: sheetName,
+              normalizedSheetName,
+              normalizedTarget,
+            });
+            return true;
+          }
+
+          // Check if normalized sheet name starts with normalized target
+          if (normalizedSheetName.startsWith(normalizedTarget)) {
+            logger.info("Found sheet by normalized prefix match", {
+              originalSheetName: sheetName,
+              normalizedSheetName,
+              normalizedTarget,
+            });
+            return true;
+          }
+
+          return false;
+        });
+
+        return foundSheet;
+      };
 
       // List all available sheets
       const allSheets = wb.sheets();
       const allSheetNames = allSheets.map((s: any) => s.name());
-      logger.info("Available sheets in workbook:", { sheetNames: allSheetNames });
+      logger.info("Available sheets in workbook:", {
+        sheetNames: allSheetNames,
+      });
 
-      // Find sheet by exact name or by prefix
-      let sheet = wb.sheet(targetSheetName);
-      if (!sheet) {
-        // Try to find by prefix
-        logger.info("Exact sheet name not found, trying prefix match...");
-        sheet = allSheets.find((s: any) => s.name().startsWith(`${kodOdpadu} ${odberatelIco}`));
+      // Try to find sheet using different IČO variations
+      let sheet: any = null;
+      let matchedIco = "";
+      let matchedSource = "";
+
+      for (const variation of targetVariations) {
+        logger.info(`Trying to find sheet with ${variation.source} IČO: ${variation.ico}`);
+        sheet = tryFindSheet(variation.ico);
         if (sheet) {
-          logger.info("Found sheet by prefix match", { matchedSheetName: sheet.name() });
+          matchedIco = variation.ico;
+          matchedSource = variation.source;
+          logger.info(`✅ Found sheet using ${variation.source} IČO`, {
+            sheetName: sheet.name(),
+            ico: variation.ico,
+          });
+          break;
         }
       }
 
       if (!sheet) {
+        const attemptedNames = targetVariations.map((v) => `${kodOdpadu} ${v.ico}`).join(", ");
         logger.warn("❌ Sheet not found, skipping this data item", {
-          targetSheetName,
+          attemptedNames,
           availableSheets: allSheetNames,
         });
+
+        // Track sheets not found for user notification
+        const odberatelNazev =
+          extractedData.odběratel?.název || (extractedData as any).odberatel?.nazev || "";
+        const puvodceNazev = puvod?.název || (puvod as any)?.nazev || "";
+
+        sheetsNotFound.push({
+          kodOdpadu,
+          nazevOdpadu:
+            extractedData["název/druh odpadu"] || (extractedData as any).nazev_druhu_odpadu || "",
+          odberatelIco,
+          odberatelNazev: odberatelNazev,
+          puvodceIco,
+          puvodceNazev: puvodceNazev,
+          targetSheetName: attemptedNames,
+        });
+
         continue;
       }
 
-      logger.info("✅ STEP 1 COMPLETE: Found matching sheet", { actualSheetName: sheet.name() });
+      logger.info("✅ STEP 1 COMPLETE: Found matching sheet", {
+        actualSheetName: sheet.name(),
+        matchedUsing: matchedSource,
+        matchedIco,
+      });
 
       logger.info("STEP 2: Finding header row and columns");
 
@@ -447,18 +614,54 @@ export async function augmentExcelWithData(
         // Parse date to check for duplicates
         let dateValueForCheck: any = datumFormatted;
         try {
-          const dateParts = datumFormatted.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+          // Support multiple date formats: D.M.YYYY, D/M/YYYY, M/D/YY, D.M.YY, etc.
+          const dateParts = datumFormatted.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
           if (dateParts) {
-            const day = parseInt(dateParts[1], 10);
-            const month = parseInt(dateParts[2], 10);
-            const year = parseInt(dateParts[3], 10);
+            let day: number, month: number, year: number;
+
+            // Parse year and handle 2-digit years
+            let parsedYear = parseInt(dateParts[3], 10);
+            if (parsedYear < 100) {
+              // 2-digit year: assume 2000s for 00-49, 1900s for 50-99
+              parsedYear += parsedYear < 50 ? 2000 : 1900;
+            }
+
+            // Try to determine if it's M/D/Y or D/M/Y format
+            // If separator is slash, assume American format (M/D/Y)
+            // If separator is dot, assume European format (D.M.Y)
+            const separator = datumFormatted.includes("/") ? "/" : ".";
+            const firstNum = parseInt(dateParts[1], 10);
+            const secondNum = parseInt(dateParts[2], 10);
+
+            if (separator === "/" && firstNum <= 12) {
+              // American format: M/D/Y
+              month = firstNum;
+              day = secondNum;
+              year = parsedYear;
+            } else {
+              // European format: D.M.Y or D/M/Y
+              day = firstNum;
+              month = secondNum;
+              year = parsedYear;
+            }
+
             const jsDate = new Date(year, month - 1, day);
             const excelEpoch = new Date(1899, 11, 30);
             const diffTime = jsDate.getTime() - excelEpoch.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             dateValueForCheck = diffDays;
+
+            logger.info("Parsed date for duplicate check", {
+              original: datumFormatted,
+              parsed: `${year}-${month}-${day}`,
+              excelSerial: dateValueForCheck,
+            });
           }
         } catch (error) {
+          logger.warn("Could not parse date for duplicate check, using string comparison", {
+            date: datumFormatted,
+            error,
+          });
           // Use string comparison as fallback
         }
 
@@ -495,12 +698,37 @@ export async function augmentExcelWithData(
         // Try to parse the date and convert it to Excel serial number
         let dateValue: any = datumFormatted;
         try {
-          // Parse Czech date format (D.M.YYYY)
-          const dateParts = datumFormatted.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+          // Support multiple date formats: D.M.YYYY, D/M/YYYY, M/D/YY, D.M.YY, etc.
+          const dateParts = datumFormatted.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
           if (dateParts) {
-            const day = parseInt(dateParts[1], 10);
-            const month = parseInt(dateParts[2], 10);
-            const year = parseInt(dateParts[3], 10);
+            let day: number, month: number, year: number;
+
+            // Parse year and handle 2-digit years
+            let parsedYear = parseInt(dateParts[3], 10);
+            if (parsedYear < 100) {
+              // 2-digit year: assume 2000s for 00-49, 1900s for 50-99
+              parsedYear += parsedYear < 50 ? 2000 : 1900;
+            }
+
+            // Try to determine if it's M/D/Y or D/M/Y format
+            // If separator is slash, assume American format (M/D/Y)
+            // If separator is dot, assume European format (D.M.Y)
+            const separator = datumFormatted.includes("/") ? "/" : ".";
+            const firstNum = parseInt(dateParts[1], 10);
+            const secondNum = parseInt(dateParts[2], 10);
+
+            if (separator === "/" && firstNum <= 12) {
+              // American format: M/D/Y
+              month = firstNum;
+              day = secondNum;
+              year = parsedYear;
+            } else {
+              // European format: D.M.Y or D/M/Y
+              day = firstNum;
+              month = secondNum;
+              year = parsedYear;
+            }
+
             const jsDate = new Date(year, month - 1, day);
 
             // Convert to Excel serial number (days since 1900-01-01)
@@ -606,6 +834,7 @@ export async function augmentExcelWithData(
       sheetsModified,
       duplicatesSkipped,
       recordsAdded,
+      sheetsNotFound,
     };
   } catch (error) {
     // Comprehensive error logging
@@ -629,7 +858,7 @@ export async function augmentExcelWithData(
       sheetsModified: [],
       duplicatesSkipped: [],
       recordsAdded: 0,
+      sheetsNotFound: [],
     };
   }
 }
-

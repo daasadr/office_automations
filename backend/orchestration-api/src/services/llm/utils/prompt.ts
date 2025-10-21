@@ -2,6 +2,8 @@ import { REQUIRED_FIELDS } from "../constants";
 
 /**
  * Creates the prompt for Gemini PDF analysis
+ * commented out:
+ * množství předaného odpadu
  */
 export function createAnalysisPrompt(): string {
   return `Zkontroluj prosím tento PDF dokument průběžné evidence odpadů a urči, které z následujících informací obsahuje a které chybí.
@@ -15,7 +17,7 @@ Vyextrahuj z toho dokumentu pro každý kód odpadu (do extracted_data pole vytv
 - kód způsobu nakládání
 - původce - IČO, název, adresa, zodpovědná osoba. pokud možno pak také SAMOSTATNÁ PROVOZOVNA (číslo provozovny, název, adresa, zodpovědná osoba)
 - odběratel - IČO, název, adresa
-- tabulku se sloupci: pořadové číslo, datum vzniku, množství vznikého odpadu, množství předaného odpadu
+- tabulku se sloupci: pořadové číslo, datum vzniku, množství vznikého odpadu
 
 Při získávání informací z tabulky ber v potaz i ten fakt, že někdy dva řádky tabulky odpovídají jedné položce v poli extracted_data. Například dokument může obsahovat dva řádky jeden pro příjem a druhý pro zpracování. Reálně je to možné brát jako jeden řádek.
 

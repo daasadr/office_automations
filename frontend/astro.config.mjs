@@ -5,6 +5,8 @@ import tailwind from '@astrojs/tailwind';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import sentry from '@sentry/astro';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -12,7 +14,11 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone'
   }),
-  integrations: [react(), tailwind({ applyBaseStyles: false })],
+  integrations: [react(), tailwind({ applyBaseStyles: false }), sentry({
+    project: "odpady-astro-app",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      environment: import.meta.env.NODE_ENV || 'development',
+  })],
   server: {
     port: 4321,
     host: true

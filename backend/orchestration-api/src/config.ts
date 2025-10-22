@@ -14,6 +14,25 @@ interface EnvironmentConfig {
     url: string;
     token: string;
   };
+  postgres: {
+    host: string;
+    port: number;
+    database: string;
+    user: string;
+    password: string;
+  };
+  keydb: {
+    host: string;
+    port: number;
+    password: string;
+  };
+  minio: {
+    endpoint: string;
+    port: number;
+    accessKey: string;
+    secretKey: string;
+    useSSL: boolean;
+  };
   gemini: {
     apiKey?: string;
     model: string;
@@ -78,6 +97,25 @@ function createConfig(): EnvironmentConfig {
       url: directusUrl,
       token: directusToken,
     },
+    postgres: {
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "5432", 10),
+      database: process.env.DB_DATABASE || "directus",
+      user: process.env.DB_USER || "directus",
+      password: process.env.DB_PASSWORD || "",
+    },
+    keydb: {
+      host: process.env.REDIS_HOST || process.env.KEYDB_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || process.env.KEYDB_PORT || "6379", 10),
+      password: process.env.REDIS_PASSWORD || process.env.KEYDB_PASSWORD || "",
+    },
+    minio: {
+      endpoint: process.env.MINIO_ENDPOINT || "localhost",
+      port: parseInt(process.env.MINIO_API_PORT || "9000", 10),
+      accessKey: process.env.MINIO_ACCESS_KEY || "",
+      secretKey: process.env.MINIO_SECRET_KEY || "",
+      useSSL: process.env.MINIO_USE_SSL === "true",
+    },
     gemini: {
       apiKey: process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
@@ -131,6 +169,9 @@ if (config.nodeEnv === "development") {
     corsOrigin: config.cors.origin,
     directusUrl: config.directus.url,
     directusConfigured: Boolean(config.directus.token),
+    postgresConfigured: Boolean(config.postgres.password),
+    keydbConfigured: Boolean(config.keydb.password),
+    minioConfigured: Boolean(config.minio.accessKey && config.minio.secretKey),
     geminiConfigured: Boolean(config.gemini.apiKey),
     geminiModel: config.gemini.model,
     jobCleanup: config.jobCleanup,

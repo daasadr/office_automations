@@ -25,12 +25,6 @@ export function ProcessingStatistics({
           <div className="text-2xl font-bold text-primary">{extractedDataCount}</div>
           <div className="text-sm text-muted-foreground">Typů odpadu (kódů)</div>
         </div>
-        <div>
-          <div className="text-2xl font-bold text-primary">
-            {confidence ? `${confidence.toFixed(1)}%` : "N/A"}
-          </div>
-          <div className="text-sm text-muted-foreground">Spolehlivost</div>
-        </div>
       </div>
 
       {sheetsModified.length > 0 && (

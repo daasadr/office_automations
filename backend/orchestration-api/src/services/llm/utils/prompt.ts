@@ -17,9 +17,10 @@ Vyextrahuj z toho dokumentu pro každý kód odpadu (do extracted_data pole vytv
 - kód způsobu nakládání
 - původce - IČO, název, adresa, zodpovědná osoba. pokud možno pak také SAMOSTATNÁ PROVOZOVNA (číslo provozovny, název, adresa, zodpovědná osoba)
 - odběratel - IČO, název, adresa
-- tabulku se sloupci: pořadové číslo, datum vzniku, množství vznikého odpadu
+- tabulku se sloupci: pořadové číslo, datum vzniku, množství odpadu (extrahuj toto množství pod nazvem pole "množství vzniklého odpadu")
 
-Při získávání informací z tabulky ber v potaz i ten fakt, že někdy dva řádky tabulky odpovídají jedné položce v poli extracted_data. Například dokument může obsahovat dva řádky jeden pro příjem a druhý pro zpracování. Reálně je to možné brát jako jeden řádek.
+Při získávání informací z tabulky ber v potaz i ten fakt, že někdy dva řádky tabulky odpovídají jedné položce v poli extracted_data. Například dokument může obsahovat dva řádky jeden pro příjem a druhý pro zpracování. Reálně je to možné brát jako jeden řádek (extrahuj toto množství pod nazvem pole "množství vzniklého odpadu").
+Dokument může být také ve formě faktury, né jenom přehledu/výpisu. V takovém případě hledej výše uvedené informace v kontextu fakturačních údajů - množství odpadu může být uvedeno jako fakturované množství (extrahuj toto množství pod polem "množství vzniklého odpadu").
 
 FORMÁT ODPOVĚDI: Odpověz POUZE validním JSON objektem bez komentářů, vysvětlení nebo dalšího textu:
 {"present": ["seznam nalezených typů informací"], "missing": ["seznam chybějících typů informací"], "extracted_data": [...]}

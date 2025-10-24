@@ -72,12 +72,12 @@ export function ExtractedRecordsDetail({
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         Níže jsou uvedeny všechny jednotlivé záznamy nalezené v nahraném dokumentu a informace o
         tom, do kterého listu byly přidány.
-        {totalDuplicates > 0 && (
+        {/* {totalDuplicates > 0 && (
           <span className="block mt-2 text-orange-700 dark:text-orange-300">
             ⚠️ Záznamy označené oranžově s přeškrtnutím byly přeskočeny jako duplikáty (již existují
             v dokumentu).
           </span>
-        )}
+        )} */}
       </p>
 
       <div className="space-y-6">

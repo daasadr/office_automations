@@ -78,7 +78,7 @@ export function ResultsState({ validationData, downloadUrl }: ResultsStateProps)
           <Button asChild size="lg" className="min-w-48 shadow-lg hover:shadow-xl">
             <a href={downloadUrl}>
               <ArrowRight className="w-5 h-5" />
-              Pokračovat ke stažení
+              Pokračovat ve zpracování
             </a>
           </Button>
         </div>

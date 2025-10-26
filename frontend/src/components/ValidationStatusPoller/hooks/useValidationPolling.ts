@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLogger } from "@/lib/client-logger";
 import type { ValidationData } from "../types";
+import { withBasePath } from "@/lib/utils";
 
 interface UseValidationPollingProps {
   documentId?: string;
@@ -29,7 +30,9 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
         log.info("Fetching validation data", { documentId, jobId });
 
         // Use frontend API proxy to avoid CORS issues
-        const url = documentId ? `/api/status-by-source/${documentId}` : `/api/status/${jobId}`;
+        const url = documentId
+          ? withBasePath(`/api/status-by-source/${documentId}`)
+          : withBasePath(`/api/status/${jobId}`);
 
         const response = await fetch(url);
 

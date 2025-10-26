@@ -15,6 +15,7 @@ import { DocumentInfoCards } from "@/components/FoundationDocumentProcessor/comp
 import { ErrorState } from "@/components/FoundationDocumentProcessor/components/ErrorState";
 import { ExtractedRecordsDetail } from "@/components/FoundationDocumentProcessor/components/ExtractedRecordsDetail";
 import { SheetsNotFoundWarning } from "@/components/FoundationDocumentProcessor/components/SheetsNotFoundWarning";
+import { withBasePath } from "@/lib/utils";
 
 export function FoundationDocumentProcessor({
   documentId,
@@ -40,7 +41,7 @@ export function FoundationDocumentProcessor({
 
         // Inline the processing call to avoid handleProcess dependency
         try {
-          const response = await fetch("/api/process-foundation", {
+          const response = await fetch(withBasePath("/api/process-foundation"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ jobId, sourceDocumentId: documentId }),
@@ -76,7 +77,7 @@ export function FoundationDocumentProcessor({
       });
 
       // Use the local API route to download the foundation document
-      const response = await fetch("/api/download-foundation", {
+      const response = await fetch(withBasePath("/api/download-foundation"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,7 +139,7 @@ export function FoundationDocumentProcessor({
         status,
       });
 
-      const response = await fetch("/api/update-foundation-status", {
+      const response = await fetch(withBasePath("/api/update-foundation-status"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -2,6 +2,7 @@
 // This provides a consistent logging interface that works in the browser
 
 import { CONTENT_TYPE_JSON } from "@/client-constants";
+import { withBasePath } from "@/lib/utils";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -90,7 +91,7 @@ class ClientLogger {
 
   private async sendToServer(logData: ClientLogData): Promise<void> {
     try {
-      await fetch("/api/client-logs", {
+      await fetch(withBasePath("/api/client-logs"), {
         method: "POST",
         headers: {
           "Content-Type": CONTENT_TYPE_JSON,

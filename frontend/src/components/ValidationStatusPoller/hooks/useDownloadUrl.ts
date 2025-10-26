@@ -1,4 +1,5 @@
 import type { ValidationData } from "../types";
+import { generateUrl } from "@/lib/utils";
 
 interface UseDownloadUrlProps {
   validationData: ValidationData | null;
@@ -9,8 +10,8 @@ interface UseDownloadUrlProps {
 export function useDownloadUrl({ validationData, documentId, jobId }: UseDownloadUrlProps) {
   const sourceDocumentId = validationData?.directusSourceDocumentId || documentId;
   const downloadUrl = sourceDocumentId
-    ? `/download?doc=${sourceDocumentId}`
-    : `/download?job=${jobId}`;
+    ? generateUrl("/download", { doc: sourceDocumentId })
+    : generateUrl("/download", { job: jobId });
 
   return downloadUrl;
 }

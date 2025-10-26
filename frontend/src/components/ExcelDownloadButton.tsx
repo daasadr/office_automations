@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useId, type FC } from "react";
 import { Download } from "lucide-react";
 import { useLogger } from "@/lib/client-logger";
 import { Button } from "@/components/ui/button";
+import { withBasePath } from "@/lib/utils";
 
 export interface ExcelDownloadButtonProps {
   documentId?: string;
@@ -36,7 +37,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
     try {
       logger.debug("Making POST request to /api/generate-excel", { documentId, jobId });
 
-      const response = await fetch("/api/generate-excel", {
+      const response = await fetch(withBasePath("/api/generate-excel"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

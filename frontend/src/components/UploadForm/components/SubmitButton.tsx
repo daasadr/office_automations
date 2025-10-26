@@ -1,4 +1,4 @@
-import { Loader2, Upload } from "lucide-react";
+import { Loader2 as UploadSpinner, Upload } from "lucide-react";
 
 interface SubmitButtonProps {
   isSubmitting: boolean;
@@ -15,7 +15,7 @@ export function SubmitButton({ isSubmitting, disabled }: SubmitButtonProps) {
     >
       {isSubmitting ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <UploadSpinner className="mr-2 h-4 w-4 animate-spin" />
           Zpracovávám data...
         </>
       ) : (

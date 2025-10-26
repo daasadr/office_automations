@@ -1,4 +1,4 @@
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2 as ApprovalSpinner } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ApprovalActionsProps {
@@ -31,7 +31,7 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
         >
           {isUpdating ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <ApprovalSpinner className="mr-2 h-4 w-4 animate-spin" />
               Zpracovávám...
             </>
           ) : (
@@ -52,7 +52,7 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
         >
           {isUpdating ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <ApprovalSpinner className="mr-2 h-4 w-4 animate-spin" />
               Zpracovávám...
             </>
           ) : (

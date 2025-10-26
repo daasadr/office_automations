@@ -1,4 +1,4 @@
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2 as DownloadSpinner } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DownloadSectionProps {
@@ -19,7 +19,7 @@ export function DownloadSection({ onDownload, isDownloading }: DownloadSectionPr
         <Button onClick={onDownload} disabled={isDownloading} size="lg" variant="default">
           {isDownloading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <DownloadSpinner className="mr-2 h-4 w-4 animate-spin" />
               Stahuji...
             </>
           ) : (

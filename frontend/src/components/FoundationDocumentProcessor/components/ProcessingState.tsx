@@ -1,10 +1,10 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 as DocumentSpinner } from "lucide-react";
 
 export function ProcessingState() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
-        <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
+        <DocumentSpinner className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
         <div className="flex-1">
           <h4 className="font-semibold text-blue-900 dark:text-blue-100">
             Zpracovávám zakládací dokument...

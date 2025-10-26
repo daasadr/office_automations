@@ -1,0 +1,61 @@
+/**
+ * Base Layout Styles
+ * 
+ * Styles specific to the BaseLayout component including:
+ * - View transition animations
+ * - Fallback animations for older browsers
+ * - Skip link accessibility styles
+ * - Print media styles
+ */
+
+/* View transition animations */
+@view-transition {
+  navigation: auto;
+}
+
+/* Skip link styles for accessibility */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 1em;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.skip-link:focus {
+  left: 1em;
+  top: 1em;
+}
+
+/* Fallback animation for older browsers without View Transitions API */
+@media (prefers-reduced-motion: no-preference) {
+  .page-content {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Print styles - hide interactive elements */
+@media print {
+  .progress-indicator {
+    display: none;
+  }
+
+  .skip-link {
+    display: none;
+  }
+}
+

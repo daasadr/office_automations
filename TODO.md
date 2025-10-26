@@ -4,3 +4,8 @@
 - Sentry
 - save documents and processing results to Directus
 - add Sentry
+- HTTPS
+- PWA
+- foundational documents view
+- adjust in app navigation
+- limit IP to Czech

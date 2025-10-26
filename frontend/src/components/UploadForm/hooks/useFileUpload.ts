@@ -9,7 +9,6 @@ export interface FileUploadHandlers {
   showProcessing: boolean;
   handleFileSelect: (file: File) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  handleCloseProcessing: () => void;
 }
 
 export function useFileUpload(): FileUploadHandlers {
@@ -74,17 +73,11 @@ export function useFileUpload(): FileUploadHandlers {
     [isSubmitting, selectedFile, log]
   );
 
-  const handleCloseProcessing = useCallback(() => {
-    setShowProcessing(false);
-    setIsSubmitting(false);
-  }, []);
-
   return {
     selectedFile,
     isSubmitting,
     showProcessing,
     handleFileSelect,
     handleSubmit,
-    handleCloseProcessing,
   };
 }

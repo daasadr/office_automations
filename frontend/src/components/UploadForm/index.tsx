@@ -5,14 +5,8 @@ import { useDragAndDrop } from "@/components/UploadForm/hooks/useDragAndDrop";
 import { useFileUpload } from "@/components/UploadForm/hooks/useFileUpload";
 
 export function UploadForm() {
-  const {
-    selectedFile,
-    isSubmitting,
-    showProcessing,
-    handleFileSelect,
-    handleSubmit,
-    handleCloseProcessing,
-  } = useFileUpload();
+  const { selectedFile, isSubmitting, showProcessing, handleFileSelect, handleSubmit } =
+    useFileUpload();
 
   const { dragOver, handleDragOver, handleDragLeave, handleDrop } = useDragAndDrop();
 

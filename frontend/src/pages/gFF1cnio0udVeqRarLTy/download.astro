@@ -4,7 +4,7 @@ import { FoundationDocumentProcessor } from "@/components/FoundationDocumentProc
 import { FileText, CloudUpload } from "lucide-react";
 import { ORCHESTRATION_API_URL } from "@/server-constants";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, withBasePath } from "@/lib/utils";
 
 interface ValidationResult {
   present?: string[];
@@ -19,7 +19,7 @@ const jobId = Astro.url.searchParams.get("job");
 
 // If neither is present, redirect to home
 if (!documentId && !jobId) {
-  return Astro.redirect("/", 302);
+  return Astro.redirect(withBasePath("/"), 302);
 }
 
 // Get validation result from backend API
@@ -76,7 +76,7 @@ try {
             Nebyla nalezena žádná extrahovaná data pro zpracování.
           </p>
           <a
-            href="/upload"
+            href={withBasePath("/upload")}
             class={cn(buttonVariants({ variant: "secondary", size: "lg" }), "mt-4")}
           >
             Nahrát jiný dokument
@@ -87,7 +87,7 @@ try {
       <!-- Additional Actions -->
       <div class="flex justify-center pt-8">
         <a
-          href="/upload"
+          href={withBasePath("/upload")}
           class={buttonVariants({ variant: "secondary", size: "lg" })}
         >
           <CloudUpload className="w-5 h-5" />

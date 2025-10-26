@@ -2,7 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { FileSpreadsheet, ArrowRight, FileCheck, Download } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, withBasePath } from "@/lib/utils";
 ---
 
 <style>
@@ -101,7 +101,7 @@ import { cn } from "@/lib/utils";
 
       <div class="mt-16">
         <a
-          href="/upload"
+          href={withBasePath("/upload")}
           class={cn(
             buttonVariants({ size: "lg" }),
             "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"

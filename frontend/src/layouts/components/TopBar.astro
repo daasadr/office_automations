@@ -1,13 +1,14 @@
 ---
 import { Home, Settings } from "lucide-react";
 import "./top-bar.scss";
+import { withBasePath } from "@/lib/utils";
 ---
 
 <header class="top-bar">
   <div class="top-bar__container container mx-auto px-2 py-2">
     <!-- Home icon - returns to first step -->
     <a 
-      href="/upload" 
+      href={withBasePath("/upload")}
       class="top-bar__icon"
       aria-label="Zpět na úvodní stránku"
       title="Domů"
@@ -18,7 +19,7 @@ import "./top-bar.scss";
 
     <!-- Settings icon -->
     <a 
-      href="/settings" 
+      href={withBasePath("/settings")}
       class="top-bar__icon"
       aria-label="Nastavení"
       title="Nastavení"

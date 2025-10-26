@@ -1,6 +1,9 @@
 // Client-safe constants - no environment variables or server-only configuration
 // This file can be safely imported by client-side components
 
+// Base path for the application
+export const BASE_PATH = import.meta.env.PUBLIC_BASE_PATH || "";
+
 // HTTP Headers
 export const CONTENT_TYPE_JSON = "application/json";
 export const CONTENT_TYPE_PDF = "application/pdf";

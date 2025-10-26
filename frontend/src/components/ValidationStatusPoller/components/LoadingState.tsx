@@ -1,6 +1,7 @@
 import { FileText, RefreshCw, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProcessingSteps } from "./ProcessingSteps";
+import { withBasePath } from "@/lib/utils";
 
 export function LoadingState() {
   return (
@@ -45,6 +46,17 @@ export function LoadingState() {
       {/* Alternative actions */}
       <div className="flex justify-center gap-4 mt-8">
         <Button
+          asChild
+          variant="ghost"
+          className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
+          <a href={withBasePath("/upload")}>
+            <ChevronLeft className="w-4 h-4" />
+            Zpět
+          </a>
+        </Button>
+
+        {/* <Button
           type="button"
           onClick={() => window.location.reload()}
           variant="secondary"
@@ -52,18 +64,7 @@ export function LoadingState() {
         >
           <RefreshCw className="w-4 h-4" />
           Obnovit nyní
-        </Button>
-
-        <Button
-          asChild
-          variant="ghost"
-          className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
-        >
-          <a href="/upload">
-            <ChevronLeft className="w-4 h-4" />
-            Zpět
-          </a>
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

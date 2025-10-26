@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ValidationResults } from "@/components/ValidationResults";
 import { ExtractedDataPreview } from "./ExtractedDataPreview";
 import type { ValidationData } from "../types";
+import { withBasePath } from "@/lib/utils";
 
 interface ResultsStateProps {
   validationData: ValidationData;
@@ -68,7 +69,7 @@ export function ResultsState({ validationData, downloadUrl }: ResultsStateProps)
       <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border shadow-lg py-6 z-50">
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button asChild variant="secondary" size="lg" className="min-w-48">
-            <a href="/upload">
+            <a href={withBasePath("/upload")}>
               <CloudUpload className="w-5 h-5" />
               Nahrát jiný dokument
             </a>

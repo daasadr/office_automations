@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { ValidationStatusPoller } from "@/components/ValidationStatusPoller/index";
+import { withBasePath } from "@/lib/utils";
 
 // Get document UUID or job ID from query parameters
 const documentId = Astro.url.searchParams.get("doc") ?? undefined;
@@ -8,7 +9,7 @@ const jobId = Astro.url.searchParams.get("job") ?? undefined;
 
 // If neither is present, redirect to upload page
 if (!documentId && !jobId) {
-  return Astro.redirect("/upload", 302);
+  return Astro.redirect(withBasePath("/upload"), 302);
 }
 ---
 

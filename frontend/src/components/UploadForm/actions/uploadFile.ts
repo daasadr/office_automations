@@ -1,9 +1,10 @@
 import type { UploadResult, UploadError } from "@/components/UploadForm/types";
 import type { useLogger } from "@/lib/client-logger";
+import { withBasePath } from "@/lib/utils";
 
 type Logger = ReturnType<typeof useLogger>;
 
-const UPLOAD_ENDPOINT = "/api/validate-pdf";
+const UPLOAD_ENDPOINT = withBasePath("/api/validate-pdf");
 
 export async function uploadFile(file: File, log: Logger): Promise<UploadResult> {
   const startTime = Date.now();
@@ -67,5 +68,5 @@ export function buildRedirectUrl(result: UploadResult): string {
   const redirectParam = result.directusSourceDocumentId
     ? `doc=${result.directusSourceDocumentId}`
     : `job=${result.jobId}`;
-  return `/check?${redirectParam}`;
+  return withBasePath(`/check?${redirectParam}`);
 }

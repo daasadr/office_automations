@@ -1,4 +1,6 @@
 ---
+import { withBasePath } from "@/lib/utils";
+
 export interface Props {
   currentStep?: "welcome" | "upload" | "check" | "processing" | "download";
 }
@@ -13,9 +15,9 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: "upload", number: 1, label: "Nahrání souboru", href: "/upload" },
+  { id: "upload", number: 1, label: "Nahrání souboru", href: withBasePath("/upload") },
   { id: "check", number: 2, label: "Kontrola" },
-  { id: "download", number: 3, label: "Stažení Excel" },
+  { id: "download", number: 3, label: "Doplnění do Excelu" },
 ];
 
 const isStepActive = (stepId: string) => currentStep === stepId;

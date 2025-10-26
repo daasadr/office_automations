@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FileText, Check, RefreshCw, ChevronLeft, CloudUpload, ArrowRight } from "lucide-react";
 import { ValidationResults } from "@/components/ValidationResults";
 import { useLogger } from "@/lib/client-logger";
+import { Button } from "@/components/ui/button";
 
 interface ValidationData {
   validationResult: {
@@ -187,22 +188,26 @@ export function ValidationStatusPoller({ documentId, jobId }: ValidationStatusPo
 
         {/* Alternative actions */}
         <div className="flex justify-center gap-4 mt-8">
-          <button
+          <Button
             type="button"
             onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+            variant="secondary"
+            className="text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50"
           >
             <RefreshCw className="w-4 h-4" />
             Obnovit nyní
-          </button>
+          </Button>
 
-          <a
-            href="/upload"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          <Button
+            asChild
+            variant="ghost"
+            className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
-            <ChevronLeft className="w-4 h-4" />
-            Zpět
-          </a>
+            <a href="/upload">
+              <ChevronLeft className="w-4 h-4" />
+              Zpět
+            </a>
+          </Button>
         </div>
       </div>
     );
@@ -219,21 +224,19 @@ export function ValidationStatusPoller({ documentId, jobId }: ValidationStatusPo
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-        <a
-          href="/upload"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors min-w-48"
-        >
-          <CloudUpload className="w-5 h-5" />
-          Nahrát jiný dokument
-        </a>
+        <Button asChild variant="secondary" size="lg" className="min-w-48">
+          <a href="/upload">
+            <CloudUpload className="w-5 h-5" />
+            Nahrát jiný dokument
+          </a>
+        </Button>
 
-        <a
-          href={downloadUrl}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl min-w-48"
-        >
-          <ArrowRight className="w-5 h-5" />
-          Pokračovat ke stažení
-        </a>
+        <Button asChild size="lg" className="min-w-48 shadow-lg hover:shadow-xl">
+          <a href={downloadUrl}>
+            <ArrowRight className="w-5 h-5" />
+            Pokračovat ke stažení
+          </a>
+        </Button>
       </div>
     </div>
   );

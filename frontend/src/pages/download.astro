@@ -3,6 +3,8 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { FoundationDocumentProcessor } from "@/components/FoundationDocumentProcessor/index";
 import { FileText, CloudUpload } from "lucide-react";
 import { ORCHESTRATION_API_URL } from "@/server-constants";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ValidationResult {
   present?: string[];
@@ -75,7 +77,7 @@ try {
           </p>
           <a
             href="/upload"
-            class="inline-flex items-center justify-center gap-2 px-6 py-3 mt-4 text-base font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+            class={cn(buttonVariants({ variant: "secondary", size: "lg" }), "mt-4")}
           >
             Nahrát jiný dokument
           </a>
@@ -86,7 +88,7 @@ try {
       <div class="flex justify-center pt-8">
         <a
           href="/upload"
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-muted-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+          class={buttonVariants({ variant: "secondary", size: "lg" })}
         >
           <CloudUpload className="w-5 h-5" />
           Nahrát jiný dokument

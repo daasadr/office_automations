@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useId, type FC } from "react";
 import { Download } from "lucide-react";
 import { useLogger } from "@/lib/client-logger";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export interface ExcelDownloadButtonProps {
   documentId?: string;
@@ -169,23 +169,19 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
   const isLoading = state.status === "generating" || state.status === "preparing";
 
   return (
-    <a
-      id={linkId}
-      href={state.status === "ready" ? state.downloadUrl : "#"}
-      download={state.status === "ready" ? state.filename : undefined}
-      onClick={state.status === "unavailable" ? handleRetryClick : handleDownloadClick}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors",
-        isButtonDisabled ? "opacity-50 pointer-events-none" : "opacity-100 pointer-events-auto",
-        className
-      )}
-      aria-disabled={isButtonDisabled}
-      aria-busy={isLoading}
-      title={getButtonTitle()}
-    >
-      <Download className="w-4 h-4" aria-hidden="true" />
-      <span id={textId}>{getButtonText()}</span>
-    </a>
+    <Button asChild disabled={isButtonDisabled} className={className} title={getButtonTitle()}>
+      <a
+        id={linkId}
+        href={state.status === "ready" ? state.downloadUrl : "#"}
+        download={state.status === "ready" ? state.filename : undefined}
+        onClick={state.status === "unavailable" ? handleRetryClick : handleDownloadClick}
+        aria-disabled={isButtonDisabled}
+        aria-busy={isLoading}
+      >
+        <Download className="w-4 h-4" aria-hidden="true" />
+        <span id={textId}>{getButtonText()}</span>
+      </a>
+    </Button>
   );
 };
 

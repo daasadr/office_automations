@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { FileSpreadsheet, ArrowRight, FileCheck, Download } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 ---
 
 <style>
@@ -100,7 +102,10 @@ import { FileSpreadsheet, ArrowRight, FileCheck, Download } from "lucide-react";
       <div class="mt-16">
         <a
           href="/upload"
-          class="animate-fade-in cta-button inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium text-white bg-primary rounded-full hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+          class={cn(
+            buttonVariants({ size: "lg" }),
+            "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+          )}
         >
           Začít
           <ArrowRight className="w-5 h-5" />

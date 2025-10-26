@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { withLogging, createErrorResponse } from "../../../../lib/middleware";
 import { generateRequestId } from "../../../../lib/logger";
-import { ORCHESTRATION_API_URL } from "../../../../constants";
+import { ORCHESTRATION_API_URL } from "../../../../server-constants";
 
 const downloadByDocHandler: APIRoute = async ({ params }) => {
   const requestId = generateRequestId();

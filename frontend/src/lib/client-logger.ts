@@ -1,7 +1,7 @@
 // Client-side logging utility for React components and browser-side code
 // This provides a consistent logging interface that works in the browser
 
-import { CONTENT_TYPE_JSON } from "../constants";
+import { CONTENT_TYPE_JSON } from "../client-constants";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 

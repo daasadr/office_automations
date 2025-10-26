@@ -1,9 +1,6 @@
+- implement SSO 
 - refactoring workers
 - dockerization of fe
-- XLS generator
-- Sentry
-- save documents and processing results to Directus
-- add Sentry
 - HTTPS
 - PWA
 - foundational documents view

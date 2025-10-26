@@ -1,6 +1,6 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import { ValidationStatusPoller } from "../components/ValidationStatusPoller";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { ValidationStatusPoller } from "@/components/ValidationStatusPoller";
 
 // Get document UUID or job ID from query parameters
 const documentId = Astro.url.searchParams.get("doc") ?? undefined;

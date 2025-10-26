@@ -5,14 +5,14 @@ import {
   createSuccessResponse,
   loggedFetch,
   RequestTimer,
-} from "../../lib/middleware";
-import { generateRequestId, logUploadProgress, logSecurityEvent } from "../../lib/logger";
+} from "@/lib/middleware";
+import { generateRequestId, logUploadProgress, logSecurityEvent } from "@/lib/logger";
 import {
   ORCHESTRATION_API_URL,
   CONTENT_TYPE_PDF,
   MAX_FILE_SIZE,
   HTTP_STATUS,
-} from "../../server-constants";
+} from "@/server-constants";
 
 const validatePdfHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

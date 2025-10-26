@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { ORCHESTRATION_API_URL } from "../../server-constants";
+import { ORCHESTRATION_API_URL } from "@/server-constants";
 
 export const POST: APIRoute = async ({ request }) => {
   try {

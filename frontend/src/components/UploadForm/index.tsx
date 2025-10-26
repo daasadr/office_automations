@@ -1,8 +1,8 @@
-import { ProcessingOverlay } from "../ProcessingOverlay";
-import { FileDropZone } from "./components/FileDropZone";
-import { SubmitButton } from "./components/SubmitButton";
-import { useDragAndDrop } from "./hooks/useDragAndDrop";
-import { useFileUpload } from "./hooks/useFileUpload";
+import { ProcessingOverlay } from "@/components/ProcessingOverlay";
+import { FileDropZone } from "@/components/UploadForm/components/FileDropZone";
+import { SubmitButton } from "@/components/UploadForm/components/SubmitButton";
+import { useDragAndDrop } from "@/components/UploadForm/hooks/useDragAndDrop";
+import { useFileUpload } from "@/components/UploadForm/hooks/useFileUpload";
 
 export function UploadForm() {
   const {

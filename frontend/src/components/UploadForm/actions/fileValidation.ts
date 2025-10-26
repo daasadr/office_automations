@@ -1,5 +1,5 @@
-import type { FileValidationResult } from "../types";
-import type { useLogger } from "../../../lib/client-logger";
+import type { FileValidationResult } from "@/components/UploadForm/types";
+import type { useLogger } from "@/lib/client-logger";
 
 type Logger = ReturnType<typeof useLogger>;
 

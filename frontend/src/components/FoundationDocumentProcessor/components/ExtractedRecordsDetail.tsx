@@ -1,4 +1,7 @@
-import type { ExtractedRecordDetail, DuplicateRecord } from "../types";
+import type {
+  ExtractedRecordDetail,
+  DuplicateRecord,
+} from "@/components/FoundationDocumentProcessor/types";
 
 interface ExtractedRecordsDetailProps {
   extractedRecords?: ExtractedRecordDetail[];

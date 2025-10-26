@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import type { SheetNotFound } from "../types";
+import type { SheetNotFound } from "@/components/FoundationDocumentProcessor/types";
 
 interface SheetsNotFoundWarningProps {
   sheetsNotFound?: SheetNotFound[];

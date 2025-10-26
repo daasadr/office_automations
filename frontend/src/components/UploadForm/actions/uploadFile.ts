@@ -1,5 +1,5 @@
-import type { UploadResult, UploadError } from "../types";
-import type { useLogger } from "../../../lib/client-logger";
+import type { UploadResult, UploadError } from "@/components/UploadForm/types";
+import type { useLogger } from "@/lib/client-logger";
 
 type Logger = ReturnType<typeof useLogger>;
 

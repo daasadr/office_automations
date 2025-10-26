@@ -4,9 +4,9 @@ import {
   createErrorResponse,
   createSuccessResponse,
   loggedFetch,
-} from "../../../lib/middleware";
-import { generateRequestId, logPerformance } from "../../../lib/logger";
-import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "../../../server-constants";
+} from "@/lib/middleware";
+import { generateRequestId, logPerformance } from "@/lib/logger";
+import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "@/server-constants";
 
 const statusBySourceHandler: APIRoute = async ({ params }) => {
   const requestId = generateRequestId();

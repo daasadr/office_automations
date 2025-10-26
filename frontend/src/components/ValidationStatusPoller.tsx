@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Check, RefreshCw, ChevronLeft, CloudUpload, ArrowRight } from "lucide-react";
-import { ValidationResults } from "./ValidationResults";
+import { ValidationResults } from "@/components/ValidationResults";
 import { useLogger } from "@/lib/client-logger";
 
 interface ValidationData {

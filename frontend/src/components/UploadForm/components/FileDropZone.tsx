@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { CheckCircle, Upload } from "lucide-react";
-import { formatFileSize } from "../actions/fileValidation";
+import { formatFileSize } from "@/components/UploadForm/actions/fileValidation";
 
 interface FileDropZoneProps {
   selectedFile: File | null;

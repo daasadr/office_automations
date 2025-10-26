@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { generateRequestId, logRequest } from "./logger";
-import { CONTENT_TYPE_JSON } from "../client-constants";
+import { generateRequestId, logRequest } from "@/lib/logger";
+import { CONTENT_TYPE_JSON } from "@/client-constants";
 
 // Request timing utility
 export class RequestTimer {

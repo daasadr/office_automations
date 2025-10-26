@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useId, type FC } from "react";
 import { Download } from "lucide-react";
-import { useLogger } from "../lib/client-logger";
+import { useLogger } from "@/lib/client-logger";
 
 export interface ExcelDownloadButtonProps {
   documentId?: string;

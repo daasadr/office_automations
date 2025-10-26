@@ -5,8 +5,8 @@ import {
   createSuccessResponse,
   loggedFetch,
   RequestTimer,
-} from "../../lib/middleware";
-import { generateRequestId, logUploadProgress, logSecurityEvent } from "../../lib/logger";
+} from "@/lib/middleware";
+import { generateRequestId, logUploadProgress, logSecurityEvent } from "@/lib/logger";
 import {
   ORCHESTRATION_API_URL,
   CONTENT_TYPE_PDF,
@@ -14,7 +14,7 @@ import {
   MAX_FILE_SIZE,
   ALLOWED_FILE_TYPES,
   HTTP_STATUS,
-} from "../../server-constants";
+} from "@/server-constants";
 
 const uploadHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

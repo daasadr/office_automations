@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLogger } from "@/lib/client-logger";
-import type { FoundationDocumentProcessorProps, ProcessingResult } from "./types";
-import { ProcessingState } from "./components/ProcessingState";
-import { StatusUpdateMessage } from "./components/StatusUpdateMessage";
-import { DownloadSection } from "./components/DownloadSection";
-import { ApprovalActions } from "./components/ApprovalActions";
-import { DuplicatesWarning } from "./components/DuplicatesWarning";
-import { ProcessingStatistics } from "./components/ProcessingStatistics";
-import { DocumentInfoCards } from "./components/DocumentInfoCards";
-import { ErrorState } from "./components/ErrorState";
-import { ExtractedRecordsDetail } from "./components/ExtractedRecordsDetail";
-import { SheetsNotFoundWarning } from "./components/SheetsNotFoundWarning";
+import type {
+  FoundationDocumentProcessorProps,
+  ProcessingResult,
+} from "@/components/FoundationDocumentProcessor/types";
+import { ProcessingState } from "@/components/FoundationDocumentProcessor/components/ProcessingState";
+import { StatusUpdateMessage } from "@/components/FoundationDocumentProcessor/components/StatusUpdateMessage";
+import { DownloadSection } from "@/components/FoundationDocumentProcessor/components/DownloadSection";
+import { ApprovalActions } from "@/components/FoundationDocumentProcessor/components/ApprovalActions";
+import { DuplicatesWarning } from "@/components/FoundationDocumentProcessor/components/DuplicatesWarning";
+import { ProcessingStatistics } from "@/components/FoundationDocumentProcessor/components/ProcessingStatistics";
+import { DocumentInfoCards } from "@/components/FoundationDocumentProcessor/components/DocumentInfoCards";
+import { ErrorState } from "@/components/FoundationDocumentProcessor/components/ErrorState";
+import { ExtractedRecordsDetail } from "@/components/FoundationDocumentProcessor/components/ExtractedRecordsDetail";
+import { SheetsNotFoundWarning } from "@/components/FoundationDocumentProcessor/components/SheetsNotFoundWarning";
 
 export function FoundationDocumentProcessor({
   documentId,
@@ -89,7 +92,7 @@ export function FoundationDocumentProcessor({
 
       // Get the blob from the response
       const blob = await response.blob();
-      
+
       // Create a download URL and trigger download
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-import { useLogger } from "../../../lib/client-logger";
-import { validateFile } from "../actions/fileValidation";
-import { uploadFile, buildRedirectUrl } from "../actions/uploadFile";
+import { useLogger } from "@/lib/client-logger";
+import { validateFile } from "@/components/UploadForm/actions/fileValidation";
+import { uploadFile, buildRedirectUrl } from "@/components/UploadForm/actions/uploadFile";
 
 export interface FileUploadHandlers {
   selectedFile: File | null;

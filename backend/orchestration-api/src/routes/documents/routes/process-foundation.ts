@@ -1,7 +1,6 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
-import { isDirectusAvailable } from "../../../lib/directus";
 import { FoundationProcessingService } from "../services/FoundationProcessingService";
+import { requireDirectus, requireBodyParams, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
@@ -45,22 +44,12 @@ const router = Router();
  *   }
  * }
  */
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  requireBodyParams(["jobId", "responseId", "sourceDocumentId"], { atLeastOne: true }),
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     const { jobId, responseId, sourceDocumentId } = req.body;
-
-    if (!jobId && !responseId && !sourceDocumentId) {
-      return res.status(400).json({
-        error: "Either jobId, responseId, or sourceDocumentId is required",
-      });
-    }
-
-    // Check if Directus is available
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
 
     // Process foundation document using service
     const processingService = new FoundationProcessingService();
@@ -94,13 +83,7 @@ router.post("/", async (req, res) => {
       foundationDocument: result.foundationDocument,
       processing: result.processing,
     });
-  } catch (error) {
-    logger.error("Error processing foundation document:", error);
-    res.status(500).json({
-      error: "Failed to process foundation document",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as processFoundationRouter };

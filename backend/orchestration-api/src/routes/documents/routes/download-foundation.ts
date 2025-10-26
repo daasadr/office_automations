@@ -1,19 +1,17 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
-import { directusDocumentService, isDirectusAvailable } from "../../../lib/directus";
+import { directusDocumentService } from "../../../lib/directus";
+import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
 // Download foundation document by ID
-router.get("/:foundationDocumentId", async (req, res) => {
-  try {
+router.get(
+  "/:foundationDocumentId",
+  requireUrlParams(["foundationDocumentId"]),
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     const { foundationDocumentId } = req.params;
-
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
 
     logger.info("Downloading foundation document", { foundationDocumentId });
 
@@ -64,13 +62,7 @@ router.get("/:foundationDocumentId", async (req, res) => {
     });
 
     res.send(fileBuffer);
-  } catch (error) {
-    logger.error("Error downloading foundation document:", error);
-    res.status(500).json({
-      error: "Failed to download foundation document",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as downloadFoundationRouter };

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
 import { setJobExcel, updateJob } from "../../../services/jobService";
 import { isDirectusAvailable } from "../../../lib/directus";
 import { ExcelGenerationService } from "../services/ExcelGenerationService";
+import { requireBodyParams, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
@@ -34,13 +34,11 @@ const router = Router();
  * Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
  * Content-Disposition: attachment; filename="extracted_data_2025-10-26.xlsx"
  */
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  requireBodyParams(["documentId", "jobId"], { atLeastOne: true }),
+  asyncHandler(async (req, res) => {
     const { documentId, jobId } = req.body;
-
-    if (!documentId && !jobId) {
-      return res.status(400).json({ error: "Document ID or Job ID is required" });
-    }
 
     // Generate Excel using service
     const generationService = new ExcelGenerationService();
@@ -74,13 +72,7 @@ router.post("/", async (req, res) => {
     });
 
     res.send(result.buffer);
-  } catch (error) {
-    logger.error("Error generating Excel file:", error);
-    res.status(500).json({
-      error: "Failed to generate Excel file",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as generateExcelRouter };

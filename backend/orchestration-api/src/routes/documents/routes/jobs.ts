@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
 import { getAllJobs } from "../../../services/jobService";
+import { asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
 // List all jobs (for debugging/admin purposes)
-router.get("/", async (_req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (_req, res) => {
     const jobs = getAllJobs().map((job) => ({
       jobId: job.jobId,
       status: job.status,
@@ -23,13 +24,7 @@ router.get("/", async (_req, res) => {
       jobs,
       count: jobs.length,
     });
-  } catch (error) {
-    logger.error("Error listing jobs:", error);
-    res.status(500).json({
-      error: "Failed to list jobs",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as jobsRouter };

@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
 import { createJob, updateJob, generateJobId } from "../../../services/jobService";
-import { isDirectusAvailable } from "../../../lib/directus";
 import { upload } from "../shared";
 import { DocumentValidationService } from "../services/DocumentValidationService";
+import { requireDirectus, requireFile, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
@@ -30,34 +30,27 @@ const router = Router();
  *   "message": "Document uploaded successfully. Processing started."
  * }
  */
-router.post("/", upload.single("file"), async (req, res) => {
-  try {
+router.post(
+  "/",
+  upload.single("file"),
+  requireFile,
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     logger.info("Starting PDF validation request");
-
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
 
     // Use Gemini for PDF processing
     const provider = "gemini";
 
     logger.info("File received for validation", {
-      originalName: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
+      originalName: req.file!.originalname,
+      mimetype: req.file!.mimetype,
+      size: req.file!.size,
       provider: provider,
     });
 
     // Generate job ID and create job
     const jobId = generateJobId();
-    createJob(jobId, req.file.originalname, req.file.size);
-
-    // Check if Directus is available (required for this endpoint)
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. Document upload requires Directus integration.",
-      });
-    }
+    createJob(jobId, req.file!.originalname, req.file!.size);
 
     // Step 1: Save file to Directus using service
     const validationService = new DocumentValidationService();
@@ -65,9 +58,9 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     try {
       sourceDocumentId = await validationService.saveSourceDocument({
-        filename: req.file.originalname,
-        buffer: req.file.buffer,
-        mimetype: req.file.mimetype,
+        filename: req.file!.originalname,
+        buffer: req.file!.buffer,
+        mimetype: req.file!.mimetype,
         jobId,
       });
       updateJob(jobId, { directusSourceDocumentId: sourceDocumentId });
@@ -132,19 +125,7 @@ router.post("/", upload.single("file"), async (req, res) => {
         failJob(jobId, error instanceof Error ? error.message : "Unexpected error");
       }
     });
-  } catch (error) {
-    logger.error("Error processing PDF validation:", error);
-
-    let errorMessage = "Došlo k chybě při zpracování souboru";
-    if (error instanceof Error) {
-      errorMessage = `Chyba: ${error.message}`;
-    }
-
-    res.status(500).json({
-      error: errorMessage,
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as validatePdfRouter };

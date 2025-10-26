@@ -1,18 +1,14 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
-import { getJob } from "../../../services/jobService";
+import { requireJob, asyncHandler, type RequestWithJob } from "../middleware/validation";
 
 const router = Router();
 
 // Get job status by job ID (in-memory, doesn't persist after restart)
-router.get("/:jobId", async (req, res) => {
-  try {
-    const { jobId } = req.params;
-
-    const job = getJob(jobId);
-    if (!job) {
-      return res.status(404).json({ error: "Job not found" });
-    }
+router.get(
+  "/:jobId",
+  requireJob("params"),
+  asyncHandler(async (req, res) => {
+    const job = (req as RequestWithJob).job;
 
     // Return job status without sensitive data like buffers
     const response = {
@@ -38,13 +34,7 @@ router.get("/:jobId", async (req, res) => {
     };
 
     res.json(response);
-  } catch (error) {
-    logger.error("Error getting job status:", error);
-    res.status(500).json({
-      error: "Failed to get job status",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as statusRouter };

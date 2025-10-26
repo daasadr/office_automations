@@ -1,21 +1,18 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
-import { directusDocumentService, isDirectusAvailable } from "../../../lib/directus";
+import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses } from "../shared";
+import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
 // Get document status by source document UUID (persists after restart)
-router.get("/:sourceDocumentId", async (req, res) => {
-  try {
+router.get(
+  "/:sourceDocumentId",
+  requireUrlParams(["sourceDocumentId"]),
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     const { sourceDocumentId } = req.params;
-
-    // Check if Directus is available
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
 
     logger.info("Fetching document status by source document ID", { sourceDocumentId });
 
@@ -52,6 +49,7 @@ router.get("/:sourceDocumentId", async (req, res) => {
       });
 
       if (latestResponse.response_json) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseData = latestResponse.response_json as any;
         // Only include validationResult if it has the required fields
         if (
@@ -104,13 +102,7 @@ router.get("/:sourceDocumentId", async (req, res) => {
     });
 
     res.json(response);
-  } catch (error) {
-    logger.error("Error getting document status by source ID:", error);
-    res.status(500).json({
-      error: "Failed to get document status",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as statusBySourceRouter };

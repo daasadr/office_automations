@@ -1,21 +1,19 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
 import { generateExcelFile } from "../../../lib/excel";
-import { directusDocumentService, isDirectusAvailable } from "../../../lib/directus";
+import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
+import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
 
 const router = Router();
 
 // Download Excel file by document UUID (persists after restart)
-router.get("/:documentId/:filename", async (req, res) => {
-  try {
+router.get(
+  "/:documentId/:filename",
+  requireUrlParams(["documentId", "filename"]),
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     const { documentId, filename } = req.params;
-
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
 
     logger.info("Downloading Excel by document ID", { documentId, filename });
 
@@ -52,6 +50,7 @@ router.get("/:documentId/:filename", async (req, res) => {
         });
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const validationResult = latestResponse.response_json as any;
       const excelResult = await generateExcelFile({
         jobId: documentId,
@@ -127,13 +126,7 @@ router.get("/:documentId/:filename", async (req, res) => {
     });
 
     res.send(fileBuffer);
-  } catch (error) {
-    logger.error("Error downloading Excel file by document ID:", error);
-    res.status(500).json({
-      error: "Failed to download Excel file",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as downloadByDocRouter };

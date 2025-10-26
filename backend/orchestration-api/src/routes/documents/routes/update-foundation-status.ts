@@ -1,31 +1,23 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
-import { directusDocumentService, isDirectusAvailable } from "../../../lib/directus";
+import { directusDocumentService } from "../../../lib/directus";
+import {
+  requireDirectus,
+  requireBodyParams,
+  validateEnum,
+  asyncHandler,
+} from "../middleware/validation";
 
 const router = Router();
 
 // Update foundation document status (approve/reject)
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  requireBodyParams(["foundationDocumentId", "status"]),
+  validateEnum("status", ["approved", "rejected", "draft"]),
+  requireDirectus,
+  asyncHandler(async (req, res) => {
     const { foundationDocumentId, status } = req.body;
-
-    if (!foundationDocumentId) {
-      return res.status(400).json({
-        error: "Foundation document ID is required",
-      });
-    }
-
-    if (!status || !["approved", "rejected", "draft"].includes(status)) {
-      return res.status(400).json({
-        error: "Invalid status. Must be 'approved', 'rejected', or 'draft'",
-      });
-    }
-
-    if (!isDirectusAvailable()) {
-      return res.status(503).json({
-        error: "Directus is not available. This endpoint requires Directus integration.",
-      });
-    }
 
     logger.info("Updating foundation document status", {
       foundationDocumentId,
@@ -53,13 +45,7 @@ router.post("/", async (req, res) => {
       },
       message: `Foundation document status updated to ${status}`,
     });
-  } catch (error) {
-    logger.error("Error updating foundation document status:", error);
-    res.status(500).json({
-      error: "Failed to update foundation document status",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
+  })
+);
 
 export { router as updateFoundationStatusRouter };

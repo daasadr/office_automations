@@ -1,0 +1,79 @@
+---
+export interface Props {
+  currentStep?: "welcome" | "upload" | "check" | "processing" | "download";
+}
+
+const { currentStep } = Astro.props;
+
+interface Step {
+  id: "upload" | "check" | "download";
+  number: number;
+  label: string;
+  href?: string;
+}
+
+const steps: Step[] = [
+  { id: "upload", number: 1, label: "Nahrání souboru", href: "/upload" },
+  { id: "check", number: 2, label: "Kontrola" },
+  { id: "download", number: 3, label: "Stažení Excel" },
+];
+
+const isStepActive = (stepId: string) => currentStep === stepId;
+const isStepClickable = (step: Step) => step.href !== undefined;
+---
+
+{currentStep && currentStep !== 'welcome' && (
+  <nav 
+    class="flex justify-center items-center py-8 gap-4" 
+    role="progressbar" 
+    aria-label="Průběh zpracování souboru"
+  >
+    {steps.map((step, index) => (
+      <>
+        {isStepClickable(step) ? (
+          <a 
+            href={step.href}
+            class={`flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-primary transition-colors ${
+              isStepActive(step.id) ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            <div 
+              class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${
+                isStepActive(step.id) 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground hover:bg-primary/10'
+              }`} 
+              aria-hidden="true"
+            >
+              {step.number}
+            </div>
+            <span>{step.label}</span>
+          </a>
+        ) : (
+          <div 
+            class={`flex items-center gap-2 text-sm font-medium ${
+              isStepActive(step.id) ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            <div 
+              class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
+                isStepActive(step.id) 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground'
+              }`} 
+              aria-hidden="true"
+            >
+              {step.number}
+            </div>
+            <span>{step.label}</span>
+          </div>
+        )}
+        
+        {index < steps.length - 1 && (
+          <div class="w-12 h-0.5 bg-muted" aria-hidden="true"></div>
+        )}
+      </>
+    ))}
+  </nav>
+)}
+

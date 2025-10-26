@@ -1,4 +1,6 @@
 ---
+import ProgressIndicator from "./components/ProgressIndicator.astro";
+
 export interface Props {
   title: string;
   description?: string;
@@ -53,6 +55,23 @@ const { title, description = "Aplikace pro zpracování souborů", currentStep }
         }
       }
       
+      /* Skip link styles */
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        z-index: 999;
+        padding: 1em;
+        background-color: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+        text-decoration: none;
+        border-radius: 0.25rem;
+      }
+      
+      .skip-link:focus {
+        left: 1em;
+        top: 1em;
+      }
+      
       /* Print styles */
       @media print {
         .progress-indicator {
@@ -68,39 +87,7 @@ const { title, description = "Aplikace pro zpracování souborů", currentStep }
     
     <div class="container mx-auto px-4 flex-1 flex flex-col">
       <!-- Progress indicator -->
-      {currentStep && currentStep !== 'welcome' && (
-        <nav class="flex justify-center items-center py-8 gap-4" role="progressbar" aria-label="Průběh zpracování souboru">
-          <a 
-            href="/upload" 
-            class={`flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-primary transition-colors ${currentStep === 'upload' ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${
-              currentStep === 'upload' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10'
-            }`} aria-hidden="true">1</div>
-            <span>Nahrání souboru</span>
-          </a>
-          
-          <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
-          
-          <div class={`flex items-center gap-2 text-sm font-medium ${
-            currentStep === 'check' ? 'text-primary' : 'text-muted-foreground'
-          }`}>
-            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-              currentStep === 'check' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-            }`} aria-hidden="true">2</div>
-            <span>Kontrola</span>
-          </div>
-          
-          <div class={`w-12 h-0.5 bg-muted`} aria-hidden="true"></div>
-          
-          <div class={`flex items-center gap-2 text-sm font-medium ${currentStep === 'download' ? 'text-primary' : 'text-muted-foreground'}`}>
-            <div class={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-              currentStep === 'download' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-            }`} aria-hidden="true">3</div>
-            <span>Stažení Excel</span>
-          </div>
-        </nav>
-      )}
+      <ProgressIndicator currentStep={currentStep} />
       
       <!-- Main content -->
       <main id="main-content" class="page-content flex-1" role="main">
@@ -110,46 +97,10 @@ const { title, description = "Aplikace pro zpracování souborů", currentStep }
     
     <!-- Progressive enhancement JavaScript -->
     <script>
-      // View transitions for supported browsers
-      const hasViewTransitions = 'startViewTransition' in document;
-      if (hasViewTransitions) {
-        // Modern browsers with native view transitions
-        document.addEventListener('astro:page-load', () => {
-          // Additional setup if needed
-        });
-      } else {
-        // Fallback for older browsers
-        document.addEventListener('astro:page-load', () => {
-          const content = document.querySelector('.page-content') as HTMLElement;
-          if (content) {
-            content.style.animation = 'slideIn 0.3s ease-out';
-          }
-        });
-      }
+      import { initializeLayoutUtils } from './utils';
       
-      // Enhance form submissions for better UX
-      document.addEventListener('astro:page-load', () => {
-        const forms = document.querySelectorAll('form[data-enhance]');
-        forms.forEach(form => {
-          form.addEventListener('submit', function() {
-            const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-            if (submitButton) {
-              submitButton.disabled = true;
-              submitButton.setAttribute('aria-busy', 'true');
-              const originalText = submitButton.textContent;
-              const loadingText = (submitButton as any).dataset?.loadingText || 'Zpracování...';
-              submitButton.textContent = loadingText;
-              
-              // Re-enable after timeout as failsafe
-              setTimeout(() => {
-                submitButton.disabled = false;
-                submitButton.removeAttribute('aria-busy');
-                if (originalText) submitButton.textContent = originalText;
-              }, 30000);
-            }
-          });
-        });
-      });
+      // Initialize all layout utilities
+      initializeLayoutUtils();
     </script>
   </body>
 </html>

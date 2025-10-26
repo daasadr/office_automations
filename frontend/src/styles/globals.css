@@ -69,15 +69,6 @@
     @apply outline-2 outline-ring outline-offset-2;
   }
 
-  /* Skip link for screen readers */
-  .skip-link {
-    @apply absolute -top-40 left-6 bg-primary text-primary-foreground px-2 py-1 rounded z-50;
-  }
-
-  .skip-link:focus {
-    @apply top-6;
-  }
-
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -104,5 +95,100 @@
         --background: 0 0% 0%;
       }
     }
+  }
+}
+
+/* Custom utility classes layer for reusable patterns */
+@layer utilities {
+  /* Skip link for screen readers - accessible navigation */
+  .skip-link {
+    @apply absolute -top-40 left-6 bg-primary text-primary-foreground px-2 py-1 rounded z-50 transition-all;
+  }
+
+  .skip-link:focus {
+    @apply top-6;
+  }
+
+  /* Page content container - common layout wrapper */
+  .page-content {
+    @apply w-full max-w-7xl mx-auto py-8;
+  }
+
+  /* Card utilities - reusable card patterns */
+  .card-elevated {
+    @apply bg-card text-card-foreground rounded-lg shadow-lg p-6 border border-border;
+  }
+
+  .card-flat {
+    @apply bg-card text-card-foreground rounded-lg p-6 border border-border;
+  }
+
+  /* Button reset - for custom button styling */
+  .btn-reset {
+    @apply appearance-none border-none bg-transparent p-0 m-0 cursor-pointer;
+  }
+
+  /* Centered container utilities */
+  .center-xy {
+    @apply flex items-center justify-center;
+  }
+
+  .center-x {
+    @apply flex justify-center;
+  }
+
+  .center-y {
+    @apply flex items-center;
+  }
+
+  /* Text utilities for common patterns */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Loading spinner utility */
+  .spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite];
+  }
+
+  /* Focus ring utility for interactive elements */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  /* Truncate utilities */
+  .truncate-2 {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .truncate-3 {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Scroll area utilities */
+  .scroll-area {
+    @apply overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-background;
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-background/80 backdrop-blur-sm border border-border;
+  }
+
+  /* Gradient text utility */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
   }
 }

@@ -24,17 +24,10 @@ const { title, description, currentStep } = Astro.props;
       <ProgressIndicator currentStep={currentStep} />
       
       <!-- Main content -->
-      <main id="main-content" class="page-content flex-1" role="main">
+      <main id="main-content" class="page-content flex-1" role="main" tabindex="-1">
         <slot />
       </main>
     </div>
     
-    <!-- Progressive enhancement JavaScript -->
-    <script>
-      import { initializeLayoutUtils } from './utils';
-      
-      // Initialize all layout utilities
-      initializeLayoutUtils();
-    </script>
   </body>
 </html>

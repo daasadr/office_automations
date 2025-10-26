@@ -16,7 +16,8 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
         </h4>
         <p className="text-sm text-blue-800 dark:text-blue-200">
           Stáhněte si dokument, zkontrolujte doplněná data a pokud jsou správná, schvalte dokument.
-          V případě chyb dokument odmítněte a obnovte stránku pro nové vygenerování.
+          Tím dojde k uložení změn do dokumentu na serveru. V případě chyb dokument odmítněte a
+          obnovte stránku pro nové vygenerování.
         </p>
       </div>
 
@@ -37,7 +38,7 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
           ) : (
             <>
               <Check className="mr-2 h-4 w-4" />
-              Přijmout (Schválit)
+              Schválit
             </>
           )}
         </Button>

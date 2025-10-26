@@ -12,7 +12,7 @@ import {
   CONTENT_TYPE_PDF,
   MAX_FILE_SIZE,
   HTTP_STATUS,
-} from "../../constants";
+} from "../../server-constants";
 
 const validatePdfHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

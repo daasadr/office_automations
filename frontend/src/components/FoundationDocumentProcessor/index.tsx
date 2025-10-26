@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLogger } from "@/lib/client-logger";
-import { ORCHESTRATION_API_URL } from "@/constants";
 import type { FoundationDocumentProcessorProps, ProcessingResult } from "./types";
 import { ProcessingState } from "./components/ProcessingState";
 import { StatusUpdateMessage } from "./components/StatusUpdateMessage";
@@ -73,10 +72,26 @@ export function FoundationDocumentProcessor({
         foundationDocumentId: result.foundationDocument.id,
       });
 
-      // Download directly from backend to avoid proxy corruption
-      const downloadUrl = `${ORCHESTRATION_API_URL}/documents/download-foundation/${result.foundationDocument.id}`;
+      // Use the local API route to download the foundation document
+      const response = await fetch("/api/download-foundation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          foundationDocumentId: result.foundationDocument.id,
+        }),
+      });
 
-      // Use a hidden link to trigger download
+      if (!response.ok) {
+        throw new Error(`Download failed with status: ${response.status}`);
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a download URL and trigger download
+      const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
       a.download = `${result.foundationDocument.title}.xlsx`;
@@ -84,9 +99,10 @@ export function FoundationDocumentProcessor({
       document.body.appendChild(a);
       a.click();
 
-      // Clean up after a short delay
+      // Clean up
       setTimeout(() => {
         document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
       }, 100);
 
       log.info("Foundation document download triggered", {

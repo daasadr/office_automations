@@ -1,6 +1,5 @@
-// API Configuration
-export const ORCHESTRATION_API_URL =
-  import.meta.env.ORCHESTRATION_API_URL || "http://localhost:3001";
+// Client-safe constants - no environment variables or server-only configuration
+// This file can be safely imported by client-side components
 
 // HTTP Headers
 export const CONTENT_TYPE_JSON = "application/json";

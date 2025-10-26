@@ -6,7 +6,7 @@ import {
   loggedFetch,
 } from "../../../lib/middleware";
 import { generateRequestId, logPerformance } from "../../../lib/logger";
-import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "../../../constants";
+import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "../../../server-constants";
 
 const statusBySourceHandler: APIRoute = async ({ params }) => {
   const requestId = generateRequestId();

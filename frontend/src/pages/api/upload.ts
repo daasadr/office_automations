@@ -14,7 +14,7 @@ import {
   MAX_FILE_SIZE,
   ALLOWED_FILE_TYPES,
   HTTP_STATUS,
-} from "../../constants";
+} from "../../server-constants";
 
 const uploadHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

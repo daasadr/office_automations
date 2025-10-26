@@ -35,7 +35,7 @@ export function UploadForm() {
         </div>
       </form>
 
-      <ProcessingOverlay isVisible={showProcessing} onClose={handleCloseProcessing} />
+      <ProcessingOverlay isVisible={showProcessing} />
     </>
   );
 }

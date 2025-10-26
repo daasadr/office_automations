@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { CheckCircle, Upload } from "lucide-react";
 import { formatFileSize } from "@/components/UploadForm/actions/fileValidation";
+import { cn } from "@/lib/utils";
 
 interface FileDropZoneProps {
   selectedFile: File | null;
@@ -32,18 +33,17 @@ export function FileDropZone({
     }
   };
 
-  const dropZoneClassName = `border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-    dragOver
-      ? "border-primary bg-primary/10"
-      : selectedFile
-        ? "border-primary bg-primary/5"
-        : "border-muted-foreground/25 hover:border-primary hover:bg-primary/5"
-  }`;
-
   return (
     /* biome-ignore lint/a11y/noStaticElementInteractions: File drop zone needs click and keyboard interactions */
     <div
-      className={dropZoneClassName}
+      className={cn(
+        "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+        dragOver && "border-primary bg-primary/10",
+        !dragOver && selectedFile && "border-primary bg-primary/5",
+        !dragOver &&
+          !selectedFile &&
+          "border-muted-foreground/25 hover:border-primary hover:bg-primary/5"
+      )}
       onClick={handleAreaClick}
       onKeyDown={handleAreaClick}
       onDragOver={onDragOver}

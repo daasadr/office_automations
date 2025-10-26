@@ -2,6 +2,7 @@ import type {
   ExtractedRecordDetail,
   DuplicateRecord,
 } from "@/components/FoundationDocumentProcessor/types";
+import { cn } from "@/lib/utils";
 
 interface ExtractedRecordsDetailProps {
   extractedRecords?: ExtractedRecordDetail[];
@@ -144,9 +145,10 @@ export function ExtractedRecordsDetail({
                     {detail.records.map((record) => (
                       <tr
                         key={`${detail.sheetName}-${record.poradoveCislo}-${record.datumVzniku}`}
-                        className={`border-b border-gray-100 dark:border-gray-800 last:border-0 ${
-                          record.isDuplicate ? "bg-orange-50 dark:bg-orange-900/20" : ""
-                        }`}
+                        className={cn(
+                          "border-b border-gray-100 dark:border-gray-800 last:border-0",
+                          record.isDuplicate && "bg-orange-50 dark:bg-orange-900/20"
+                        )}
                         title={
                           record.isDuplicate
                             ? "Tento záznam byl přeskočen jako duplikát"
@@ -164,28 +166,43 @@ export function ExtractedRecordsDetail({
                               </span>
                             )}
                             <span
-                              className={
+                              className={cn(
                                 record.isDuplicate
                                   ? "text-orange-900 dark:text-orange-100 line-through"
                                   : "text-gray-900 dark:text-white"
-                              }
+                              )}
                             >
                               {record.poradoveCislo}
                             </span>
                           </div>
                         </td>
                         <td
-                          className={`py-2 px-3 ${record.isDuplicate ? "text-orange-900 dark:text-orange-100 line-through" : "text-gray-900 dark:text-white"}`}
+                          className={cn(
+                            "py-2 px-3",
+                            record.isDuplicate
+                              ? "text-orange-900 dark:text-orange-100 line-through"
+                              : "text-gray-900 dark:text-white"
+                          )}
                         >
                           {record.datumVzniku || "-"}
                         </td>
                         <td
-                          className={`py-2 px-3 text-right ${record.isDuplicate ? "text-orange-900 dark:text-orange-100 line-through" : "text-gray-900 dark:text-white"}`}
+                          className={cn(
+                            "py-2 px-3 text-right",
+                            record.isDuplicate
+                              ? "text-orange-900 dark:text-orange-100 line-through"
+                              : "text-gray-900 dark:text-white"
+                          )}
                         >
                           {record.mnozstviVznikleho || "-"}
                         </td>
                         <td
-                          className={`py-2 px-3 text-right ${record.isDuplicate ? "text-orange-900 dark:text-orange-100 line-through" : "text-gray-900 dark:text-white"}`}
+                          className={cn(
+                            "py-2 px-3 text-right",
+                            record.isDuplicate
+                              ? "text-orange-900 dark:text-orange-100 line-through"
+                              : "text-gray-900 dark:text-white"
+                          )}
                         >
                           {record.mnozstviPredaneho || "-"}
                         </td>

@@ -1,13 +1,35 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
-import { validateDocumentContent } from "../../../services/llm";
 import { createJob, updateJob, generateJobId } from "../../../services/jobService";
-import { directusDocumentService, isDirectusAvailable } from "../../../lib/directus";
+import { isDirectusAvailable } from "../../../lib/directus";
 import { upload } from "../shared";
+import { DocumentValidationService } from "../services/DocumentValidationService";
 
 const router = Router();
 
-// Upload and validate PDF document
+/**
+ * POST /validate-pdf
+ *
+ * Uploads and validates a PDF document using LLM (Gemini).
+ * The document is saved to Directus and processed asynchronously.
+ *
+ * @route POST /documents/validate-pdf
+ * @param {Express.Multer.File} file - The PDF file to validate (multipart/form-data)
+ * @returns {Object} 200 - Success response with jobId and sourceDocumentId
+ * @returns {Object} 400 - Invalid request (no file)
+ * @returns {Object} 503 - Directus unavailable
+ *
+ * @example
+ * // Response
+ * {
+ *   "success": true,
+ *   "jobId": "job-abc123",
+ *   "provider": "gemini",
+ *   "directusSourceDocumentId": "doc-xyz789",
+ *   "status": "processing",
+ *   "message": "Document uploaded successfully. Processing started."
+ * }
+ */
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     logger.info("Starting PDF validation request");
@@ -30,39 +52,29 @@ router.post("/", upload.single("file"), async (req, res) => {
     const jobId = generateJobId();
     createJob(jobId, req.file.originalname, req.file.size);
 
-    // Step 1: Save file to Directus (if available) - REQUIRED
-    let sourceDocumentId: string | undefined;
-    if (isDirectusAvailable()) {
-      try {
-        logger.info("Saving source document to Directus", { jobId });
-        const sourceDocument = await directusDocumentService.createSourceDocument({
-          title: req.file.originalname,
-          file: {
-            filename: req.file.originalname,
-            buffer: req.file.buffer,
-            mimetype: req.file.mimetype,
-          },
-          processingStatus: "processing",
-        });
-        sourceDocumentId = sourceDocument.id;
-        updateJob(jobId, { directusSourceDocumentId: sourceDocumentId });
-        logger.info("Source document saved to Directus", {
-          jobId,
-          sourceDocumentId,
-        });
-      } catch (directusError) {
-        logger.error("Failed to save source document to Directus", {
-          jobId,
-          error: directusError,
-        });
-        return res.status(500).json({
-          error: "Failed to save document",
-          details: directusError instanceof Error ? directusError.message : "Unknown error",
-        });
-      }
-    } else {
+    // Check if Directus is available (required for this endpoint)
+    if (!isDirectusAvailable()) {
       return res.status(503).json({
         error: "Directus is not available. Document upload requires Directus integration.",
+      });
+    }
+
+    // Step 1: Save file to Directus using service
+    const validationService = new DocumentValidationService();
+    let sourceDocumentId: string;
+
+    try {
+      sourceDocumentId = await validationService.saveSourceDocument({
+        filename: req.file.originalname,
+        buffer: req.file.buffer,
+        mimetype: req.file.mimetype,
+        jobId,
+      });
+      updateJob(jobId, { directusSourceDocumentId: sourceDocumentId });
+    } catch (error) {
+      return res.status(500).json({
+        error: "Failed to save document",
+        details: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
@@ -86,81 +98,38 @@ router.post("/", upload.single("file"), async (req, res) => {
     // Using setImmediate to ensure response is sent first
     setImmediate(async () => {
       try {
-        logger.info(`Starting async PDF processing with Gemini`, { jobId, sourceDocumentId });
-        const startTime = Date.now();
-        const validationResult = await validateDocumentContent(
-          new Uint8Array(req.file!.buffer).buffer,
-          { provider: "gemini" }
-        );
-        const processingTimeMs = Date.now() - startTime;
-
-        // Complete the job - import completeJob here to avoid circular dependency
-        const { completeJob } = await import("../../../services/jobService");
-        completeJob(jobId, validationResult, "gemini");
-
-        // Save LLM response to Directus
-        try {
-          logger.info("Saving LLM response to Directus", { jobId, sourceDocumentId });
-          const response = await directusDocumentService.createResponse({
-            sourceDocumentId: sourceDocumentId!,
-            prompt: "PDF document validation and data extraction",
-            responseJson: {
-              present: validationResult.present,
-              missing: validationResult.missing,
-              confidence: validationResult.confidence,
-              extracted_data: validationResult.extracted_data,
-            },
-            modelName: "gemini-2.5-flash",
-            tokenCount: undefined,
-            processingTimeMs,
-            status: "completed",
-          });
-          updateJob(jobId, { directusResponseId: response.id });
-
-          // Update source document status
-          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId!, "completed");
-
-          logger.info("LLM response saved to Directus", {
-            jobId,
-            sourceDocumentId,
-            responseId: response.id,
-          });
-        } catch (directusError) {
-          logger.error("Failed to save LLM response to Directus", {
-            jobId,
-            sourceDocumentId,
-            error: directusError,
-          });
-        }
-
-        logger.info("PDF validation completed successfully with Gemini", {
+        // Process the document using the service
+        const result = await validationService.processDocument({
           jobId,
-          sourceDocumentId,
-          processingTimeMs,
+          filename: req.file!.originalname,
+          buffer: req.file!.buffer,
+          mimetype: req.file!.mimetype,
+          size: req.file!.size,
         });
-      } catch (geminiError) {
-        logger.error("Gemini PDF validation failed", {
+
+        if (result.error) {
+          // Import failJob here to avoid circular dependency
+          const { failJob } = await import("../../../services/jobService");
+          failJob(jobId, result.error);
+        } else if (result.validationResult) {
+          // Complete the job - import completeJob here to avoid circular dependency
+          const { completeJob } = await import("../../../services/jobService");
+          completeJob(jobId, result.validationResult, "gemini");
+
+          // Update job with response ID
+          if (result.responseId) {
+            updateJob(jobId, { directusResponseId: result.responseId });
+          }
+        }
+      } catch (error) {
+        logger.error("Unexpected error in async PDF processing", {
           jobId,
           sourceDocumentId,
-          error: geminiError,
+          error,
         });
         // Import failJob here to avoid circular dependency
         const { failJob } = await import("../../../services/jobService");
-        failJob(
-          jobId,
-          geminiError instanceof Error ? geminiError.message : "PDF validation failed"
-        );
-
-        // Update Directus status
-        try {
-          await directusDocumentService.updateSourceDocumentStatus(sourceDocumentId!, "failed");
-        } catch (directusError) {
-          logger.warn("Failed to update source document status in Directus", {
-            jobId,
-            sourceDocumentId,
-            error: directusError,
-          });
-        }
+        failJob(jobId, error instanceof Error ? error.message : "Unexpected error");
       }
     });
   } catch (error) {

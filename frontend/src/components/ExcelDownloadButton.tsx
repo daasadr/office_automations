@@ -165,6 +165,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
   };
 
   const isButtonDisabled = disabled || (state.status !== "ready" && state.status !== "unavailable");
+  const isLoading = state.status === "generating" || state.status === "preparing";
   const buttonOpacity = isButtonDisabled ? "opacity-50" : "opacity-100";
   const pointerEvents = isButtonDisabled ? "pointer-events-none" : "pointer-events-auto";
 
@@ -176,6 +177,7 @@ export const ExcelDownloadButton: FC<ExcelDownloadButtonProps> = ({
       onClick={state.status === "unavailable" ? handleRetryClick : handleDownloadClick}
       className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors ${buttonOpacity} ${pointerEvents} ${className}`}
       aria-disabled={isButtonDisabled}
+      aria-busy={isLoading}
       title={getButtonTitle()}
     >
       <Download className="w-4 h-4" aria-hidden="true" />

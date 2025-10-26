@@ -24,6 +24,7 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
         <Button
           onClick={onApprove}
           disabled={isUpdating}
+          aria-busy={isUpdating}
           size="lg"
           variant="default"
           className="flex-1 bg-green-600 hover:bg-green-700 text-white"
@@ -44,6 +45,7 @@ export function ApprovalActions({ onApprove, onReject, isUpdating }: ApprovalAct
         <Button
           onClick={onReject}
           disabled={isUpdating}
+          aria-busy={isUpdating}
           size="lg"
           variant="destructive"
           className="flex-1"

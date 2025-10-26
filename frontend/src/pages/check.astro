@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { ValidationStatusPoller } from "@/components/ValidationStatusPoller";
+import { ValidationStatusPoller } from "@/components/ValidationStatusPoller/index";
 
 // Get document UUID or job ID from query parameters
 const documentId = Astro.url.searchParams.get("doc") ?? undefined;
@@ -13,14 +13,7 @@ if (!documentId && !jobId) {
 ---
 
 <BaseLayout title="Kontrola dokumentu" currentStep="check">
-  <div class="container mx-auto py-8">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold tracking-tight mb-4">Kontrola dokumentu</h1>
-      <p class="text-lg text-muted-foreground">
-        Výsledky analýzy vašeho PDF dokumentu
-      </p>
-    </div>
-    
+  <div class="container mx-auto py-8">    
     <ValidationStatusPoller 
       client:load
       documentId={documentId}

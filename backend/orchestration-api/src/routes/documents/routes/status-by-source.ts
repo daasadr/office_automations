@@ -3,6 +3,7 @@ import { logger } from "../../../utils/logger";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses } from "../shared";
 import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
+import { parseResponseJson } from "../types";
 
 const router = Router();
 
@@ -49,14 +50,9 @@ router.get(
       });
 
       if (latestResponse.response_json) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const responseData = latestResponse.response_json as any;
+        const responseData = parseResponseJson(latestResponse.response_json);
         // Only include validationResult if it has the required fields
-        if (
-          responseData.present !== undefined &&
-          responseData.missing !== undefined &&
-          responseData.confidence !== undefined
-        ) {
+        if (responseData) {
           validationResult = responseData;
           logger.info("Valid response data found", {
             sourceDocumentId,
@@ -67,9 +63,7 @@ router.get(
           logger.warn("Response data incomplete, treating as not ready", {
             sourceDocumentId,
             responseId: latestResponse.id,
-            hasPresent: responseData.present !== undefined,
-            hasMissing: responseData.missing !== undefined,
-            hasConfidence: responseData.confidence !== undefined,
+            hasValidStructure: false,
           });
         }
       }

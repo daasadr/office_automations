@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
 import { generateExcelFile } from "../../../lib/excel";
+import type { ValidationResult as LLMValidationResult } from "../../../services/llm";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
 import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
+import { parseResponseJson, getExtractedData, ensureProvider } from "../types";
 
 const router = Router();
 
@@ -44,17 +46,17 @@ router.get(
       // No generated document found, regenerate it
       logger.info("No generated document found, regenerating", { documentId });
 
-      if (!latestResponse.response_json) {
+      const validationResult = parseResponseJson(latestResponse.response_json);
+
+      if (!validationResult) {
         return res.status(404).json({
-          error: "No response data found for this document",
+          error: "No valid response data found for this document",
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const validationResult = latestResponse.response_json as any;
       const excelResult = await generateExcelFile({
         jobId: documentId,
-        validationResult,
+        validationResult: ensureProvider(validationResult) as unknown as LLMValidationResult,
       });
 
       if (!excelResult.success || !excelResult.buffer) {
@@ -66,6 +68,7 @@ router.get(
 
       // Save the regenerated document to Directus
       try {
+        const extractedData = getExtractedData(validationResult);
         await directusDocumentService.createGeneratedDocument({
           responseId: latestResponse.id!,
           file: {
@@ -78,8 +81,8 @@ router.get(
           generationStatus: "completed",
           generationParams: {
             documentId,
-            extractedDataCount: validationResult.extracted_data?.length || 0,
-            confidence: validationResult.confidence || 0,
+            extractedDataCount: extractedData.length,
+            confidence: validationResult.confidence,
           },
         });
       } catch (saveError) {

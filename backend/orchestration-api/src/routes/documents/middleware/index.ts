@@ -16,5 +16,9 @@ export {
   validateFilename,
   errorHandler,
   asyncHandler,
-  type RequestWithJob,
+  hasJobAttached,
+  getJobFromRequest,
 } from "./validation";
+
+// Re-export types from centralized types file
+export type { RequestWithJob } from "../types";

@@ -6,6 +6,16 @@ import { directusDocumentService } from "../../../lib/directus";
 import type { FoundationDocument } from "../../../lib/directus/types";
 import type { LLMResponseSchema } from "../../../llmResponseSchema";
 import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
+import {
+  parseResponseJson,
+  isValidationResult,
+  toLLMResponseSchema,
+  getStringValue,
+  getNumberValue,
+  getRecordValue,
+  getArrayValue,
+  isRecord,
+} from "../types";
 
 /**
  * Result of foundation document processing
@@ -99,8 +109,13 @@ export class FoundationProcessingService {
       responseDate: latestResponse.created_at,
     });
 
+    const validationResult = parseResponseJson(latestResponse.response_json);
+    if (!validationResult) {
+      throw new Error("Invalid response data structure");
+    }
+
     return {
-      llmResponseData: latestResponse.response_json as unknown as LLMResponseSchema,
+      llmResponseData: toLLMResponseSchema(validationResult),
       responseId: latestResponse.id!,
     };
   }
@@ -121,8 +136,12 @@ export class FoundationProcessingService {
       throw new Error("Job not found or has no validation result");
     }
 
+    if (!isValidationResult(job.validationResult)) {
+      throw new Error("Job validation result has invalid structure");
+    }
+
     return {
-      llmResponseData: job.validationResult as unknown as LLMResponseSchema,
+      llmResponseData: toLLMResponseSchema(job.validationResult),
       sourceDocumentId: job.directusSourceDocumentId,
     };
   }
@@ -143,8 +162,13 @@ export class FoundationProcessingService {
       throw new Error("Response not found or has no response data");
     }
 
+    const validationResult = parseResponseJson(response.response_json);
+    if (!validationResult) {
+      throw new Error("Invalid response data structure");
+    }
+
     return {
-      llmResponseData: response.response_json as unknown as LLMResponseSchema,
+      llmResponseData: toLLMResponseSchema(validationResult),
       sourceDocumentId: response.source_document,
     };
   }
@@ -242,53 +266,67 @@ export class FoundationProcessingService {
    */
   formatExtractedRecordsDetail(extractedData: LLMExtractedData[]): Record<string, unknown>[] {
     return extractedData.map((extractedItem: LLMExtractedData) => {
-      const extractedAsRecord = extractedItem as unknown as Record<string, unknown>;
-      const kodOdpadu = extractedItem["kód odpadu"] || (extractedAsRecord.kod_odpadu as string);
-      const odberatel = extractedItem.odběratel;
-      const odberatelAlt = extractedAsRecord.odberatel as Record<string, unknown> | undefined;
+      if (!isRecord(extractedItem)) {
+        return {};
+      }
 
-      const odberatelIco =
-        odberatel?.IČO || (odberatelAlt?.ico as string) || (odberatelAlt?.IČO as string) || "";
+      const kodOdpadu =
+        getStringValue(extractedItem, "kód odpadu") || getStringValue(extractedItem, "kod_odpadu");
+      const odberatel = extractedItem.odběratel;
+      const odberatelAlt = getRecordValue(extractedItem, "odberatel");
+
+      let odberatelIco = "";
+      if (odberatel && typeof odberatel === "object" && "IČO" in odberatel) {
+        odberatelIco = String(odberatel.IČO);
+      } else if (odberatelAlt) {
+        odberatelIco = getStringValue(odberatelAlt, "ico") || getStringValue(odberatelAlt, "IČO");
+      }
+
       const sheetName = `${kodOdpadu} ${odberatelIco}`.trim();
 
       // Get table data from various possible field names
+      const tabulkaValue = extractedItem.tabulka;
       const tabulka =
-        extractedItem.tabulka ||
-        (extractedAsRecord.tabulka_evidence as Record<string, unknown>[]) ||
-        (extractedAsRecord.tabulka_pohybu as Record<string, unknown>[]) ||
+        (Array.isArray(tabulkaValue) ? tabulkaValue : null) ||
+        getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_evidence") ||
+        getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_pohybu") ||
         [];
+
+      let odberatelNazev = "";
+      if (odberatel && typeof odberatel === "object" && "název" in odberatel) {
+        odberatelNazev = String(odberatel.název);
+      } else if (odberatelAlt) {
+        odberatelNazev = getStringValue(odberatelAlt, "nazev");
+      }
 
       return {
         sheetName,
         kodOdpadu,
         nazevOdpadu:
-          extractedItem["název/druh odpadu"] ||
-          (extractedAsRecord.nazev_druhu_odpadu as string) ||
-          "",
+          getStringValue(extractedItem, "název/druh odpadu") ||
+          getStringValue(extractedItem, "nazev_druhu_odpadu"),
         odberatel: {
           ico: odberatelIco,
-          nazev: odberatel?.název || (odberatelAlt?.nazev as string) || "",
+          nazev: odberatelNazev,
         },
         records: tabulka.map((record) => {
-          const recordAsRecord = record as unknown as Record<string, unknown>;
+          if (!isRecord(record)) {
+            return {};
+          }
+
           return {
             poradoveCislo:
-              (record["pořadové číslo"] as number) ||
-              (recordAsRecord.poradove_cislo as number) ||
-              0,
+              getNumberValue(record, "pořadové číslo") || getNumberValue(record, "poradove_cislo"),
             datumVzniku:
-              (record["datum vzniku"] as string) ||
-              (recordAsRecord.datum_vzniku as string) ||
-              (recordAsRecord.datum as string) ||
-              "",
+              getStringValue(record, "datum vzniku") ||
+              getStringValue(record, "datum_vzniku") ||
+              getStringValue(record, "datum"),
             mnozstviVznikleho:
-              (record["množství vzniklého odpadu"] as string) ||
-              (recordAsRecord.mnozstvi_vznikleho_odpadu as string) ||
-              "",
+              getStringValue(record, "množství vzniklého odpadu") ||
+              getStringValue(record, "mnozstvi_vznikleho_odpadu"),
             mnozstviPredaneho:
-              (record["množství předaného odpadu"] as string) ||
-              (recordAsRecord.mnozstvi_predaneho_odpadu as string) ||
-              "",
+              getStringValue(record, "množství předaného odpadu") ||
+              getStringValue(record, "mnozstvi_predaneho_odpadu"),
           };
         }),
       };

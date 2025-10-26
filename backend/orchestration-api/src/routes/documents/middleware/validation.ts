@@ -2,13 +2,29 @@ import type { Request, Response, NextFunction } from "express";
 import { logger } from "../../../utils/logger";
 import { isDirectusAvailable } from "../../../lib/directus";
 import { getJob } from "../../../services/jobService";
-import type { JobData } from "../../../services/jobService";
+import type { RequestWithJob } from "../types";
+
+// ============================================================================
+// Type Narrowing Helpers
+// ============================================================================
 
 /**
- * Extended Request type with job attached
+ * Type guard to check if request has job attached
+ * Used after requireJob middleware
  */
-export interface RequestWithJob extends Request {
-  job: JobData;
+export function hasJobAttached(req: Request): req is RequestWithJob {
+  return "job" in req && req.job !== undefined;
+}
+
+/**
+ * Get job from request (guaranteed by middleware)
+ * This replaces (req as RequestWithJob).job pattern
+ */
+export function getJobFromRequest(req: Request): RequestWithJob["job"] {
+  if (!hasJobAttached(req)) {
+    throw new Error("Job not attached to request. Use requireJob middleware first.");
+  }
+  return req.job;
 }
 
 /**
@@ -143,7 +159,9 @@ export const requireJob = (source: "params" | "body" = "params") => {
     }
 
     // Attach job to request for downstream use
-    (req as RequestWithJob).job = job;
+    // Note: This is the only place where we need to extend the Request type
+    // All downstream code should use getJobFromRequest() helper
+    Object.assign(req, { job });
     next();
   };
 };
@@ -194,7 +212,7 @@ export const validateEnum = (
  * Expects job to be attached to req.job (use after requireJob middleware)
  */
 export const requireJobExcel = (req: Request, res: Response, next: NextFunction) => {
-  const job = (req as RequestWithJob).job;
+  const job = getJobFromRequest(req);
 
   if (!job) {
     logger.error("requireJobExcel middleware used without requireJob", {
@@ -228,7 +246,7 @@ export const requireJobExcel = (req: Request, res: Response, next: NextFunction)
  * Expects filename in req.params
  */
 export const validateFilename = (req: Request, res: Response, next: NextFunction) => {
-  const job = (req as RequestWithJob).job;
+  const job = getJobFromRequest(req);
   const { filename } = req.params;
 
   if (!job) {

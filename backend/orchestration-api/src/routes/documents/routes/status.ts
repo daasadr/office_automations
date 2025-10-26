@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireJob, asyncHandler, type RequestWithJob } from "../middleware/validation";
+import { requireJob, asyncHandler, getJobFromRequest } from "../middleware/validation";
 
 const router = Router();
 
@@ -8,7 +8,7 @@ router.get(
   "/:jobId",
   requireJob("params"),
   asyncHandler(async (req, res) => {
-    const job = (req as RequestWithJob).job;
+    const job = getJobFromRequest(req);
 
     // Return job status without sensitive data like buffers
     const response = {

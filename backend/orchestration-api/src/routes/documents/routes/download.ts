@@ -4,7 +4,7 @@ import {
   requireJobExcel,
   validateFilename,
   asyncHandler,
-  type RequestWithJob,
+  getJobFromRequest,
 } from "../middleware/validation";
 
 const router = Router();
@@ -16,7 +16,7 @@ router.get(
   requireJobExcel,
   validateFilename,
   asyncHandler(async (req, res) => {
-    const job = (req as RequestWithJob).job;
+    const job = getJobFromRequest(req);
 
     // Note: excelBuffer and excelFilename are guaranteed to exist by requireJobExcel middleware
     res.set({

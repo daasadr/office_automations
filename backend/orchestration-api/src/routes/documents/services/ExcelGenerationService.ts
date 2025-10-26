@@ -1,9 +1,16 @@
 import { logger } from "../../../utils/logger";
 import { generateExcelFile } from "../../../lib/excel";
-import type { ValidationResult } from "../../../services/llm";
+import type { ValidationResult as LLMValidationResult } from "../../../services/llm";
 import { getJob } from "../../../services/jobService";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses } from "../shared";
+import {
+  parseResponseJson,
+  isValidationResult,
+  getExtractedData,
+  ensureProvider,
+  type ValidationResult,
+} from "../types";
 
 /**
  * Result of Excel generation
@@ -48,7 +55,7 @@ export class ExcelGenerationService {
    */
   async getValidationDataFromDirectus(
     documentId: string
-  ): Promise<{ validationResult: Record<string, unknown>; responseId: string } | null> {
+  ): Promise<{ validationResult: ValidationResult; responseId: string } | null> {
     try {
       logger.info("Fetching validation data from Directus by document ID", { documentId });
 
@@ -63,13 +70,14 @@ export class ExcelGenerationService {
           return dateB - dateA;
         })[0];
 
-        if (latestResponse.response_json) {
+        const validationResult = parseResponseJson(latestResponse.response_json);
+        if (validationResult) {
           logger.info("Retrieved validation data from Directus", {
             documentId,
             responseId: latestResponse.id,
           });
           return {
-            validationResult: latestResponse.response_json as Record<string, unknown>,
+            validationResult,
             responseId: latestResponse.id!,
           };
         }
@@ -91,11 +99,11 @@ export class ExcelGenerationService {
    * @param jobId - The job ID
    * @returns Validation result or null if not found
    */
-  getValidationDataFromJob(jobId: string): Record<string, unknown> | null {
+  getValidationDataFromJob(jobId: string): ValidationResult | null {
     const job = getJob(jobId);
-    if (job?.validationResult) {
+    if (job?.validationResult && isValidationResult(job.validationResult)) {
       logger.info("Retrieved validation data from job", { jobId });
-      return job.validationResult as unknown as Record<string, unknown>;
+      return job.validationResult;
     }
     return null;
   }
@@ -109,13 +117,13 @@ export class ExcelGenerationService {
    */
   async generateExcelFromValidation(params: {
     identifier: string;
-    validationResult: Record<string, unknown>;
+    validationResult: ValidationResult;
   }): Promise<{ buffer: Buffer; filename: string }> {
     const { identifier, validationResult } = params;
 
     const excelResult = await generateExcelFile({
       jobId: identifier,
-      validationResult: validationResult as unknown as ValidationResult,
+      validationResult: ensureProvider(validationResult) as unknown as LLMValidationResult,
     });
 
     if (!excelResult.success || !excelResult.buffer || !excelResult.filename) {
@@ -138,7 +146,7 @@ export class ExcelGenerationService {
     responseId: string;
     buffer: Buffer;
     filename: string;
-    validationResult: Record<string, unknown>;
+    validationResult: ValidationResult;
     documentId?: string;
     jobId?: string;
   }): Promise<string> {
@@ -164,12 +172,8 @@ export class ExcelGenerationService {
         generationParams: {
           documentId: documentId || undefined,
           jobId: jobId || undefined,
-          extractedDataCount: Array.isArray(
-            (validationResult as Record<string, unknown>)?.extracted_data
-          )
-            ? ((validationResult as Record<string, unknown>).extracted_data as unknown[]).length
-            : 0,
-          confidence: ((validationResult as Record<string, unknown>)?.confidence as number) || 0,
+          extractedDataCount: getExtractedData(validationResult).length,
+          confidence: validationResult.confidence,
         },
       });
 
@@ -212,7 +216,7 @@ export class ExcelGenerationService {
         };
       }
 
-      let validationResult: Record<string, unknown> | null = null;
+      let validationResult: ValidationResult | null = null;
       let identifier = documentId || jobId!;
       let responseId: string | undefined;
 

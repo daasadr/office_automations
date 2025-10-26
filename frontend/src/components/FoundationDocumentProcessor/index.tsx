@@ -199,6 +199,20 @@ export function FoundationDocumentProcessor({
             {/* Success Message if status was updated */}
             {statusUpdateSuccess && <StatusUpdateMessage status={statusUpdateSuccess} />}
 
+            {/* Sheets Not Found Warning */}
+            <SheetsNotFoundWarning sheetsNotFound={result.processing.sheetsNotFound} />
+
+            {/* Processing Statistics */}
+            <ProcessingStatistics
+              recordsAdded={result.processing.recordsAdded}
+              extractedDataCount={result.processing.extractedDataCount}
+              confidence={result.processing.confidence}
+              sheetsModified={result.processing.sheetsModified}
+            />
+
+            {/* Duplicate Warning */}
+            <DuplicatesWarning duplicates={result.processing.duplicatesSkipped} />
+
             {/* Download Button */}
             <DownloadSection onDownload={handleDownload} isDownloading={isDownloading} />
 
@@ -211,19 +225,7 @@ export function FoundationDocumentProcessor({
               />
             )}
 
-            {/* Duplicate Warning */}
-            <DuplicatesWarning duplicates={result.processing.duplicatesSkipped} />
-
-            {/* Sheets Not Found Warning */}
-            <SheetsNotFoundWarning sheetsNotFound={result.processing.sheetsNotFound} />
-
-            {/* Processing Statistics */}
-            <ProcessingStatistics
-              recordsAdded={result.processing.recordsAdded}
-              extractedDataCount={result.processing.extractedDataCount}
-              confidence={result.processing.confidence}
-              sheetsModified={result.processing.sheetsModified}
-            />
+            <div className="py-4">&nbsp;</div>
 
             {/* Extracted Records Detail */}
             <ExtractedRecordsDetail

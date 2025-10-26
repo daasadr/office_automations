@@ -27,15 +27,21 @@ export function DuplicatesWarning({ duplicates }: DuplicatesWarningProps) {
             {duplicates.length} záznamů bylo přeskočeno, protože stejné datum a množství odpadu již
             v dokumentu existují:
           </p>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {duplicates.map((dup, idx) => (
-              <div
-                key={`${dup.sheetName}-${dup.date}-${dup.wasteAmount}-${idx}`}
-                className="text-xs p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded border border-yellow-300 dark:border-yellow-700"
-              >
-                <span className="font-medium">{dup.sheetName}:</span> {dup.date} • {dup.wasteAmount}
+          <div className="space-y-2">
+            <details>
+              <summary>Detail jednotlivých položek</summary>
+              <div className="space-y-2">
+                {duplicates.map((dup, idx) => (
+                  <div
+                    key={`${dup.sheetName}-${dup.date}-${dup.wasteAmount}-${idx}`}
+                    className="text-xs p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded border border-yellow-300 dark:border-yellow-700"
+                  >
+                    <span className="font-medium">tabulka {dup.sheetName}:</span>
+                    <br /> {dup.date} • {dup.wasteAmount}
+                  </div>
+                ))}
               </div>
-            ))}
+            </details>
           </div>
         </div>
       </div>

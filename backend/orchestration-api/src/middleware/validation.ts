@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../../../utils/logger";
-import { isDirectusAvailable } from "../../../lib/directus";
-import { jobService } from "../../../services/jobService";
-import type { RequestWithJob } from "../types";
+import { logger } from "../utils/logger";
+import { isDirectusAvailable } from "../lib/directus";
+import { getJob } from "../services/jobService";
+import type { RequestWithJob } from "../routes/documents/types";
 
 // ============================================================================
 // Type Narrowing Helpers
@@ -145,7 +145,7 @@ export const requireJob = (source: "params" | "body" = "params") => {
       });
     }
 
-    const job = jobService.getJob(jobId);
+    const job = getJob(jobId);
     if (!job) {
       logger.warn("Job validation failed: job not found", {
         endpoint: req.path,

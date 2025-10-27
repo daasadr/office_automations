@@ -5,17 +5,17 @@ import { jobService } from "./JobService";
 import { directusDocumentService } from "../lib/directus";
 import type { FoundationDocument } from "../lib/directus/types";
 import type { LLMResponseSchema } from "../llmResponseSchema";
-import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../routes/documents/shared";
 import {
+  filterRecentResponses,
+  RESPONSE_MAX_AGE_HOURS,
   parseResponseJson,
   isValidationResult,
   toLLMResponseSchema,
-  getStringValue,
-  getNumberValue,
-  getRecordValue,
-  getArrayValue,
-  isRecord,
-} from "../routes/documents/types";
+  formatExtractedRecordsDetail,
+  generateTimestampForFilename,
+  generateFoundationFilename,
+  generateFoundationTitle,
+} from "../utils/dataTransformers";
 
 /**
  * Result of foundation document processing
@@ -259,81 +259,6 @@ export class FoundationProcessingService {
   }
 
   /**
-   * Formats extracted data records for detailed frontend display.
-   *
-   * @param extractedData - The raw extracted data
-   * @returns Formatted records detail
-   */
-  formatExtractedRecordsDetail(extractedData: LLMExtractedData[]): Record<string, unknown>[] {
-    return extractedData.map((extractedItem: LLMExtractedData) => {
-      if (!isRecord(extractedItem)) {
-        return {};
-      }
-
-      const kodOdpadu =
-        getStringValue(extractedItem, "kód odpadu") || getStringValue(extractedItem, "kod_odpadu");
-      const odberatel = extractedItem.odběratel;
-      const odberatelAlt = getRecordValue(extractedItem, "odberatel");
-
-      let odberatelIco = "";
-      if (odberatel && typeof odberatel === "object" && "IČO" in odberatel) {
-        odberatelIco = String(odberatel.IČO);
-      } else if (odberatelAlt) {
-        odberatelIco = getStringValue(odberatelAlt, "ico") || getStringValue(odberatelAlt, "IČO");
-      }
-
-      const sheetName = `${kodOdpadu} ${odberatelIco}`.trim();
-
-      // Get table data from various possible field names
-      const tabulkaValue = extractedItem.tabulka;
-      const tabulka =
-        (Array.isArray(tabulkaValue) ? tabulkaValue : null) ||
-        getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_evidence") ||
-        getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_pohybu") ||
-        [];
-
-      let odberatelNazev = "";
-      if (odberatel && typeof odberatel === "object" && "název" in odberatel) {
-        odberatelNazev = String(odberatel.název);
-      } else if (odberatelAlt) {
-        odberatelNazev = getStringValue(odberatelAlt, "nazev");
-      }
-
-      return {
-        sheetName,
-        kodOdpadu,
-        nazevOdpadu:
-          getStringValue(extractedItem, "název/druh odpadu") ||
-          getStringValue(extractedItem, "nazev_druhu_odpadu"),
-        odberatel: {
-          ico: odberatelIco,
-          nazev: odberatelNazev,
-        },
-        records: tabulka.map((record) => {
-          if (!isRecord(record)) {
-            return {};
-          }
-
-          return {
-            poradoveCislo:
-              getNumberValue(record, "pořadové číslo") || getNumberValue(record, "poradove_cislo"),
-            datumVzniku:
-              getStringValue(record, "datum vzniku") ||
-              getStringValue(record, "datum_vzniku") ||
-              getStringValue(record, "datum"),
-            mnozstviVznikleho:
-              getStringValue(record, "množství vzniklého odpadu") ||
-              getStringValue(record, "mnozstvi_vznikleho_odpadu"),
-            mnozstviPredaneho:
-              getStringValue(record, "množství předaného odpadu") ||
-              getStringValue(record, "mnozstvi_predaneho_odpadu"),
-          };
-        }),
-      };
-    });
-  }
-
-  /**
    * Main method to process a foundation document.
    * Orchestrates the entire workflow from data retrieval to document creation.
    *
@@ -390,8 +315,8 @@ export class FoundationProcessingService {
       const augmentResult = await this.augmentExcel(excelBuffer, llmResponseData.extracted_data);
 
       // Generate filename and notes
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split("T")[0];
-      const newFilename = `${lastApprovedDoc.title.replace(/\.[^/.]+$/, "")}_augmented_${timestamp}.xlsx`;
+      const timestamp = generateTimestampForFilename();
+      const newFilename = generateFoundationFilename(lastApprovedDoc.title, timestamp);
 
       let notes = `Augmented from foundation document "${lastApprovedDoc.title}" with ${llmResponseData.extracted_data.length} extracted data items. Sheets modified: ${augmentResult.sheetsModified.join(", ")}.`;
       if (augmentResult.duplicatesSkipped.length > 0) {
@@ -400,7 +325,7 @@ export class FoundationProcessingService {
 
       // Save as new draft foundation document
       const newFoundationDoc = await directusDocumentService.createFoundationDocument({
-        title: `${lastApprovedDoc.title} (Augmented ${timestamp})`,
+        title: generateFoundationTitle(lastApprovedDoc.title, timestamp),
         file: {
           filename: newFilename,
           buffer: augmentResult.buffer,
@@ -433,9 +358,7 @@ export class FoundationProcessingService {
       });
 
       // Format detailed records for response
-      const extractedRecordsDetail = this.formatExtractedRecordsDetail(
-        llmResponseData.extracted_data
-      );
+      const extractedRecordsDetail = formatExtractedRecordsDetail(llmResponseData.extracted_data);
 
       return {
         success: true,

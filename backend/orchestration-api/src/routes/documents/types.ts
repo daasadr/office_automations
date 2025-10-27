@@ -81,49 +81,15 @@ export interface DirectusResponseJson {
 }
 
 // ============================================================================
-// Type Guards
+// Type Guards - Re-exported from dataTransformers
 // ============================================================================
 
-/**
- * Type guard to check if a value is a valid ValidationResult
- */
-export function isValidationResult(value: unknown): value is ValidationResult {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const obj = value as Record<string, unknown>;
-
-  return (
-    Array.isArray(obj.present) &&
-    obj.present.every((item) => typeof item === "string") &&
-    Array.isArray(obj.missing) &&
-    obj.missing.every((item) => typeof item === "string") &&
-    typeof obj.confidence === "number" &&
-    Array.isArray(obj.extracted_data)
-  );
-}
-
-/**
- * Type guard to check if response_json is a valid ValidationResult
- */
-export function isDirectusResponseJsonValid(json: unknown): json is ValidationResult {
-  return isValidationResult(json);
-}
-
-/**
- * Type guard for checking if an object is a record with string keys
- */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * Type guard for checking if value is an array of records
- */
-export function isRecordArray(value: unknown): value is Record<string, unknown>[] {
-  return Array.isArray(value) && value.every((item) => isRecord(item));
-}
+export {
+  isValidationResult,
+  isDirectusResponseJsonValid,
+  isRecord,
+  isRecordArray,
+} from "../../utils/dataTransformers";
 
 // ============================================================================
 // Extracted Data Processing Types
@@ -281,91 +247,16 @@ export interface DownloadFoundationParams {
 }
 
 // ============================================================================
-// Utility Functions
+// Utility Functions - Re-exported from dataTransformers
 // ============================================================================
 
-/**
- * Safely parse response_json from Directus Response
- * Returns null if parsing fails or result is invalid
- */
-export function parseResponseJson(json: unknown): ValidationResult | null {
-  if (!json) {
-    return null;
-  }
-
-  if (isValidationResult(json)) {
-    return json;
-  }
-
-  return null;
-}
-
-/**
- * Convert ValidationResult to LLMResponseSchema
- * ValidationResult is a subset of LLMResponseSchema, so this is a safe conversion
- */
-export function toLLMResponseSchema(result: ValidationResult): LLMResponseSchema {
-  return result as unknown as LLMResponseSchema;
-}
-
-/**
- * Ensures a ValidationResult has a provider field set
- * Defaults to "gemini" if not present
- */
-export function ensureProvider(result: ValidationResult): ValidationResult & { provider: string } {
-  return {
-    ...result,
-    provider: result.provider || "gemini",
-  };
-}
-
-/**
- * Extract extracted_data from validation result
- * Returns the extracted_data array (always present in ValidationResult)
- */
-export function getExtractedData(result: ValidationResult): ExtractedData[] {
-  return result.extracted_data;
-}
-
-/**
- * Safely get string value from record
- */
-export function getStringValue(
-  record: Record<string, unknown>,
-  key: string,
-  defaultValue = ""
-): string {
-  const value = record[key];
-  return typeof value === "string" ? value : defaultValue;
-}
-
-/**
- * Safely get number value from record
- */
-export function getNumberValue(
-  record: Record<string, unknown>,
-  key: string,
-  defaultValue = 0
-): number {
-  const value = record[key];
-  return typeof value === "number" ? value : defaultValue;
-}
-
-/**
- * Safely get record value from record
- */
-export function getRecordValue(
-  record: Record<string, unknown>,
-  key: string
-): Record<string, unknown> | null {
-  const value = record[key];
-  return isRecord(value) ? value : null;
-}
-
-/**
- * Safely get array value from record
- */
-export function getArrayValue<T = unknown>(record: Record<string, unknown>, key: string): T[] {
-  const value = record[key];
-  return Array.isArray(value) ? (value as T[]) : [];
-}
+export {
+  parseResponseJson,
+  toLLMResponseSchema,
+  ensureProvider,
+  getExtractedData,
+  getStringValue,
+  getNumberValue,
+  getRecordValue,
+  getArrayValue,
+} from "../../utils/dataTransformers";

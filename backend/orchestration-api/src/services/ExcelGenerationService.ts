@@ -3,14 +3,14 @@ import { generateExcelFile } from "../lib/excel";
 import type { ValidationResult as LLMValidationResult } from "./llm";
 import { jobService } from "./JobService";
 import { directusDocumentService } from "../lib/directus";
-import { filterRecentResponses } from "../routes/documents/shared";
 import {
+  filterRecentResponses,
   parseResponseJson,
   isValidationResult,
   getExtractedData,
   ensureProvider,
-  type ValidationResult,
-} from "../routes/documents/types";
+} from "../utils/dataTransformers";
+import type { ValidationResult } from "../routes/documents/types";
 
 /**
  * Result of Excel generation

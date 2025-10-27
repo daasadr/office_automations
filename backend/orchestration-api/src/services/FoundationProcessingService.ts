@@ -1,11 +1,11 @@
-import { logger } from "../../../utils/logger";
-import { augmentExcelWithData } from "../../../lib/excel";
-import type { SheetNotFound, DuplicateRecord, LLMExtractedData } from "../../../lib/excel/types";
-import { getJob } from "../../../services/jobService";
-import { directusDocumentService } from "../../../lib/directus";
-import type { FoundationDocument } from "../../../lib/directus/types";
-import type { LLMResponseSchema } from "../../../llmResponseSchema";
-import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
+import { logger } from "../utils/logger";
+import { augmentExcelWithData } from "../lib/excel";
+import type { SheetNotFound, DuplicateRecord, LLMExtractedData } from "../lib/excel/types";
+import { jobService } from "./jobService";
+import { directusDocumentService } from "../lib/directus";
+import type { FoundationDocument } from "../lib/directus/types";
+import type { LLMResponseSchema } from "../llmResponseSchema";
+import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../routes/documents/shared";
 import {
   parseResponseJson,
   isValidationResult,
@@ -15,7 +15,7 @@ import {
   getRecordValue,
   getArrayValue,
   isRecord,
-} from "../types";
+} from "../routes/documents/types";
 
 /**
  * Result of foundation document processing
@@ -131,7 +131,7 @@ export class FoundationProcessingService {
     llmResponseData: LLMResponseSchema;
     sourceDocumentId?: string;
   }> {
-    const job = getJob(jobId);
+    const job = jobService.getJob(jobId);
     if (!job || !job.validationResult) {
       throw new Error("Job not found or has no validation result");
     }

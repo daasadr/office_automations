@@ -1,16 +1,16 @@
-import { logger } from "../../../utils/logger";
-import { generateExcelFile } from "../../../lib/excel";
-import type { ValidationResult as LLMValidationResult } from "../../../services/llm";
-import { getJob } from "../../../services/jobService";
-import { directusDocumentService } from "../../../lib/directus";
-import { filterRecentResponses } from "../shared";
+import { logger } from "../utils/logger";
+import { generateExcelFile } from "../lib/excel";
+import type { ValidationResult as LLMValidationResult } from "./llm";
+import { jobService } from "./jobService";
+import { directusDocumentService } from "../lib/directus";
+import { filterRecentResponses } from "../routes/documents/shared";
 import {
   parseResponseJson,
   isValidationResult,
   getExtractedData,
   ensureProvider,
   type ValidationResult,
-} from "../types";
+} from "../routes/documents/types";
 
 /**
  * Result of Excel generation
@@ -100,7 +100,7 @@ export class ExcelGenerationService {
    * @returns Validation result or null if not found
    */
   getValidationDataFromJob(jobId: string): ValidationResult | null {
-    const job = getJob(jobId);
+    const job = jobService.getJob(jobId);
     if (job?.validationResult && isValidationResult(job.validationResult)) {
       logger.info("Retrieved validation data from job", { jobId });
       return job.validationResult;
@@ -268,7 +268,7 @@ export class ExcelGenerationService {
         }
       } else if (saveToDirectus && jobId && !responseId) {
         // Try to save using job's associated response
-        const job = getJob(jobId);
+        const job = jobService.getJob(jobId);
         if (job?.directusResponseId) {
           try {
             generatedDocumentId = await this.saveGeneratedDocument({

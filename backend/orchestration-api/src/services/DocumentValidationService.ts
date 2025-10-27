@@ -1,7 +1,7 @@
-import { logger } from "../../../utils/logger";
-import { validateDocumentContent } from "../../../services/llm";
-import type { ValidationResult } from "../../../services/llm";
-import { directusDocumentService } from "../../../lib/directus";
+import { logger } from "../utils/logger";
+import { validateDocumentContent } from "./llm";
+import type { ValidationResult } from "./llm";
+import { directusDocumentService } from "../lib/directus";
 
 /**
  * Service class for handling document validation operations.
@@ -236,3 +236,5 @@ export class DocumentValidationService {
     }
   }
 }
+
+

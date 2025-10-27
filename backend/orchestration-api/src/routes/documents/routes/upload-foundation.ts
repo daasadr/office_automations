@@ -11,6 +11,74 @@ import {
 const router = Router();
 
 /**
+ * Sanitizes filename by removing or replacing special characters
+ * Handles Czech diacritics and other potentially problematic characters
+ */
+function sanitizeFilename(filename: string): string {
+  // Map of diacritics to their ASCII equivalents
+  const diacriticsMap: Record<string, string> = {
+    á: "a",
+    č: "c",
+    ď: "d",
+    é: "e",
+    ě: "e",
+    í: "i",
+    ň: "n",
+    ó: "o",
+    ř: "r",
+    š: "s",
+    ť: "t",
+    ú: "u",
+    ů: "u",
+    ý: "y",
+    ž: "z",
+    Á: "A",
+    Č: "C",
+    Ď: "D",
+    É: "E",
+    Ě: "E",
+    Í: "I",
+    Ň: "N",
+    Ó: "O",
+    Ř: "R",
+    Š: "S",
+    Ť: "T",
+    Ú: "U",
+    Ů: "U",
+    Ý: "Y",
+    Ž: "Z",
+  };
+
+  // Split filename into name and extension
+  const lastDotIndex = filename.lastIndexOf(".");
+  const name = lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+  const extension = lastDotIndex > 0 ? filename.substring(lastDotIndex) : "";
+
+  // Replace diacritics
+  let sanitized = name
+    .split("")
+    .map((char) => diacriticsMap[char] || char)
+    .join("");
+
+  // Remove or replace other special characters
+  // Keep: letters, numbers, hyphens, underscores
+  sanitized = sanitized.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+  // Remove multiple consecutive underscores
+  sanitized = sanitized.replace(/_+/g, "_");
+
+  // Remove leading/trailing underscores
+  sanitized = sanitized.replace(/^_+|_+$/g, "");
+
+  // If name is empty after sanitization, use a default
+  if (!sanitized) {
+    sanitized = "document";
+  }
+
+  return sanitized + extension;
+}
+
+/**
  * POST /upload-foundation
  *
  * Uploads a new foundation document (Excel file) to Directus.
@@ -48,8 +116,13 @@ router.post(
     const file = req.file!;
     const { title, notes } = req.body;
 
+    // Sanitize filename to avoid issues with special characters
+    const sanitizedFilename = sanitizeFilename(file.originalname);
+    const sanitizedTitle = sanitizeFilename(title || file.originalname.replace(/\.[^/.]+$/, ""));
+
     logger.info("Uploading foundation document", {
       originalName: file.originalname,
+      sanitizedFilename,
       mimetype: file.mimetype,
       size: file.size,
     });
@@ -66,14 +139,14 @@ router.post(
       });
     }
 
-    // Create foundation document
+    // Create foundation document with sanitized names
     const foundationDoc = await directusDocumentService.createFoundationDocument({
-      title: title || file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension from filename
+      title: sanitizedTitle,
       file: {
-        filename: file.originalname,
+        filename: sanitizedFilename,
         buffer: file.buffer,
         mimetype: file.mimetype,
-        title: title || file.originalname,
+        title: sanitizedTitle,
       },
       docType: "waste_management",
       status: "approved", // New uploads are approved by default

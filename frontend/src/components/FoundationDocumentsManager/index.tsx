@@ -6,6 +6,74 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 
+/**
+ * Sanitizes filename by removing or replacing special characters
+ * Handles Czech diacritics and other potentially problematic characters
+ */
+function sanitizeFilename(filename: string): string {
+  // Map of diacritics to their ASCII equivalents
+  const diacriticsMap: Record<string, string> = {
+    á: "a",
+    č: "c",
+    ď: "d",
+    é: "e",
+    ě: "e",
+    í: "i",
+    ň: "n",
+    ó: "o",
+    ř: "r",
+    š: "s",
+    ť: "t",
+    ú: "u",
+    ů: "u",
+    ý: "y",
+    ž: "z",
+    Á: "A",
+    Č: "C",
+    Ď: "D",
+    É: "E",
+    Ě: "E",
+    Í: "I",
+    Ň: "N",
+    Ó: "O",
+    Ř: "R",
+    Š: "S",
+    Ť: "T",
+    Ú: "U",
+    Ů: "U",
+    Ý: "Y",
+    Ž: "Z",
+  };
+
+  // Split filename into name and extension
+  const lastDotIndex = filename.lastIndexOf(".");
+  const name = lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+  const extension = lastDotIndex > 0 ? filename.substring(lastDotIndex) : "";
+
+  // Replace diacritics
+  let sanitized = name
+    .split("")
+    .map((char) => diacriticsMap[char] || char)
+    .join("");
+
+  // Remove or replace other special characters
+  // Keep: letters, numbers, hyphens, underscores
+  sanitized = sanitized.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+  // Remove multiple consecutive underscores
+  sanitized = sanitized.replace(/_+/g, "_");
+
+  // Remove leading/trailing underscores
+  sanitized = sanitized.replace(/^_+|_+$/g, "");
+
+  // If name is empty after sanitization, use a default
+  if (!sanitized) {
+    sanitized = "document";
+  }
+
+  return sanitized + extension;
+}
+
 interface FoundationDocument {
   id: string;
   title: string;
@@ -97,14 +165,27 @@ export default function FoundationDocumentsManager() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    log.info("Uploading foundation document", { filename: file.name });
+    // Sanitize filename to avoid issues with special characters
+    const sanitizedFilename = sanitizeFilename(file.name);
+    const sanitizedTitle = sanitizedFilename.replace(/\.[^/.]+$/, ""); // Remove extension
+
+    log.info("Uploading foundation document", {
+      originalFilename: file.name,
+      sanitizedFilename,
+    });
     setUploadingFile(true);
     setError(null);
 
     try {
+      // Create a new File object with sanitized name
+      const sanitizedFile = new File([file], sanitizedFilename, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("title", file.name.replace(/\.[^/.]+$/, ""));
+      formData.append("file", sanitizedFile);
+      formData.append("title", sanitizedTitle);
 
       const response = await fetch(withBasePath("/api/upload-foundation"), {
         method: "POST",

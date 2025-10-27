@@ -245,18 +245,3 @@ export interface DownloadByDocParams {
 export interface DownloadFoundationParams {
   foundationDocumentId: string;
 }
-
-// ============================================================================
-// Utility Functions - Re-exported from dataTransformers
-// ============================================================================
-
-export {
-  parseResponseJson,
-  toLLMResponseSchema,
-  ensureProvider,
-  getExtractedData,
-  getStringValue,
-  getNumberValue,
-  getRecordValue,
-  getArrayValue,
-} from "../../utils/dataTransformers";

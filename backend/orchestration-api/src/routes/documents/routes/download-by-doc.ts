@@ -5,7 +5,11 @@ import type { ValidationResult as LLMValidationResult } from "../../../services/
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
 import { requireDirectus, requireUrlParams, asyncHandler } from "../../../middleware/validation";
-import { parseResponseJson, getExtractedData, ensureProvider } from "../types";
+import {
+  parseResponseJson,
+  getExtractedData,
+  ensureProvider,
+} from "../../../utils/dataTransformers";
 
 const router = Router();
 

@@ -3,7 +3,7 @@ import { logger } from "../../../utils/logger";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses } from "../shared";
 import { requireDirectus, requireUrlParams, asyncHandler } from "../../../middleware/validation";
-import { parseResponseJson } from "../types";
+import { parseResponseJson } from "../../../utils/dataTransformers";
 
 const router = Router();
 

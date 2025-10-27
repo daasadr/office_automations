@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
-import { directusDocumentService } from "../../../lib/directus";
+import { logger } from "@orchestration-api/utils/logger";
+import { directusDocumentService } from "@orchestration-api/lib/directus";
 import {
   requireDirectus,
   requireBodyParams,
   validateEnum,
   asyncHandler,
-} from "../../../middleware/validation";
+} from "@orchestration-api/middleware/validation";
 
 const router = Router();
 

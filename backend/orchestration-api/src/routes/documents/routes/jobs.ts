@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { jobService } from "../../../services/JobService";
-import { asyncHandler } from "../../../middleware/validation";
+import { jobService } from "@orchestration-api/services/JobService";
+import { asyncHandler } from "@orchestration-api/middleware/validation";
 
 const router = Router();
 

@@ -1,4 +1,4 @@
-import { logger } from "../../../utils/logger";
+import { logger } from "@orchestration-api/utils/logger";
 
 /**
  * Cleans JSON strings by removing markdown code blocks and fixing common formatting issues

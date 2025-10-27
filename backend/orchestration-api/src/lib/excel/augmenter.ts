@@ -1,8 +1,13 @@
 // @ts-ignore - xlsx-populate doesn't have TypeScript definitions
 import * as XlsxPopulate from "xlsx-populate";
-import { logger } from "../../utils/logger";
-import type { LLMExtractedData, AugmentExcelResult, DuplicateRecord, SheetNotFound } from "./types";
-import { dateStringToDate, cleanQuantityString } from "./utils";
+import { logger } from "@orchestration-api/utils/logger";
+import type {
+  LLMExtractedData,
+  AugmentExcelResult,
+  DuplicateRecord,
+  SheetNotFound,
+} from "@orchestration-api/lib/excel/types";
+import { dateStringToDate, cleanQuantityString } from "@orchestration-api/lib/excel/utils";
 
 /**
  * Augments an existing Excel file with extracted data using xlsx-populate

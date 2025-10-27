@@ -1,7 +1,7 @@
 import { createDirectus, rest, staticToken } from "@directus/sdk";
-import { config } from "../../config";
-import { logger } from "../../utils/logger";
-import type { DirectusSchema } from "./types";
+import { config } from "@orchestration-api/config";
+import { logger } from "@orchestration-api/utils/logger";
+import type { DirectusSchema } from "@orchestration-api/lib/directus/types";
 
 /**
  * Create and configure Directus client

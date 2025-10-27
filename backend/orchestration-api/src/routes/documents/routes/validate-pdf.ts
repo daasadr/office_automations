@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { logger } from "../../../utils/logger";
-import { jobService } from "../../../services/JobService";
+import { logger } from "@orchestration-api/utils/logger";
+import { jobService } from "@orchestration-api/services/JobService";
 import { upload } from "../shared";
-import { DocumentValidationService } from "../../../services/DocumentValidationService";
-import { requireDirectus, requireFile, asyncHandler } from "../../../middleware/validation";
+import { DocumentValidationService } from "@orchestration-api/services/DocumentValidationService";
+import {
+  requireDirectus,
+  requireFile,
+  asyncHandler,
+} from "@orchestration-api/middleware/validation";
 
 const router = Router();
 

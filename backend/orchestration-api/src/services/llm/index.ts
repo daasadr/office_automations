@@ -1,11 +1,18 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { logger } from "../../utils/logger";
-import type { ExtractedData } from "../types";
-import { REQUIRED_FIELDS } from "./constants";
-import type { GeminiConfig, ValidationResult, ValidationOptions } from "./types";
-import { parseJsonResponse } from "./utils/jsonParser";
-import { createAnalysisPrompt } from "./utils/prompt";
-import { calculateConfidence, validateResponseStructure } from "./utils/validation";
+import { logger } from "@orchestration-api/utils/logger";
+import type { ExtractedData } from "@orchestration-api/services/types";
+import { REQUIRED_FIELDS } from "@orchestration-api/services/llm/constants";
+import type {
+  GeminiConfig,
+  ValidationResult,
+  ValidationOptions,
+} from "@orchestration-api/services/llm/types";
+import { parseJsonResponse } from "@orchestration-api/services/llm/utils/jsonParser";
+import { createAnalysisPrompt } from "@orchestration-api/services/llm/utils/prompt";
+import {
+  calculateConfidence,
+  validateResponseStructure,
+} from "@orchestration-api/services/llm/utils/validation";
 
 // Initialize Gemini configuration
 const geminiConfig: GeminiConfig = {

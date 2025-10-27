@@ -1,4 +1,4 @@
-import type { ExtractedData } from "../types";
+import type { ExtractedData } from "@orchestration-api/services/types";
 
 /**
  * Configuration for Gemini API

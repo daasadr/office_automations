@@ -5,15 +5,15 @@
 
 import { createItem, readItems, updateItem, uploadFiles, readAssetRaw } from "@directus/sdk";
 import { createHash } from "crypto";
-import { requireDirectus } from "./client";
-import { logger } from "../../utils/logger";
+import { requireDirectus } from "@orchestration-api/lib/directus/client";
+import { logger } from "@orchestration-api/utils/logger";
 import type {
   SourceDocument,
   Response,
   GeneratedDocument,
   DirectusFile,
   FoundationDocument,
-} from "./types";
+} from "@orchestration-api/lib/directus/types";
 
 /**
  * File Upload Options

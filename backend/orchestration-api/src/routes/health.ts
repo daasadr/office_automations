@@ -2,8 +2,8 @@ import { Router } from "express";
 import { Pool } from "pg";
 import Redis from "ioredis";
 import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
-import { config } from "../config";
-import { directusClient } from "../lib/directus";
+import { config } from "@orchestration-api/config";
+import { directusClient } from "@orchestration-api/lib/directus";
 import { readItems } from "@directus/sdk";
 
 const router = Router();

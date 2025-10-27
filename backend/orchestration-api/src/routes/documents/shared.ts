@@ -5,7 +5,7 @@ export {
   filterRecentResponses,
   RESPONSE_MAX_AGE_HOURS,
   RESPONSE_MAX_AGE_MS,
-} from "../../utils/dataTransformers";
+} from "@orchestration-api/utils/dataTransformers";
 
 // Configure multer for file uploads
 export const upload = multer({

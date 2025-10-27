@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../utils/logger";
-import { isDirectusAvailable } from "../lib/directus";
-import { jobService } from "../services/JobService";
-import type { RequestWithJob } from "../routes/documents/types";
+import { logger } from "@orchestration-api/utils/logger";
+import { isDirectusAvailable } from "@orchestration-api/lib/directus";
+import { jobService } from "@orchestration-api/services/JobService";
+import type { RequestWithJob } from "@orchestration-api/routes/documents/types";
 
 // ============================================================================
 // Type Narrowing Helpers

@@ -1,5 +1,5 @@
-import type { ValidationResult } from "../../services/llm";
-import type { ExtractedData as LLMExtractedData } from "../../llmResponseSchema";
+import type { ValidationResult } from "@orchestration-api/services/llm";
+import type { ExtractedData as LLMExtractedData } from "@orchestration-api/llmResponseSchema";
 
 export interface GenerateExcelInput {
   jobId: string;

@@ -1,4 +1,4 @@
-import { REQUIRED_FIELDS } from "../constants";
+import { REQUIRED_FIELDS } from "@orchestration-api/services/llm/constants";
 
 /**
  * Creates the prompt for Gemini PDF analysis

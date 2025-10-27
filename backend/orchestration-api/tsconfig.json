@@ -19,7 +19,17 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@orchestration-api/config": ["./src/config"],
+      "@orchestration-api/lib/*": ["./src/lib/*"],
+      "@orchestration-api/middleware/*": ["./src/middleware/*"],
+      "@orchestration-api/routes/*": ["./src/routes/*"],
+      "@orchestration-api/services/*": ["./src/services/*"],
+      "@orchestration-api/utils/*": ["./src/utils/*"],
+      "@orchestration-api/llmResponseSchema": ["./src/llmResponseSchema"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
@@ -27,5 +37,3 @@
     "esm": true
   }
 }
-
-

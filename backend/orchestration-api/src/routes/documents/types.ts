@@ -6,7 +6,7 @@
  */
 
 import type { Request } from "express";
-import type { JobData } from "../../services/JobService";
+import type { JobData } from "@orchestration-api/services/JobService";
 import type {
   LLMResponseSchema,
   ExtractedData,
@@ -14,7 +14,7 @@ import type {
   Odberatel,
   Puvod,
   SamostatnaProv,
-} from "../../llmResponseSchema";
+} from "@orchestration-api/llmResponseSchema";
 
 // Re-export types from other modules for convenience
 export type { LLMResponseSchema, ExtractedData, TabulkaRecord, Odberatel, Puvod, SamostatnaProv };
@@ -25,9 +25,9 @@ export type {
   GeneratedDocument,
   FoundationDocument,
   DocumentVersion,
-} from "../../lib/directus/types";
+} from "@orchestration-api/lib/directus/types";
 
-export type { JobData } from "../../services/JobService";
+export type { JobData } from "@orchestration-api/services/JobService";
 
 // ============================================================================
 // Request Extensions
@@ -89,7 +89,7 @@ export {
   isDirectusResponseJsonValid,
   isRecord,
   isRecordArray,
-} from "../../utils/dataTransformers";
+} from "@orchestration-api/utils/dataTransformers";
 
 // ============================================================================
 // Extracted Data Processing Types

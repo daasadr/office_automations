@@ -1,8 +1,8 @@
 import * as XLSX from "xlsx";
-import { logger } from "../../utils/logger";
-import type { ValidationResult } from "../../services/llm";
-import type { ExtractedData } from "../../services/types";
-import type { GenerateExcelInput, GenerateExcelResult } from "./types";
+import { logger } from "@orchestration-api/utils/logger";
+import type { ValidationResult } from "@orchestration-api/services/llm";
+import type { ExtractedData } from "@orchestration-api/services/types";
+import type { GenerateExcelInput, GenerateExcelResult } from "@orchestration-api/lib/excel/types";
 import {
   EXCEL_COLUMNS,
   DEFAULT_COLUMN_WIDTH,

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { jobService } from "../../../services/JobService";
-import { isDirectusAvailable } from "../../../lib/directus";
-import { ExcelGenerationService } from "../../../services/ExcelGenerationService";
-import { requireBodyParams, asyncHandler } from "../../../middleware/validation";
+import { jobService } from "@orchestration-api/services/JobService";
+import { isDirectusAvailable } from "@orchestration-api/lib/directus";
+import { ExcelGenerationService } from "@orchestration-api/services/ExcelGenerationService";
+import { requireBodyParams, asyncHandler } from "@orchestration-api/middleware/validation";
 
 const router = Router();
 

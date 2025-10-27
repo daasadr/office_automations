@@ -4,7 +4,7 @@
   "description": "Orchestration API for document processing workflows",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "jest"
@@ -34,6 +34,7 @@
     "@types/node": "^20.9.0",
     "@types/pg": "^8.15.5",
     "jest": "^29.7.0",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.6.0",
     "typescript": "^5.2.2"
   },

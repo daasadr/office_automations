@@ -741,6 +741,43 @@ export class DirectusDocumentService {
   }
 
   /**
+   * Retrieves all foundation documents, sorted by creation date (newest first)
+   */
+  async getAllFoundationDocuments(): Promise<FoundationDocument[]> {
+    // ATTEMPT LOG
+    logger.info("[Directus] Attempting to retrieve all foundation documents", {
+      operation: "getAllFoundationDocuments",
+    });
+
+    try {
+      const client = requireDirectus();
+
+      const documents = await client.request(
+        readItems("foundation_documents", {
+          sort: ["-created_at"],
+          limit: -1, // Get all documents
+        })
+      );
+
+      // SUCCESS LOG
+      logger.info("[Directus] Foundation documents retrieved successfully", {
+        operation: "getAllFoundationDocuments",
+        count: documents.length,
+      });
+
+      return (documents as FoundationDocument[]) || [];
+    } catch (error) {
+      // ERROR LOG
+      logger.error("[Directus] Failed to retrieve foundation documents", {
+        operation: "getAllFoundationDocuments",
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return [];
+    }
+  }
+
+  /**
    * Retrieves a foundation document by ID
    */
   async getFoundationDocument(documentId: string): Promise<FoundationDocument | null> {

@@ -9,6 +9,8 @@ import { jobsRouter } from "./routes/jobs";
 import { processFoundationRouter } from "./routes/process-foundation";
 import { downloadFoundationRouter } from "./routes/download-foundation";
 import { updateFoundationStatusRouter } from "./routes/update-foundation-status";
+import { listFoundationRouter } from "./routes/list-foundation";
+import { uploadFoundationRouter } from "./routes/upload-foundation";
 
 const router = Router();
 
@@ -31,6 +33,8 @@ router.use("/download-by-doc", downloadByDocRouter);
 router.use("/process-foundation", processFoundationRouter);
 router.use("/download-foundation", downloadFoundationRouter);
 router.use("/update-foundation-status", updateFoundationStatusRouter);
+router.use("/list-foundation", listFoundationRouter);
+router.use("/upload-foundation", uploadFoundationRouter);
 
 // Jobs listing
 router.use("/jobs", jobsRouter);

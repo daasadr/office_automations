@@ -1,5 +1,5 @@
-import { logger } from "../utils/logger";
-import type { ValidationResult } from "./llm";
+import { logger } from "@orchestration-api/utils/logger";
+import type { ValidationResult } from "@orchestration-api/services/llm";
 
 export interface JobData {
   jobId: string;

@@ -26,208 +26,238 @@ interface JobCleanupConfig {
   enabled: boolean;
 }
 
-const cleanupConfig: JobCleanupConfig = {
-  maxAgeHours: parseInt(process.env.JOB_CLEANUP_MAX_AGE_HOURS || "24", 10),
-  intervalHours: parseInt(process.env.JOB_CLEANUP_INTERVAL_HOURS || "1", 10),
-  enabled: process.env.JOB_CLEANUP_ENABLED !== "false",
-};
-
-// In-memory job store (in production, this should be replaced with a database)
-const jobStore = new Map<string, JobData>();
-
-// Auto-cleanup timer reference
-let cleanupTimer: NodeJS.Timeout | null = null;
-
 /**
- * Generates a unique job ID
+ * Service class for managing job lifecycle and state.
+ *
+ * This service handles:
+ * - Creating and tracking async jobs
+ * - Storing job state and results in memory
+ * - Managing job lifecycle (processing -> completed/failed)
+ * - Auto-cleanup of old jobs
+ * - Job statistics and retrieval
+ *
+ * @example
+ * ```typescript
+ * // Use the singleton instance
+ * import { jobService } from './JobService';
+ *
+ * // Create a new job
+ * const jobId = jobService.generateJobId();
+ * const job = jobService.createJob(jobId, 'document.pdf', 12345);
+ *
+ * // Update job status
+ * jobService.completeJob(jobId, validationResult, 'gemini');
+ *
+ * // Retrieve job
+ * const job = jobService.getJob(jobId);
+ * ```
  */
-export function generateJobId(): string {
-  return `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
+export class JobService {
+  private jobStore: Map<string, JobData>;
+  private cleanupTimer: NodeJS.Timeout | null;
+  private cleanupConfig: JobCleanupConfig;
 
-/**
- * Creates a new job
- */
-export function createJob(jobId: string, fileName?: string, fileSize?: number): JobData {
-  const job: JobData = {
-    jobId,
-    status: "processing",
-    fileName,
-    fileSize,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  constructor() {
+    this.jobStore = new Map<string, JobData>();
+    this.cleanupTimer = null;
+    this.cleanupConfig = {
+      maxAgeHours: parseInt(process.env.JOB_CLEANUP_MAX_AGE_HOURS || "24", 10),
+      intervalHours: parseInt(process.env.JOB_CLEANUP_INTERVAL_HOURS || "1", 10),
+      enabled: process.env.JOB_CLEANUP_ENABLED !== "false",
+    };
 
-  jobStore.set(jobId, job);
-  logger.info("Job created", { jobId, fileName, fileSize });
-
-  return job;
-}
-
-/**
- * Updates an existing job
- */
-export function updateJob(jobId: string, updates: Partial<JobData>): JobData | null {
-  const job = jobStore.get(jobId);
-  if (!job) {
-    logger.warn("Job not found for update", { jobId });
-    return null;
+    // Start auto-cleanup on instantiation
+    this.startAutoCleanup();
   }
 
-  const updatedJob = {
-    ...job,
-    ...updates,
-    updatedAt: new Date(),
-  };
-
-  jobStore.set(jobId, updatedJob);
-  logger.info("Job updated", { jobId, updates: Object.keys(updates) });
-
-  return updatedJob;
-}
-
-/**
- * Retrieves a job by ID
- */
-export function getJob(jobId: string): JobData | null {
-  const job = jobStore.get(jobId);
-  if (!job) {
-    logger.warn("Job not found", { jobId });
-    return null;
+  /**
+   * Generates a unique job ID
+   */
+  generateJobId(): string {
+    return `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  return job;
-}
+  /**
+   * Creates a new job
+   */
+  createJob(jobId: string, fileName?: string, fileSize?: number): JobData {
+    const job: JobData = {
+      jobId,
+      status: "processing",
+      fileName,
+      fileSize,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-/**
- * Marks a job as completed
- */
-export function completeJob(
-  jobId: string,
-  validationResult: ValidationResult,
-  provider: "gemini"
-): JobData | null {
-  const updates: Partial<JobData> = {
-    status: "completed",
-    validationResult,
-    provider,
-  };
+    this.jobStore.set(jobId, job);
+    logger.info("Job created", { jobId, fileName, fileSize });
 
-  return updateJob(jobId, updates);
-}
+    return job;
+  }
 
-/**
- * Marks a job as failed
- */
-export function failJob(jobId: string, error: string): JobData | null {
-  const updates: Partial<JobData> = {
-    status: "failed",
-    error,
-  };
+  /**
+   * Updates an existing job
+   */
+  updateJob(jobId: string, updates: Partial<JobData>): JobData | null {
+    const job = this.jobStore.get(jobId);
+    if (!job) {
+      logger.warn("Job not found for update", { jobId });
+      return null;
+    }
 
-  return updateJob(jobId, updates);
-}
+    const updatedJob = {
+      ...job,
+      ...updates,
+      updatedAt: new Date(),
+    };
 
-/**
- * Sets Excel data for a job
- */
-export function setJobExcel(
-  jobId: string,
-  excelBuffer: Buffer,
-  excelFilename: string
-): JobData | null {
-  const updates: Partial<JobData> = {
-    excelBuffer,
-    excelFilename,
-  };
+    this.jobStore.set(jobId, updatedJob);
+    logger.info("Job updated", { jobId, updates: Object.keys(updates) });
 
-  return updateJob(jobId, updates);
-}
+    return updatedJob;
+  }
 
-/**
- * Gets all jobs sorted by creation date
- */
-export function getAllJobs(): JobData[] {
-  return Array.from(jobStore.values()).sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-  );
-}
+  /**
+   * Retrieves a job by ID
+   */
+  getJob(jobId: string): JobData | null {
+    const job = this.jobStore.get(jobId);
+    if (!job) {
+      logger.warn("Job not found", { jobId });
+      return null;
+    }
 
-/**
- * Cleans up old jobs based on age
- */
-export function cleanupOldJobs(maxAgeHours: number = cleanupConfig.maxAgeHours): number {
-  const cutoffTime = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
-  let cleanedCount = 0;
+    return job;
+  }
 
-  for (const [jobId, job] of jobStore.entries()) {
-    if (job.createdAt < cutoffTime) {
-      jobStore.delete(jobId);
-      cleanedCount++;
+  /**
+   * Marks a job as completed
+   */
+  completeJob(
+    jobId: string,
+    validationResult: ValidationResult,
+    provider: "gemini"
+  ): JobData | null {
+    const updates: Partial<JobData> = {
+      status: "completed",
+      validationResult,
+      provider,
+    };
+
+    return this.updateJob(jobId, updates);
+  }
+
+  /**
+   * Marks a job as failed
+   */
+  failJob(jobId: string, error: string): JobData | null {
+    const updates: Partial<JobData> = {
+      status: "failed",
+      error,
+    };
+
+    return this.updateJob(jobId, updates);
+  }
+
+  /**
+   * Sets Excel data for a job
+   */
+  setJobExcel(jobId: string, excelBuffer: Buffer, excelFilename: string): JobData | null {
+    const updates: Partial<JobData> = {
+      excelBuffer,
+      excelFilename,
+    };
+
+    return this.updateJob(jobId, updates);
+  }
+
+  /**
+   * Gets all jobs sorted by creation date
+   */
+  getAllJobs(): JobData[] {
+    return Array.from(this.jobStore.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  /**
+   * Cleans up old jobs based on age
+   */
+  cleanupOldJobs(maxAgeHours?: number): number {
+    const hours = maxAgeHours ?? this.cleanupConfig.maxAgeHours;
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+    let cleanedCount = 0;
+
+    for (const [jobId, job] of this.jobStore.entries()) {
+      if (job.createdAt < cutoffTime) {
+        this.jobStore.delete(jobId);
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      logger.info("Cleaned up old jobs", { cleanedCount, maxAgeHours: hours });
+    }
+
+    return cleanedCount;
+  }
+
+  /**
+   * Starts the auto-cleanup timer
+   */
+  startAutoCleanup(): void {
+    if (!this.cleanupConfig.enabled) {
+      logger.info("Job auto-cleanup is disabled");
+      return;
+    }
+
+    if (this.cleanupTimer) {
+      logger.warn("Auto-cleanup timer is already running");
+      return;
+    }
+
+    const intervalMs = this.cleanupConfig.intervalHours * 60 * 60 * 1000;
+
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupOldJobs();
+    }, intervalMs);
+
+    logger.info("Job auto-cleanup started", {
+      intervalHours: this.cleanupConfig.intervalHours,
+      maxAgeHours: this.cleanupConfig.maxAgeHours,
+    });
+  }
+
+  /**
+   * Stops the auto-cleanup timer
+   */
+  stopAutoCleanup(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+      logger.info("Job auto-cleanup stopped");
     }
   }
 
-  if (cleanedCount > 0) {
-    logger.info("Cleaned up old jobs", { cleanedCount, maxAgeHours });
-  }
-
-  return cleanedCount;
-}
-
-/**
- * Starts the auto-cleanup timer
- */
-export function startAutoCleanup(): void {
-  if (!cleanupConfig.enabled) {
-    logger.info("Job auto-cleanup is disabled");
-    return;
-  }
-
-  if (cleanupTimer) {
-    logger.warn("Auto-cleanup timer is already running");
-    return;
-  }
-
-  const intervalMs = cleanupConfig.intervalHours * 60 * 60 * 1000;
-
-  cleanupTimer = setInterval(() => {
-    cleanupOldJobs();
-  }, intervalMs);
-
-  logger.info("Job auto-cleanup started", {
-    intervalHours: cleanupConfig.intervalHours,
-    maxAgeHours: cleanupConfig.maxAgeHours,
-  });
-}
-
-/**
- * Stops the auto-cleanup timer
- */
-export function stopAutoCleanup(): void {
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer);
-    cleanupTimer = null;
-    logger.info("Job auto-cleanup stopped");
+  /**
+   * Gets job statistics
+   */
+  getJobStats(): {
+    total: number;
+    processing: number;
+    completed: number;
+    failed: number;
+  } {
+    const jobs = this.getAllJobs();
+    return {
+      total: jobs.length,
+      processing: jobs.filter((job) => job.status === "processing").length,
+      completed: jobs.filter((job) => job.status === "completed").length,
+      failed: jobs.filter((job) => job.status === "failed").length,
+    };
   }
 }
 
-/**
- * Gets job statistics
- */
-export function getJobStats(): {
-  total: number;
-  processing: number;
-  completed: number;
-  failed: number;
-} {
-  const jobs = getAllJobs();
-  return {
-    total: jobs.length,
-    processing: jobs.filter((job) => job.status === "processing").length,
-    completed: jobs.filter((job) => job.status === "completed").length,
-    failed: jobs.filter((job) => job.status === "failed").length,
-  };
-}
-
-// Start auto-cleanup when the module is loaded
-startAutoCleanup();
+// Export singleton instance
+export const jobService = new JobService();

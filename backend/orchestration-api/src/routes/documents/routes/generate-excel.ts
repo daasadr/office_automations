@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { setJobExcel, updateJob } from "../../../services/jobService";
+import { jobService } from "../../../services/JobService";
 import { isDirectusAvailable } from "../../../lib/directus";
-import { ExcelGenerationService } from "../services/ExcelGenerationService";
-import { requireBodyParams, asyncHandler } from "../middleware/validation";
+import { ExcelGenerationService } from "../../../services/ExcelGenerationService";
+import { requireBodyParams, asyncHandler } from "../../../middleware/validation";
 
 const router = Router();
 
@@ -56,12 +56,12 @@ router.post(
 
     // Store Excel data in job (only if jobId was provided)
     if (jobId) {
-      setJobExcel(jobId, result.buffer, result.filename);
+      jobService.setJobExcel(jobId, result.buffer, result.filename);
     }
 
     // Update job with generated document ID if available
     if (jobId && result.generatedDocumentId) {
-      updateJob(jobId, { directusGeneratedDocumentId: result.generatedDocumentId });
+      jobService.updateJob(jobId, { directusGeneratedDocumentId: result.generatedDocumentId });
     }
 
     // Send Excel file as response

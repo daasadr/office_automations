@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { logger } from "../../../utils/logger";
-import { createJob, updateJob, generateJobId } from "../../../services/jobService";
+import { jobService } from "../../../services/JobService";
 import { upload } from "../shared";
-import { DocumentValidationService } from "../services/DocumentValidationService";
-import { requireDirectus, requireFile, asyncHandler } from "../middleware/validation";
+import { DocumentValidationService } from "../../../services/DocumentValidationService";
+import { requireDirectus, requireFile, asyncHandler } from "../../../middleware/validation";
 
 const router = Router();
 
@@ -49,8 +49,8 @@ router.post(
     });
 
     // Generate job ID and create job
-    const jobId = generateJobId();
-    createJob(jobId, req.file!.originalname, req.file!.size);
+    const jobId = jobService.generateJobId();
+    jobService.createJob(jobId, req.file!.originalname, req.file!.size);
 
     // Step 1: Save file to Directus using service
     const validationService = new DocumentValidationService();
@@ -63,7 +63,7 @@ router.post(
         mimetype: req.file!.mimetype,
         jobId,
       });
-      updateJob(jobId, { directusSourceDocumentId: sourceDocumentId });
+      jobService.updateJob(jobId, { directusSourceDocumentId: sourceDocumentId });
     } catch (error) {
       return res.status(500).json({
         error: "Failed to save document",
@@ -101,17 +101,13 @@ router.post(
         });
 
         if (result.error) {
-          // Import failJob here to avoid circular dependency
-          const { failJob } = await import("../../../services/jobService");
-          failJob(jobId, result.error);
+          jobService.failJob(jobId, result.error);
         } else if (result.validationResult) {
-          // Complete the job - import completeJob here to avoid circular dependency
-          const { completeJob } = await import("../../../services/jobService");
-          completeJob(jobId, result.validationResult, "gemini");
+          jobService.completeJob(jobId, result.validationResult, "gemini");
 
           // Update job with response ID
           if (result.responseId) {
-            updateJob(jobId, { directusResponseId: result.responseId });
+            jobService.updateJob(jobId, { directusResponseId: result.responseId });
           }
         }
       } catch (error) {
@@ -120,9 +116,7 @@ router.post(
           sourceDocumentId,
           error,
         });
-        // Import failJob here to avoid circular dependency
-        const { failJob } = await import("../../../services/jobService");
-        failJob(jobId, error instanceof Error ? error.message : "Unexpected error");
+        jobService.failJob(jobId, error instanceof Error ? error.message : "Unexpected error");
       }
     });
   })

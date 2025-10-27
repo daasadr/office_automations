@@ -6,7 +6,7 @@
  */
 
 import type { Request } from "express";
-import type { JobData } from "../../services/jobService";
+import type { JobData } from "../../services/JobService";
 import type {
   LLMResponseSchema,
   ExtractedData,
@@ -27,7 +27,7 @@ export type {
   DocumentVersion,
 } from "../../lib/directus/types";
 
-export type { JobData } from "../../services/jobService";
+export type { JobData } from "../../services/JobService";
 
 // ============================================================================
 // Request Extensions

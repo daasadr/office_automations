@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { FoundationProcessingService } from "../services/FoundationProcessingService";
-import { requireDirectus, requireBodyParams, asyncHandler } from "../middleware/validation";
+import { FoundationProcessingService } from "../../../services/FoundationProcessingService";
+import { requireDirectus, requireBodyParams, asyncHandler } from "../../../middleware/validation";
 
 const router = Router();
 

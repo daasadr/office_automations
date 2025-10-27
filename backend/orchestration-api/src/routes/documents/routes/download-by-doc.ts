@@ -4,7 +4,7 @@ import { generateExcelFile } from "../../../lib/excel";
 import type { ValidationResult as LLMValidationResult } from "../../../services/llm";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses, RESPONSE_MAX_AGE_HOURS } from "../shared";
-import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
+import { requireDirectus, requireUrlParams, asyncHandler } from "../../../middleware/validation";
 import { parseResponseJson, getExtractedData, ensureProvider } from "../types";
 
 const router = Router();

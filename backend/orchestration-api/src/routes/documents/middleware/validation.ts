@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../../../utils/logger";
 import { isDirectusAvailable } from "../../../lib/directus";
-import { jobService } from "../../../services/jobService";
+import { jobService } from "../../../services/JobService";
 import type { RequestWithJob } from "../types";
 
 // ============================================================================

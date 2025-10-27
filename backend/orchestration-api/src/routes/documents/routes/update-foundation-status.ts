@@ -6,7 +6,7 @@ import {
   requireBodyParams,
   validateEnum,
   asyncHandler,
-} from "../middleware/validation";
+} from "../../../middleware/validation";
 
 const router = Router();
 

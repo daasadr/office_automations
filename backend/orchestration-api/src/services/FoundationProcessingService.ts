@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger";
 import { augmentExcelWithData } from "../lib/excel";
 import type { SheetNotFound, DuplicateRecord, LLMExtractedData } from "../lib/excel/types";
-import { jobService } from "./jobService";
+import { jobService } from "./JobService";
 import { directusDocumentService } from "../lib/directus";
 import type { FoundationDocument } from "../lib/directus/types";
 import type { LLMResponseSchema } from "../llmResponseSchema";

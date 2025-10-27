@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getAllJobs } from "../../../services/jobService";
-import { asyncHandler } from "../middleware/validation";
+import { jobService } from "../../../services/JobService";
+import { asyncHandler } from "../../../middleware/validation";
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const router = Router();
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
-    const jobs = getAllJobs().map((job) => ({
+    const jobs = jobService.getAllJobs().map((job) => ({
       jobId: job.jobId,
       status: job.status,
       fileName: job.fileName,

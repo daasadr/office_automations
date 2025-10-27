@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import { isDirectusAvailable } from "../lib/directus";
-import { getJob } from "../services/jobService";
+import { jobService } from "../services/JobService";
 import type { RequestWithJob } from "../routes/documents/types";
 
 // ============================================================================
@@ -145,7 +145,7 @@ export const requireJob = (source: "params" | "body" = "params") => {
       });
     }
 
-    const job = getJob(jobId);
+    const job = jobService.getJob(jobId);
     if (!job) {
       logger.warn("Job validation failed: job not found", {
         endpoint: req.path,

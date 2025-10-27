@@ -2,7 +2,7 @@ import { Router } from "express";
 import { logger } from "../../../utils/logger";
 import { directusDocumentService } from "../../../lib/directus";
 import { filterRecentResponses } from "../shared";
-import { requireDirectus, requireUrlParams, asyncHandler } from "../middleware/validation";
+import { requireDirectus, requireUrlParams, asyncHandler } from "../../../middleware/validation";
 import { parseResponseJson } from "../types";
 
 const router = Router();

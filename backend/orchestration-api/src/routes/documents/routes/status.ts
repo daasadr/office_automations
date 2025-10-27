@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireJob, asyncHandler, getJobFromRequest } from "../middleware/validation";
+import { requireJob, asyncHandler, getJobFromRequest } from "../../../middleware/validation";
 
 const router = Router();
 

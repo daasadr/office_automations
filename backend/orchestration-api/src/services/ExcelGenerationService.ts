@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger";
 import { generateExcelFile } from "../lib/excel";
 import type { ValidationResult as LLMValidationResult } from "./llm";
-import { jobService } from "./jobService";
+import { jobService } from "./JobService";
 import { directusDocumentService } from "../lib/directus";
 import { filterRecentResponses } from "../routes/documents/shared";
 import {

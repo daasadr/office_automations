@@ -5,7 +5,7 @@ import {
   validateFilename,
   asyncHandler,
   getJobFromRequest,
-} from "../middleware/validation";
+} from "../../../middleware/validation";
 
 const router = Router();
 

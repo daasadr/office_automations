@@ -162,9 +162,7 @@ async function checkMinIO(): Promise<ServiceCheck> {
     // Try to access a bucket or list buckets
     // We'll just try to head a common bucket, if it fails it's still checking connectivity
     try {
-      await s3Client.send(
-        new HeadBucketCommand({ Bucket: process.env.PROJECT_PREFIX || "default" })
-      );
+      await s3Client.send(new HeadBucketCommand({ Bucket: process.env.MINIO_BUCKET || "default" }));
     } catch (bucketError) {
       // Bucket might not exist, but if we get here, MinIO is accessible
       // Check if it's a 404 (bucket not found) vs connection error
@@ -194,6 +192,29 @@ async function checkMinIO(): Promise<ServiceCheck> {
   }
 }
 
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     tags:
+ *       - Health
+ *     summary: Health check endpoint
+ *     description: Returns the health status of the API and its dependencies
+ *     operationId: getHealth
+ *     responses:
+ *       200:
+ *         description: Service is healthy or partially healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
+ *       503:
+ *         description: Service is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
+ */
 router.get("/", async (_req, res) => {
   try {
     // Run all health checks in parallel

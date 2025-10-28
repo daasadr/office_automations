@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import { config } from "./config";
 import { logger } from "./utils/logger";
 import { healthRouter } from "./routes/health";
 import { documentRouter } from "./routes/documents";
 import { errorHandler } from "./middleware/errorHandler";
+import { swaggerSpec } from "./lib/swagger";
 
 const app = express();
 
@@ -29,6 +31,15 @@ app.use((req, _res, next) => {
     userAgent: req.get("User-Agent"),
   });
   next();
+});
+
+// API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Serve OpenAPI spec as JSON
+app.get("/openapi.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
 });
 
 // Routes

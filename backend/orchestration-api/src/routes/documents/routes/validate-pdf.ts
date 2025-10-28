@@ -12,27 +12,46 @@ import {
 const router = Router();
 
 /**
- * POST /validate-pdf
- *
- * Uploads and validates a PDF document using LLM (Gemini).
- * The document is saved to Directus and processed asynchronously.
- *
- * @route POST /documents/validate-pdf
- * @param {Express.Multer.File} file - The PDF file to validate (multipart/form-data)
- * @returns {Object} 200 - Success response with jobId and sourceDocumentId
- * @returns {Object} 400 - Invalid request (no file)
- * @returns {Object} 503 - Directus unavailable
- *
- * @example
- * // Response
- * {
- *   "success": true,
- *   "jobId": "job-abc123",
- *   "provider": "gemini",
- *   "directusSourceDocumentId": "doc-xyz789",
- *   "status": "processing",
- *   "message": "Document uploaded successfully. Processing started."
- * }
+ * @openapi
+ * /documents/validate-pdf:
+ *   post:
+ *     tags:
+ *       - Documents
+ *     summary: Validate PDF document
+ *     description: Upload and validate a PDF document using AI services to extract waste management data
+ *     operationId: validatePdf
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: PDF file to validate (max 10MB)
+ *             required:
+ *               - file
+ *     responses:
+ *       200:
+ *         description: PDF validation started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationResponse'
+ *       400:
+ *         description: Bad request - no file uploaded or invalid file type
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error during validation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   "/",

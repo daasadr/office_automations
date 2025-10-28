@@ -4,7 +4,29 @@ import { asyncHandler } from "@orchestration-api/middleware/validation";
 
 const router = Router();
 
-// List all jobs (for debugging/admin purposes)
+/**
+ * @openapi
+ * /documents/jobs:
+ *   get:
+ *     tags:
+ *       - Documents
+ *     summary: List all jobs
+ *     description: Get a list of all jobs for debugging and administrative purposes
+ *     operationId: getAllJobs
+ *     responses:
+ *       200:
+ *         description: Jobs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/JobListResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/",
   asyncHandler(async (_req, res) => {

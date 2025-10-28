@@ -214,58 +214,47 @@ The following features are planned for future development:
 
 ## Quick Start
 
-### Production Deployment with Traefik (Recommended) 🚀
+### 🚀 Single Command Setup (Recommended!)
 
-**For production deployment with HTTPS, domain routing, and security:**
+The fastest way to get started - **one command does everything:**
 
 ```bash
-# 1. Configure root environment (Traefik & Docker)
-./setup.sh
+# Development environment
+make setup-dev
 
-# 2. Configure backend services
-cd backend
-cp env.template .env
-nano .env  # Set passwords, API keys, etc.
-
-# 3. Configure frontend
-cd ../frontend
-cp env.template .env
-nano .env  # Set session secrets
-
-# 4. Start all services
-cd ..
-
-# Using the helper script (recommended - loads all env files):
-./docker-start.sh up -d
-
-# OR using Make:
-make up
-
-# OR direct docker compose (you may see env variable warnings):
-docker compose up -d
-
-# 5. Import Directus schema (first time only)
-cd backend && ./scripts/quick-import-schema.sh
-
-# Access:
-# - Frontend: https://dejtoai.cz
-# - Admin: https://dejtoai.cz/admin
+# OR Production environment
+make setup-prod
 ```
 
-📚 **See [TRAEFIK_SETUP.md](TRAEFIK_SETUP.md) for complete production setup guide**
+**This single command will:**
+- ✅ Generate all environment files with secure passwords
+- ✅ Setup local domain (dev-dejtoai.local)
+- ✅ Build and start all Docker services
+- ✅ Import Directus schema
+- ✅ Guide you through API token creation
+- ✅ Test all services
 
-### Development Setup
+**After setup completes**, you can access:
+- 🌐 Frontend: http://localhost:4321
+- 🎛️ Directus: http://localhost:8055
+- 🔧 API: http://localhost:3001
 
-### Prerequisites
+📚 **See [SETUP.md](SETUP.md) for complete setup guide and troubleshooting**
+
+---
+
+### Manual/Advanced Setup
+
+#### Prerequisites
 
 - **Docker Engine** (v24.0+) and Docker Compose (v2.20+)
-- **Node.js** (v18+) for local frontend development
+- **Make** command (pre-installed on macOS/Linux)
 - **Git** for version control
-- **Google Gemini API Key** for document processing
+- **Google Gemini API Key** for document processing (optional, can add later)
 - **Minimum 4GB RAM** (8GB recommended)
 - **10GB disk space** for Docker volumes
 
-### Environment Setup
+#### Manual Environment Setup
 
 The project uses three separate environment files:
 

@@ -1,195 +1,246 @@
-# Office Automations Project
-# Makefile for common development tasks
+# Office Automation - Makefile
+# Convenient commands for managing the entire stack
 
-.PHONY: help start stop logs status import-schema quick-import clean backup dev-setup health db
-.PHONY: frontend-dev frontend-build frontend-preview frontend-check frontend-install
-.PHONY: lint format check install-deps
-.PHONY: dev-mode prod-mode start-dev start-prod rebuild-orchestration
+.PHONY: help up down restart logs status build rebuild clean shell setup check-env setup-domain setup-dev setup-prod setup-env import-schema test-services setup-directus-token start-dev start-prod rebuild-orchestration logs-orchestration
 
 # Default target
-help:
-	@echo "Available commands:"
+.DEFAULT_GOAL := help
+
+# Colors
+YELLOW := \033[1;33m
+GREEN := \033[0;32m
+RED := \033[0;31m
+CYAN := \033[0;36m
+NC := \033[0m
+
+help: ## Show this help message
 	@echo ""
-	@echo "🏗️  Backend Services:"
-	@echo "  make start              - Start all backend services"
-	@echo "  make stop               - Stop all backend services"
-	@echo "  make restart            - Restart all backend services"
-	@echo "  make logs               - View all service logs"
-	@echo "  make status             - Check service status"
-	@echo "  make health             - Run health checks"
-	@echo "  make clean              - Remove all containers and volumes"
+	@echo "$(GREEN)Office Automation - Management Commands$(NC)"
 	@echo ""
-	@echo "🔧 Orchestration API Development:"
-	@echo "  make start-dev          - Start orchestration in DEV mode (hot-reload)"
-	@echo "  make start-prod         - Start orchestration in PROD mode (optimized)"
-	@echo "  make rebuild-orchestration - Rebuild orchestration API container"
+	@echo "$(YELLOW)Quick Start:$(NC)"
+	@echo "  make setup-dev   - Complete dev environment setup"
+	@echo "  make setup-prod  - Complete prod environment setup"
 	@echo ""
-	@echo "📋 Schema Management:"
-	@echo "  make import-schema - Import Directus schema (interactive)"
-	@echo "  make quick-import  - Quick import schema (no prompts)"
-	@echo "  make backup        - Backup current Directus schema"
+	@echo "$(YELLOW)Available Commands:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo ""
-	@echo "🎨 Frontend Development:"
-	@echo "  make frontend-dev     - Start frontend development server"
-	@echo "  make frontend-build   - Build frontend for production"
-	@echo "  make frontend-preview - Preview production build"
-	@echo "  make frontend-check   - Run Astro type checking"
-	@echo "  make frontend-install - Install frontend dependencies"
-	@echo ""
-	@echo "🔧 Development Tools:"
-	@echo "  make lint          - Run linting on all code"
-	@echo "  make format        - Format all code"
-	@echo "  make check         - Run all checks and fixes"
-	@echo "  make install-deps  - Install all project dependencies"
-	@echo "  make dev-setup     - Complete development environment setup"
-	@echo ""
-	@echo "🗄️  Database:"
-	@echo "  make db            - Connect to PostgreSQL database"
 
-# Backend Service management
-start:
-	@echo "🚀 Starting all backend services..."
-	cd backend && docker compose up -d
+check-env: ## Check if all environment files exist
+	@echo "$(YELLOW)Checking environment files...$(NC)"
+	@if [ ! -f .env ]; then \
+		echo "$(RED)✗ Root .env not found. Run: make setup-dev$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -f backend/.env ]; then \
+		echo "$(RED)✗ backend/.env not found. Run: make setup-dev$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -f frontend/.env ]; then \
+		echo "$(RED)✗ frontend/.env not found. Run: make setup-dev$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✓ All environment files found$(NC)"
 
-stop:
-	@echo "🛑 Stopping all backend services..."
-	cd backend && docker compose down
+up: check-env ## Start all services
+	@echo "$(GREEN)Starting all services...$(NC)"
+	@./scripts/docker-start.sh up -d
 
-restart: stop start
+down: ## Stop all services
+	@echo "$(YELLOW)Stopping all services...$(NC)"
+	@docker compose down
 
-# Orchestration API Development Modes
-start-dev:
-	@echo "🔧 Starting Orchestration API in DEVELOPMENT mode (hot-reload)..."
-	@echo "📝 Code changes will automatically restart the server"
-	cd backend && docker compose -f docker-compose.yml -f docker/orchestration/orchestration.dev.yml up -d orchestration-api
-	@echo "✅ Development mode started!"
-	@echo "📊 View logs: make logs-orchestration"
+restart: down up ## Restart all services
 
-start-prod:
-	@echo "🚀 Starting Orchestration API in PRODUCTION mode (optimized)..."
-	cd backend && docker compose -f docker-compose.yml -f docker/orchestration/orchestration.prod.yml up -d orchestration-api
-	@echo "✅ Production mode started!"
-	@echo "📊 View logs: make logs-orchestration"
+logs: ## View logs (all services)
+	@docker compose logs -f
 
-rebuild-orchestration:
-	@echo "🔨 Rebuilding Orchestration API container..."
-	cd backend && docker compose build orchestration-api
-	@echo "✅ Rebuild complete!"
+logs-traefik: ## View Traefik logs
+	@docker compose logs -f traefik
 
-# Monitoring
-logs:
-	cd backend && docker compose logs -f
+logs-frontend: ## View frontend logs
+	@docker compose logs -f frontend
 
-status:
-	@echo "📊 Service Status:"
-	cd backend && docker compose ps
+logs-directus: ## View Directus logs
+	@docker compose logs -f directus
 
-# Schema management
-import-schema:
-	@echo "📋 Importing Directus schema (interactive)..."
-	@cd backend && ./scripts/import-directus-schema.sh
+logs-api: ## View orchestration API logs
+	@docker compose logs -f orchestration-api
 
-quick-import:
-	@echo "⚡ Quick importing Directus schema..."
-	@cd backend && ./scripts/quick-import-schema.sh
+status: ## Show status of all services
+	@docker compose ps
 
-backup:
-	@echo "💾 Creating schema backup..."
-	@cd backend && CONTAINER_NAME="$${PROJECT_PREFIX:-office-automation_}-directus"; \
-	BACKUP_FILE="backup-$$(date +%F_%H-%M-%S).json"; \
-	docker exec "$$CONTAINER_NAME" npx directus schema snapshot "/directus/snapshots/$$BACKUP_FILE"; \
-	echo "✅ Backup created: /directus/snapshots/$$BACKUP_FILE"
+build: check-env ## Build all services
+	@echo "$(GREEN)Building all services...$(NC)"
+	@./docker-start.sh build
 
-# Development
-clean:
-	@echo "🧹 Cleaning up containers and volumes..."
-	@read -p "This will remove ALL containers and data. Continue? (y/N): " confirm; \
-	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		cd backend && docker compose down -v --remove-orphans; \
-		docker system prune -f; \
-		echo "✅ Cleanup completed"; \
+rebuild: check-env ## Rebuild all services without cache
+	@echo "$(GREEN)Rebuilding all services (no cache)...$(NC)"
+	@./docker-start.sh build --no-cache
+
+clean: ## Stop and remove all containers, volumes, and networks
+	@echo "$(RED)⚠️  This will remove all data!$(NC)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		docker compose down -v; \
+		echo "$(GREEN)✓ Cleaned up$(NC)"; \
 	else \
-		echo "❌ Cleanup cancelled"; \
+		echo "Cancelled"; \
 	fi
 
-# Service-specific logs
-logs-directus:
-	cd backend && docker compose logs -f directus
+shell-frontend: ## Access frontend container shell
+	@docker compose exec frontend sh
 
-logs-temporal:
-	cd backend && docker compose logs -f temporal
+shell-api: ## Access orchestration API container shell
+	@docker compose exec orchestration-api sh
 
-logs-workers:
-	cd backend && docker compose logs -f worker-classify worker-llm-extract worker-validate worker-export worker-deliver worker-notifier
+shell-directus: ## Access Directus container shell
+	@docker compose exec directus sh
 
-logs-orchestration:
-	cd backend && docker compose logs -f orchestration-api
+shell-postgres: ## Access PostgreSQL container shell
+	@docker compose exec postgres psql -U directus directus
 
-logs-email:
-	cd backend && docker compose logs -f email-collector
+setup: setup-dev ## Alias for setup-dev (default setup)
 
-# Health checks
-health:
-	@echo "🏥 Health Checks:"
-	@echo "Directus:         $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8055/server/ping || echo 'DOWN')"
-	@echo "Temporal UI:      $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8085 || echo 'DOWN')" 
-	@echo "MinIO Console:    $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9001 || echo 'DOWN')"
-	@echo "Orchestration:    $$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/health || echo 'DOWN')"
-
-# Frontend Development
-frontend-dev:
-	@echo "🎨 Starting frontend development server..."
-	cd frontend && npm run dev
-
-frontend-build:
-	@echo "🏗️  Building frontend for production..."
-	cd frontend && npm run build
-
-frontend-preview:
-	@echo "👀 Starting frontend preview server..."
-	cd frontend && npm run preview
-
-frontend-check:
-	@echo "🔍 Running Astro type checking..."
-	cd frontend && npm run check
-
-frontend-install:
-	@echo "📦 Installing frontend dependencies..."
-	cd frontend && npm install
-
-# Development Tools
-lint:
-	@echo "🔍 Running linting..."
-	npm run lint
-
-format:
-	@echo "✨ Formatting code..."
-	npm run format:fix
-
-check:
-	@echo "🔧 Running all checks and fixes..."
-	npm run check:fix
-
-install-deps:
-	@echo "📦 Installing all project dependencies..."
-	npm install
-	cd frontend && npm install
-	cd backend/orchestration-api && npm install
-
-# Complete development setup
-dev-setup: install-deps start import-schema frontend-install
-	@echo "🎯 Development environment ready!"
+setup-dev: ## Complete development environment setup (single command)
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Development Environment Setup                         ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
-	@echo "🔗 Available Services:"
-	@echo "📱 Directus Admin:     http://localhost:8055"
-	@echo "🔄 Temporal UI:        http://localhost:8085"  
-	@echo "💾 MinIO Console:      http://localhost:9001"
-	@echo "🎛️  Orchestration API:  http://localhost:3001"
-	@echo ""
-	@echo "🎨 Frontend Development:"
-	@echo "Run 'make frontend-dev' to start the frontend development server"
+	@./scripts/setup-environment.sh
 
-# Database access
-db:
-	@CONTAINER_NAME="$${PROJECT_PREFIX:-office-automation_}-postgres"; \
-	cd backend && docker exec -it "$$CONTAINER_NAME" psql -U directus -d directus
+setup-prod: ## Complete production environment setup (single command)
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Production Environment Setup                          ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@./scripts/setup-environment.sh
+
+setup-env: ## Generate environment files only (no Docker start)
+	@echo "$(YELLOW)Generating environment files...$(NC)"
+	@if [ ! -f .env ]; then cp env.template .env; echo "$(GREEN)✓$(NC) Created root .env"; fi
+	@if [ ! -f backend/.env ]; then cp backend/env.template backend/.env; echo "$(GREEN)✓$(NC) Created backend/.env"; fi
+	@if [ ! -f frontend/.env ]; then cp frontend/env.template frontend/.env; echo "$(GREEN)✓$(NC) Created frontend/.env"; fi
+	@echo ""
+	@echo "$(YELLOW)⚠  Remember to update these files with your values:$(NC)"
+	@echo "  • .env"
+	@echo "  • backend/.env"
+	@echo "  • frontend/.env"
+
+setup-domain: ## Add dev-dejtoai.local to /etc/hosts
+	@echo "$(YELLOW)Setting up local domain...$(NC)"
+	@if grep -q "dev-dejtoai.local" /etc/hosts; then \
+		echo "$(GREEN)✓ dev-dejtoai.local already configured$(NC)"; \
+	else \
+		echo "$(YELLOW)Adding dev-dejtoai.local to /etc/hosts (requires sudo)...$(NC)"; \
+		echo "127.0.0.1 dev-dejtoai.local" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "$(GREEN)✓ dev-dejtoai.local added to /etc/hosts$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)You can now access:$(NC)"
+	@echo "  • Main site: http://dev-dejtoai.local"
+	@echo "  • Traefik dashboard: http://traefik.dev-dejtoai.local:8080"
+	@echo "  • Directus: http://dev-dejtoai.local/admin"
+
+health: test-services ## Alias for test-services
+
+pull: ## Pull latest images
+	@docker compose pull
+
+update: pull rebuild ## Update to latest versions
+
+backup: ## Backup PostgreSQL database
+	@echo "$(YELLOW)Backing up database...$(NC)"
+	@docker compose exec postgres pg_dump -U directus directus > backup_$$(date +%Y%m%d_%H%M%S).sql
+	@echo "$(GREEN)✓ Database backed up$(NC)"
+
+import-schema: ## Import Directus schema
+	@echo "$(YELLOW)Importing Directus schema...$(NC)"
+	@if [ ! -f backend/docker/directus/schema/directus11_schema_snapshot.json ] && [ ! -f backend/docker/directus/schema/directus11_schema_snapshot_simplified.json ]; then \
+		echo "$(RED)✗ Schema file not found$(NC)"; \
+		exit 1; \
+	fi
+	@cd backend && ./scripts/quick-import-schema.sh
+	@echo "$(GREEN)✓ Schema imported$(NC)"
+
+setup-directus-token: ## Interactive guide to setup Directus API token
+	@echo "$(YELLOW)╔════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(YELLOW)║  Directus API Token Setup                              ║$(NC)"
+	@echo "$(YELLOW)╚════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "Follow these steps to create an API token:"
+	@echo ""
+	@echo "1. Open Directus: $(CYAN)http://localhost:8055$(NC)"
+	@echo "2. Login with your admin credentials"
+	@echo "3. Go to Settings → Access Tokens"
+	@echo "4. Create a new token with Admin permissions"
+	@echo "5. Copy the token"
+	@echo ""
+	@read -p "Press Enter when ready to input the token..."
+	@echo ""
+	@read -p "Enter the Directus API token: " token; \
+	if [ -n "$$token" ]; then \
+		if [[ "$$OSTYPE" == "darwin"* ]]; then \
+			sed -i '' "s/DIRECTUS_API_TOKEN=.*/DIRECTUS_API_TOKEN=$$token/" backend/.env; \
+			sed -i '' "s/DIRECTUS_TOKEN=.*/DIRECTUS_TOKEN=$$token/" frontend/.env; \
+		else \
+			sed -i "s/DIRECTUS_API_TOKEN=.*/DIRECTUS_API_TOKEN=$$token/" backend/.env; \
+			sed -i "s/DIRECTUS_TOKEN=.*/DIRECTUS_TOKEN=$$token/" frontend/.env; \
+		fi; \
+		echo ""; \
+		echo "$(GREEN)✓ Token updated in environment files$(NC)"; \
+		echo ""; \
+		echo "Restart services to apply:"; \
+		echo "  $(CYAN)docker compose restart orchestration-api frontend$(NC)"; \
+	else \
+		echo "$(RED)✗ No token entered$(NC)"; \
+	fi
+
+test-services: ## Test all services health
+	@echo "$(YELLOW)Testing service health...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Traefik:$(NC)"
+	@curl -sf http://localhost:80 > /dev/null && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Frontend:$(NC)"
+	@curl -sf http://localhost:4321 > /dev/null && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Directus:$(NC)"
+	@curl -sf http://localhost:8055/server/ping > /dev/null && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Orchestration API:$(NC)"
+	@curl -sf http://localhost:3001/health > /dev/null && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+	@echo "$(YELLOW)PostgreSQL:$(NC)"
+	@docker compose exec -T postgres pg_isready -U directus > /dev/null 2>&1 && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+	@echo "$(YELLOW)MinIO:$(NC)"
+	@curl -sf http://localhost:9000/minio/health/live > /dev/null && echo "$(GREEN)✓ Running$(NC)" || echo "$(RED)✗ Not responding$(NC)"
+	@echo ""
+
+start-dev: check-env ## Start in development mode (hot-reloading)
+	@echo "$(GREEN)Starting in development mode...$(NC)"
+	@echo "$(YELLOW)ℹ Using hot-reloading for orchestration-api$(NC)"
+	@DOCKER_BUILD_TARGET=development ./scripts/docker-start.sh up -d
+	@echo ""
+	@echo "$(GREEN)✓ Services started in development mode$(NC)"
+	@echo ""
+	@make status
+
+start-prod: check-env ## Start in production mode (optimized)
+	@echo "$(GREEN)Starting in production mode...$(NC)"
+	@echo "$(YELLOW)ℹ Using optimized builds$(NC)"
+	@DOCKER_BUILD_TARGET=production ./scripts/docker-start.sh up -d
+	@echo ""
+	@echo "$(GREEN)✓ Services started in production mode$(NC)"
+	@echo ""
+	@make status
+
+rebuild-orchestration: ## Rebuild orchestration-api (after dependency changes)
+	@echo "$(YELLOW)Rebuilding orchestration-api...$(NC)"
+	@docker compose build --no-cache orchestration-api
+	@docker compose up -d orchestration-api
+	@echo "$(GREEN)✓ Orchestration API rebuilt$(NC)"
+
+logs-orchestration: ## View orchestration API logs
+	@docker compose logs -f orchestration-api

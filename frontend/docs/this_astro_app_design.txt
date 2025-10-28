@@ -1,46 +1,143 @@
 # Frontend Architecture & Technical Specifications
+## High-Quality, Maintainable, Scalable Code Standards
+
+**Core Principles**: Accessibility-first, type-safe, well-documented, performant, maintainable, scalable, and Czech-localized.
+
+**MANDATORY PRACTICES**:
+- ✅ Use path aliases (`@/components`, `@/lib`, etc.) - NEVER use relative imports beyond immediate siblings
+- ✅ Use `cn()` utility (clsx + tailwind-merge) for conditional class names
+- ✅ Write comprehensive JSDoc comments for all public APIs, complex logic, and non-obvious code
+- ✅ Follow TypeScript strict mode - NO `any` types without explicit justification
+- ✅ Separate client-safe and server-only code (constants, utilities)
+- ✅ Log all user actions, API calls, errors, and performance metrics
+- ✅ Write accessible, semantic HTML with proper ARIA attributes
+
+---
 
 ## 1. TECH STACK OVERVIEW
 - **Framework**: Astro 4.4+ with SSR (Server-Side Rendering)
 - **UI Library**: React 18 (islands architecture via @astrojs/react)
-- **Styling**: Tailwind CSS 3.4+ with custom design system
-- **Type System**: TypeScript 5.4+ (strict mode enabled)
-- **Component Library**: Radix UI primitives (accessible, unstyled)
-- **Icons**: Lucide React
-- **Logging**: Pino (server-side), custom client logger (browser)
-- **Build Tool**: Vite (via Astro)
-- **Node Adapter**: @astrojs/node (standalone mode)
-- **Backend Integration**: Directus SDK, REST APIs
+- **Styling**: Tailwind CSS 3.4+ with shadcn/ui design system
+- **Type System**: TypeScript 5.4+ (strict mode, path aliases configured)
+- **Component Library**: Radix UI primitives (accessible, unstyled, composable)
+- **Icons**: Lucide React (tree-shakeable, accessible)
+- **Logging**: Pino (server-side, structured), custom client logger (browser)
+- **Code Quality**: Biome (linting, formatting, import organization)
+- **Build Tool**: Vite (via Astro, optimized for performance)
+- **Node Adapter**: @astrojs/node (standalone mode for production)
+- **Monitoring**: Sentry (error tracking, performance monitoring)
+- **Backend Integration**: Directus SDK, REST APIs via orchestration layer
 
 ## 2. PROJECT STRUCTURE PATTERNS
 
-### File Organization
+### File Organization - Feature-Based Architecture
 ```
 src/
-├── components/          # React components
-│   ├── ui/             # Radix-based design system components
-│   └── *.tsx           # Feature components (PascalCase)
-├── layouts/            # Astro layout templates
-│   └── *.astro         # Base layouts
-├── pages/              # File-based routing
-│   ├── api/            # API routes (server endpoints)
-│   └── *.astro         # Page components
-├── lib/                # Shared utilities
-│   ├── logger.ts       # Server-side logging (Pino)
-│   ├── client-logger.ts # Client-side logging
-│   ├── utils.ts        # cn() utility for class merging
-│   └── middleware.ts   # API middleware
+├── components/                    # React components (feature-based organization)
+│   ├── ui/                       # Design system components (Radix + shadcn/ui)
+│   │   ├── button.tsx           # Reusable, styled UI primitives
+│   │   ├── dialog.tsx
+│   │   └── ...
+│   ├── FeatureName/              # Feature-based component folders
+│   │   ├── index.tsx            # Main component export
+│   │   ├── types.ts             # Feature-specific types
+│   │   ├── hooks/               # Custom hooks for this feature
+│   │   │   ├── useFeatureLogic.ts
+│   │   │   └── ...
+│   │   ├── components/          # Sub-components
+│   │   │   ├── SubComponent.tsx
+│   │   │   └── ...
+│   │   └── actions/             # Business logic, data fetching
+│   │       ├── apiCalls.ts
+│   │       └── validation.ts
+│   └── SharedComponent.tsx       # Standalone shared components
+│
+├── layouts/                      # Astro layout templates
+│   ├── BaseLayout.astro         # Main layout wrapper
+│   ├── base-layout.css          # Layout-specific styles
+│   └── components/              # Layout-specific components
+│
+├── pages/                        # File-based routing (Astro)
+│   ├── index.astro              # Public pages
+│   ├── upload.astro
+│   └── api/                     # API routes (server endpoints)
+│       ├── health.ts            # Health check endpoint
+│       ├── validate-pdf.ts      # Business logic endpoints
+│       └── [dynamic]/           # Dynamic routes
+│           └── [param].ts
+│
+├── lib/                          # Shared utilities and helpers
+│   ├── logger.ts                # Server-side logging (Pino, structured)
+│   ├── client-logger.ts         # Client-side logging (browser-safe)
+│   ├── middleware.ts            # API middleware (logging, error handling)
+│   └── utils.ts                 # cn() utility, URL helpers
+│
 ├── styles/
-│   └── globals.css     # Global styles, CSS variables
-└── constants.ts        # App-wide constants
+│   └── globals.css              # Global styles, CSS variables, design tokens
+│
+├── client-constants.ts           # Client-safe constants (PUBLIC_ env vars)
+└── server-constants.ts           # Server-only constants (all env vars)
 ```
 
-### Naming Conventions
-- **React Components**: PascalCase (e.g., `UploadForm.tsx`, `ProcessingOverlay.tsx`)
-- **Astro Pages**: lowercase with hyphens if needed (e.g., `index.astro`, `upload.astro`)
-- **Utilities/Services**: camelCase (e.g., `logger.ts`, `client-logger.ts`)
-- **API Routes**: lowercase, RESTful structure (e.g., `health.ts`, `validate-pdf.ts`)
-- **Types/Interfaces**: PascalCase with descriptive names (e.g., `ServiceStatus`, `HealthResponse`)
+### Component Organization Standards
+
+**ALWAYS organize complex components using the feature folder pattern**:
+
+```
+ComponentName/
+├── index.tsx              # Main component, orchestrates sub-components
+├── types.ts              # TypeScript interfaces, types
+├── hooks/                # Custom hooks (logic extraction)
+│   ├── useComponentLogic.ts
+│   └── useDataFetching.ts
+├── components/           # Sub-components (presentation)
+│   ├── SubComponentA.tsx
+│   └── SubComponentB.tsx
+└── actions/              # Business logic, API calls, validation
+    ├── validation.ts
+    └── apiService.ts
+```
+
+**Benefits**:
+- ✅ Scalability: Easy to add features without cluttering
+- ✅ Maintainability: Related code stays together
+- ✅ Testability: Clear boundaries for unit tests
+- ✅ Readability: Obvious where to find specific logic
+- ✅ Collaboration: Reduces merge conflicts
+
+### Naming Conventions (STRICT)
+
+| Type | Convention | Example | Location |
+|------|-----------|---------|----------|
+| **React Components** | PascalCase | `UploadForm.tsx`, `FileDropZone.tsx` | `components/` |
+| **Astro Pages** | lowercase, hyphens | `index.astro`, `upload.astro` | `pages/` |
+| **API Routes** | lowercase, RESTful | `health.ts`, `[jobId].ts` | `pages/api/` |
+| **Hooks** | camelCase, `use` prefix | `useFileUpload.ts`, `useDragAndDrop.ts` | `hooks/` |
+| **Utilities** | camelCase | `logger.ts`, `utils.ts` | `lib/` |
+| **Types/Interfaces** | PascalCase, descriptive | `ServiceStatus`, `HealthResponse`, `UploadResult` | Inline or `types.ts` |
+| **Constants** | UPPER_SNAKE_CASE | `MAX_FILE_SIZE`, `HTTP_STATUS` | `*-constants.ts` |
+| **Actions/Services** | camelCase | `validateFile`, `uploadFile` | `actions/` |
+
+### Path Aliases Configuration
+
+**ALWAYS use path aliases** - configured in `tsconfig.json` and `astro.config.mjs`:
+
+```typescript
+import { Button } from "@/components/ui/button"           // ✅ Good
+import { useLogger } from "@/lib/client-logger"          // ✅ Good
+import { ORCHESTRATION_API_URL } from "@/server-constants" // ✅ Good
+
+import { Button } from "../../../components/ui/button"   // ❌ Bad
+import { useLogger } from "../../lib/client-logger"      // ❌ Bad
+```
+
+**Available Aliases**:
+- `@/*` → `src/*` (everything)
+- `@/components/*` → `src/components/*`
+- `@/lib/*` → `src/lib/*`
+- `@/pages/*` → `src/pages/*`
+- `@/layouts/*` → `src/layouts/*`
+- `@/utils/*` → `src/utils/*` (if needed)
 
 ## 3. ASTRO CONFIGURATION
 
@@ -58,21 +155,265 @@ src/
 - Use React (`.tsx`) for interactive components with `client:*` directives
 - Leverage Astro's partial hydration (islands architecture)
 
-## 4. TYPESCRIPT CONFIGURATION
+## 4. TYPESCRIPT STANDARDS (STRICT MODE)
 
-### Compiler Options
-- **Target**: ES2022
-- **Module**: ESNext
-- **Strict Mode**: Enabled
-- **moduleResolution**: node
-- **Types**: ["astro/client", "node"]
+### Compiler Configuration
+```json
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "strict": true,                    // ✅ All strict checks enabled
+    "noEmit": true,                    // ✅ Astro handles compilation
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": { /* aliases */ }
+  }
+}
+```
 
-### Type Safety Rules
-- All function parameters must be typed
-- Avoid `any` - use `unknown` or proper types
-- Use type guards for runtime checks
-- Export interfaces for public APIs
-- Use `Omit`, `Pick`, `Partial` for type composition
+### Type Safety Rules (NON-NEGOTIABLE)
+
+#### 1. **NO `any` Without Justification**
+```typescript
+// ❌ BAD - Loses all type safety
+function processData(data: any) {
+  return data.value;
+}
+
+// ✅ GOOD - Use proper types
+interface DataInput {
+  value: string;
+  metadata?: Record<string, unknown>;
+}
+
+function processData(data: DataInput): string {
+  return data.value;
+}
+
+// ✅ ACCEPTABLE - When truly dynamic with justification
+function legacyAPICall(payload: any): Promise<Response> {  // eslint-disable-line @typescript-eslint/no-explicit-any
+  // Justification: Legacy API with no type definitions available
+  return fetch('/legacy', { body: JSON.stringify(payload) });
+}
+```
+
+#### 2. **Always Type Function Parameters and Return Values**
+```typescript
+// ❌ BAD - Implicit any, unclear return
+function calculateTotal(items) {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+// ✅ GOOD - Explicit types
+interface CartItem {
+  id: string;
+  price: number;
+  quantity: number;
+}
+
+function calculateTotal(items: CartItem[]): number {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+```
+
+#### 3. **Use Discriminated Unions for Variants**
+```typescript
+// ✅ GOOD - Type-safe state management
+type LoadingState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error };
+
+function handleState<T>(state: LoadingState<T>) {
+  switch (state.status) {
+    case 'success':
+      // TypeScript knows state.data exists here
+      return state.data;
+    case 'error':
+      // TypeScript knows state.error exists here
+      throw state.error;
+    default:
+      return null;
+  }
+}
+```
+
+#### 4. **Export Public Interfaces**
+```typescript
+// ✅ GOOD - Exportable, reusable types
+export interface UploadResult {
+  jobId: string;
+  directusSourceDocumentId?: string;
+  requestId?: string;
+}
+
+export interface UploadError {
+  error: string;
+  requestId?: string;
+  details?: unknown;
+}
+
+// Component using these types
+export function UploadForm() {
+  const [result, setResult] = useState<UploadResult | null>(null);
+  // ...
+}
+```
+
+#### 5. **Use Type Composition Utilities**
+```typescript
+// ✅ GOOD - Leverage TypeScript utilities
+type UserBase = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  createdAt: Date;
+};
+
+// Public-facing user (no password)
+type PublicUser = Omit<UserBase, 'password'>;
+
+// User creation payload (no id, no dates)
+type CreateUserInput = Omit<UserBase, 'id' | 'createdAt'>;
+
+// Partial update
+type UpdateUserInput = Partial<Pick<UserBase, 'name' | 'email'>>;
+```
+
+#### 6. **Type Guards for Runtime Checks**
+```typescript
+// ✅ GOOD - Type-safe runtime validation
+function isUploadResult(response: unknown): response is UploadResult {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'jobId' in response &&
+    typeof (response as UploadResult).jobId === 'string'
+  );
+}
+
+async function uploadFile(file: File): Promise<UploadResult> {
+  const response = await fetch('/api/upload', { /* ... */ });
+  const data: unknown = await response.json();
+  
+  if (!isUploadResult(data)) {
+    throw new Error('Invalid response from server');
+  }
+  
+  // TypeScript now knows data is UploadResult
+  return data;
+}
+```
+
+#### 7. **Const Assertions for Literal Types**
+```typescript
+// ✅ GOOD - Type-safe constants
+export const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;
+
+// Type is: { readonly OK: 200; ... }
+type HttpStatusCode = typeof HTTP_STATUS[keyof typeof HTTP_STATUS];
+// Type is: 200 | 400 | 404 | 500
+```
+
+### JSDoc Documentation Standards
+
+**ALWAYS document**:
+- Public functions/methods
+- Complex algorithms
+- Non-obvious business logic
+- API contracts
+- Type parameters
+
+```typescript
+/**
+ * Uploads a file to the server and initiates processing
+ * 
+ * @param file - The file to upload (PDF only, max 10MB)
+ * @param options - Optional upload configuration
+ * @param options.onProgress - Callback for upload progress (0-100)
+ * @param options.requestId - Optional request ID for tracking
+ * 
+ * @returns Promise resolving to upload result with job ID
+ * @throws {ValidationError} If file validation fails
+ * @throws {NetworkError} If upload fails due to network issues
+ * 
+ * @example
+ * ```typescript
+ * const result = await uploadFile(pdfFile, {
+ *   onProgress: (progress) => console.log(`${progress}%`),
+ * });
+ * console.log('Job ID:', result.jobId);
+ * ```
+ */
+export async function uploadFile(
+  file: File,
+  options?: {
+    onProgress?: (progress: number) => void;
+    requestId?: string;
+  }
+): Promise<UploadResult> {
+  // Implementation
+}
+
+/**
+ * Custom hook for managing file upload state and logic
+ * 
+ * Handles file selection, validation, upload, and error states.
+ * Automatically logs user actions and upload progress.
+ * 
+ * @returns Object containing upload state and handlers
+ * 
+ * @example
+ * ```tsx
+ * function UploadComponent() {
+ *   const { selectedFile, isSubmitting, handleFileSelect, handleSubmit } = useFileUpload();
+ *   
+ *   return (
+ *     <form onSubmit={handleSubmit}>
+ *       <input type="file" onChange={(e) => handleFileSelect(e.target.files[0])} />
+ *       <button disabled={isSubmitting}>Upload</button>
+ *     </form>
+ *   );
+ * }
+ * ```
+ */
+export function useFileUpload(): FileUploadHandlers {
+  // Implementation
+}
+```
+
+### Constants Separation Pattern
+
+**CRITICAL**: Separate client-safe and server-only code to prevent leaking secrets
+
+```typescript
+// ✅ client-constants.ts - Safe for browser
+export const BASE_PATH = import.meta.env.PUBLIC_BASE_PATH || "";
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const CONTENT_TYPE_JSON = "application/json";
+
+// ✅ server-constants.ts - Server-only
+export * from "@/client-constants";  // Re-export client constants
+
+export const ORCHESTRATION_API_URL =
+  process.env.ORCHESTRATION_API_URL || import.meta.env.ORCHESTRATION_API_URL;
+
+if (!ORCHESTRATION_API_URL) {
+  throw new Error("ORCHESTRATION_API_URL is not defined");
+}
+
+// ❌ NEVER import server-constants.ts in client components
+// ✅ ALWAYS use client-constants.ts in React components
+```
 
 ## 5. STYLING APPROACH
 
@@ -355,61 +696,323 @@ log.performance("operation", duration)
 6. **Constants**: Use `constants.ts` for magic values
 7. **Destructuring**: Destructure props and complex objects
 
-## 11. CODE STYLE & CONVENTIONS
+## 11. CODE QUALITY & STANDARDIZATION
 
-### Import Organization
-```typescript
-// 1. External dependencies
-import { useState } from "react"
-import type { APIRoute } from "astro"
+### Biome Configuration (Linting & Formatting)
 
-// 2. Internal dependencies (absolute paths)
-import { logger } from "@/lib/logger"
-import { Button } from "@/components/ui/button"
+**Automated code quality** via Biome (unified linter + formatter):
 
-// 3. Relative imports (if needed)
-import { helperFunction } from "./utils"
-
-// 4. Types (can be grouped or inline)
-import type { CustomType } from "./types"
-```
-
-### Function Declarations
-```typescript
-// Named exports preferred
-export function ComponentName() { /* ... */ }
-export const utilityFunction = () => { /* ... */ }
-
-// Arrow functions for callbacks
-const handleClick = useCallback(() => { /* ... */ }, [deps])
-```
-
-### Async/Await
-```typescript
-// Always use async/await over .then()
-async function fetchData() {
-  try {
-    const response = await fetch(url)
-    const data = await response.json()
-    return data
-  } catch (error) {
-    log.error("Fetch failed", error)
-    throw error
+```json
+{
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noImplicitAnyLet": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn"
+      },
+      "a11y": {
+        "useSemanticElements": "warn",
+        "useKeyWithClickEvents": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "semicolons": "always",
+    "trailingCommas": "es5"
   }
 }
 ```
 
-### Conditional Rendering
+**ALWAYS run before committing**:
+```bash
+npx @biomejs/biome check --apply ./frontend/src
+```
+
+### Import Organization Standards (Enforced by Biome)
+
+**STRICT ORDER** - Biome auto-organizes:
+
 ```typescript
-// Short-circuit for simple conditions
-{isLoading && <Loader />}
+// 1. External dependencies (React, Astro, libraries)
+import { useState, useCallback, useEffect } from "react";
+import type { APIRoute } from "astro";
+import { cva, type VariantProps } from "class-variance-authority";
 
-// Ternary for if/else
-{isSuccess ? <Success /> : <Error />}
+// 2. Internal dependencies (ALWAYS use @ aliases)
+import { Button } from "@/components/ui/button";
+import { useLogger } from "@/lib/client-logger";
+import { cn, withBasePath } from "@/lib/utils";
+import { MAX_FILE_SIZE, HTTP_STATUS } from "@/client-constants";
 
-// Early returns in functions
-if (!data) return null
-return <Component data={data} />
+// 3. Relative imports (ONLY for sibling files in same feature folder)
+import type { UploadResult } from "./types";
+import { validateFile } from "./actions/fileValidation";
+
+// 4. Type-only imports (separated when possible)
+import type { PropsWithChildren, ReactNode } from "react";
+```
+
+### Function Declaration Standards
+
+```typescript
+// ✅ GOOD - Named function exports (preferred)
+export function ComponentName() {
+  // Component logic
+}
+
+export function utilityFunction(param: string): string {
+  return param.toUpperCase();
+}
+
+// ✅ GOOD - Arrow functions for callbacks/handlers
+const handleClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+  event.preventDefault();
+  // Logic
+}, [dependencies]);
+
+// ✅ GOOD - Async functions with explicit return types
+export async function fetchUserData(userId: string): Promise<User> {
+  const response = await fetch(`/api/users/${userId}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// ❌ BAD - Missing return type, unclear intent
+export async function fetchUserData(userId) {
+  const response = await fetch(`/api/users/${userId}`);
+  return response.json();
+}
+```
+
+### Async/Await Best Practices
+
+```typescript
+// ✅ GOOD - Always use async/await over .then()
+async function fetchData(url: string): Promise<DataType> {
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data: unknown = await response.json();
+    
+    if (!isValidDataType(data)) {
+      throw new Error('Invalid response format');
+    }
+    
+    return data;
+  } catch (error) {
+    log.error("Fetch failed", { url, error });
+    throw error;  // Re-throw after logging
+  }
+}
+
+// ❌ BAD - Using .then() chains
+function fetchData(url) {
+  return fetch(url)
+    .then(response => response.json())
+    .then(data => data)
+    .catch(error => console.error(error));
+}
+```
+
+### Conditional Rendering Patterns
+
+```typescript
+// ✅ GOOD - Short-circuit for simple conditions
+{isLoading && <LoadingSpinner />}
+{error && <ErrorMessage error={error} />}
+
+// ✅ GOOD - Ternary for if/else
+{isSuccess ? <SuccessView data={data} /> : <ErrorView />}
+
+// ✅ GOOD - Early returns for clarity
+function UserProfile({ userId }: Props) {
+  const user = useUser(userId);
+  
+  // Early returns reduce nesting
+  if (!user) return <LoadingSpinner />;
+  if (user.error) return <ErrorView error={user.error} />;
+  if (!user.data) return null;
+  
+  return <ProfileCard user={user.data} />;
+}
+
+// ✅ GOOD - Nullish coalescing for defaults
+const displayName = user?.name ?? 'Anonymous';
+const itemCount = cart?.items?.length ?? 0;
+
+// ❌ BAD - Deeply nested conditionals
+{isLoading ? (
+  <LoadingSpinner />
+) : error ? (
+  <ErrorView />
+) : data ? (
+  data.items ? (
+    <ItemsList items={data.items} />
+  ) : (
+    <EmptyState />
+  )
+) : null}
+```
+
+### Error Handling Standards
+
+```typescript
+// ✅ GOOD - Comprehensive error handling with types
+class ValidationError extends Error {
+  constructor(
+    message: string,
+    public field: string,
+    public code: string
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+async function processUpload(file: File): Promise<UploadResult> {
+  const log = useLogger('processUpload');
+  const requestId = generateRequestId();
+  
+  try {
+    // Validation
+    if (!file) {
+      throw new ValidationError('File is required', 'file', 'REQUIRED');
+    }
+    
+    if (file.size > MAX_FILE_SIZE) {
+      throw new ValidationError(
+        `File too large (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`,
+        'file',
+        'SIZE_LIMIT'
+      );
+    }
+    
+    // Processing
+    const result = await uploadToServer(file, requestId);
+    
+    log.info('Upload successful', { requestId, jobId: result.jobId });
+    return result;
+    
+  } catch (error) {
+    // Type-safe error handling
+    if (error instanceof ValidationError) {
+      log.warn('Validation failed', { field: error.field, code: error.code });
+      throw error;  // Re-throw validation errors
+    }
+    
+    if (error instanceof TypeError) {
+      log.error('Type error during upload', { error, requestId });
+      throw new Error('Internal error during upload');
+    }
+    
+    // Unknown errors
+    log.error('Upload failed', { error, requestId });
+    throw new Error('Unexpected error during upload');
+  }
+}
+```
+
+### Code Organization Principles (DRY, SOLID)
+
+#### 1. **DRY (Don't Repeat Yourself)**
+```typescript
+// ❌ BAD - Repeated logic
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validateUserEmail(user: User): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email);
+}
+
+// ✅ GOOD - Extracted, reusable validation
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
+function validateUser(user: User): ValidationResult {
+  return {
+    isValid: isValidEmail(user.email),
+    errors: isValidEmail(user.email) ? [] : ['Invalid email format'],
+  };
+}
+```
+
+#### 2. **Single Responsibility Principle**
+```typescript
+// ❌ BAD - Component doing too much
+function UploadForm() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const validateFile = (file: File) => { /* validation */ };
+  const uploadFile = async (file: File) => { /* upload */ };
+  const handleSubmit = async (e) => { /* submit */ };
+  
+  return <form>{/* JSX */}</form>;
+}
+
+// ✅ GOOD - Separated concerns
+// hooks/useFileUpload.ts - Business logic
+export function useFileUpload() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  // Logic extracted to custom hook
+  return { file, isUploading, handleFileSelect, handleSubmit };
+}
+
+// actions/fileValidation.ts - Validation logic
+export function validateFile(file: File): ValidationResult {
+  // Pure validation function
+}
+
+// index.tsx - Presentation
+export function UploadForm() {
+  const uploadHandlers = useFileUpload();
+  return <form>{/* Clean JSX */}</form>;
+}
+```
+
+#### 3. **Composition Over Inheritance**
+```typescript
+// ✅ GOOD - Composable components
+interface WithLogging {
+  log: ReturnType<typeof useLogger>;
+}
+
+interface WithAuth {
+  user: User | null;
+  isAuthenticated: boolean;
+}
+
+// Compose functionality via hooks
+function ProtectedUploadForm() {
+  const log = useLogger('ProtectedUploadForm');
+  const { user, isAuthenticated } = useAuth();
+  const uploadHandlers = useFileUpload();
+  
+  if (!isAuthenticated) {
+    return <LoginPrompt />;
+  }
+  
+  return <UploadForm {...uploadHandlers} />;
+}
 ```
 
 ## 12. LANGUAGE REQUIREMENTS
@@ -474,7 +1077,7 @@ export const HTTP_STATUS = {
 - Forms work without JS when possible
 - Use `<form>` with proper `action` and `method`
 - Enhance with JavaScript for better UX
-- Mark enhanced forms with `data-enhance` attribute
+- Add `aria-busy` attribute to buttons/elements with loading states for accessibility
 
 ### View Transitions (Optional)
 ```typescript
@@ -565,7 +1168,409 @@ const response = await fetch(url, {
 clearTimeout(timeoutId)
 ```
 
-## 17. QUICK DECISION TREE
+## 17. SCALABILITY PATTERNS
+
+### Code Scalability Principles
+
+#### 1. **Feature-Based Architecture**
+As the app grows, organize by feature, not by type:
+
+```
+// ❌ BAD - Hard to scale
+components/
+  Button.tsx
+  Form.tsx
+  Input.tsx
+  UserForm.tsx
+  ProductForm.tsx
+  OrderForm.tsx
+
+// ✅ GOOD - Feature-based, scalable
+components/
+  ui/
+    button.tsx
+    input.tsx
+  UserManagement/
+    index.tsx
+    components/UserForm.tsx
+    hooks/useUserData.ts
+  ProductCatalog/
+    index.tsx
+    components/ProductForm.tsx
+    hooks/useProductData.ts
+  OrderProcessing/
+    index.tsx
+    components/OrderForm.tsx
+    hooks/useOrderData.ts
+```
+
+#### 2. **API Route Organization**
+```
+pages/api/
+  health.ts
+  users/
+    index.ts           # GET /api/users, POST /api/users
+    [userId]/
+      index.ts         # GET /api/users/:userId, PUT /api/users/:userId
+      avatar.ts        # POST /api/users/:userId/avatar
+  products/
+    [productId].ts     # Dynamic routes
+  orders/
+    index.ts
+```
+
+#### 3. **Shared Utilities & Helpers**
+Extract common patterns into reusable utilities:
+
+```typescript
+// lib/api/createApiHandler.ts
+export function createApiHandler<T>(
+  handler: (context: APIContext) => Promise<T>
+): APIRoute {
+  return withLogging(async (context) => {
+    try {
+      const result = await handler(context);
+      return createSuccessResponse(result);
+    } catch (error) {
+      return createErrorResponse(error);
+    }
+  });
+}
+
+// Usage in pages/api/users.ts
+export const GET = createApiHandler(async ({ request }) => {
+  const users = await fetchUsers();
+  return { users };
+});
+```
+
+#### 4. **Environment-Specific Configuration**
+```typescript
+// lib/config.ts
+export const config = {
+  isDevelopment: import.meta.env.DEV,
+  isProduction: import.meta.env.PROD,
+  api: {
+    baseUrl: import.meta.env.ORCHESTRATION_API_URL,
+    timeout: import.meta.env.API_TIMEOUT || 30000,
+  },
+  features: {
+    enableAnalytics: import.meta.env.ENABLE_ANALYTICS === 'true',
+    enableDebugMode: import.meta.env.ENABLE_DEBUG === 'true',
+  },
+} as const;
+```
+
+### Performance Scalability
+
+#### 1. **Code Splitting & Lazy Loading**
+```tsx
+// ✅ GOOD - Lazy load heavy components
+import { lazy, Suspense } from 'react';
+
+const HeavyChart = lazy(() => import('@/components/HeavyChart'));
+
+export function Dashboard() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <HeavyChart data={chartData} />
+    </Suspense>
+  );
+}
+```
+
+#### 2. **Memoization for Expensive Operations**
+```tsx
+import { useMemo, useCallback } from 'react';
+
+export function DataTable({ data }: Props) {
+  // Memoize expensive calculations
+  const sortedData = useMemo(() => {
+    return data.sort((a, b) => a.priority - b.priority);
+  }, [data]);
+  
+  // Memoize callbacks to prevent re-renders
+  const handleRowClick = useCallback((rowId: string) => {
+    console.log('Row clicked:', rowId);
+  }, []);
+  
+  return <Table data={sortedData} onRowClick={handleRowClick} />;
+}
+```
+
+#### 3. **Virtual Scrolling for Large Lists**
+```tsx
+// For lists with 1000+ items, use virtual scrolling
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+export function LargeList({ items }: { items: Item[] }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50, // Estimated row height
+  });
+  
+  return (
+    <div ref={parentRef} style={{ height: '500px', overflow: 'auto' }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
+        {virtualizer.getVirtualItems().map((virtualRow) => (
+          <div key={virtualRow.index} style={{ height: `${virtualRow.size}px` }}>
+            {items[virtualRow.index].name}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## 18. MAINTAINABILITY BEST PRACTICES
+
+### Code Maintainability Checklist
+
+#### 1. **Self-Documenting Code**
+```typescript
+// ❌ BAD - Unclear intent
+function calc(a: number, b: number): number {
+  return a * b * 0.8;
+}
+
+// ✅ GOOD - Self-explanatory
+const TAX_RATE = 0.8;
+
+function calculatePriceWithTax(basePrice: number, quantity: number): number {
+  const subtotal = basePrice * quantity;
+  return subtotal * TAX_RATE;
+}
+```
+
+#### 2. **Meaningful Variable Names**
+```typescript
+// ❌ BAD - Cryptic names
+const d = new Date();
+const u = await fetchUser();
+const fn = u.firstName;
+
+// ✅ GOOD - Descriptive names
+const currentDate = new Date();
+const user = await fetchUser();
+const firstName = user.firstName;
+```
+
+#### 3. **Small, Focused Functions**
+```typescript
+// ❌ BAD - Function doing too much
+function processUserOrder(userId: string, orderId: string) {
+  const user = fetchUser(userId);
+  if (!user) throw new Error('User not found');
+  
+  const order = fetchOrder(orderId);
+  if (!order) throw new Error('Order not found');
+  
+  if (order.total > user.balance) throw new Error('Insufficient funds');
+  
+  user.balance -= order.total;
+  order.status = 'paid';
+  
+  updateUser(user);
+  updateOrder(order);
+  sendEmail(user.email, 'Order confirmed');
+  logTransaction(userId, orderId);
+  
+  return { success: true };
+}
+
+// ✅ GOOD - Separated responsibilities
+async function validateOrder(user: User, order: Order): Promise<void> {
+  if (order.total > user.balance) {
+    throw new ValidationError('Insufficient funds');
+  }
+}
+
+async function processPayment(user: User, order: Order): Promise<void> {
+  user.balance -= order.total;
+  order.status = 'paid';
+  
+  await Promise.all([
+    updateUser(user),
+    updateOrder(order),
+  ]);
+}
+
+async function notifyOrderConfirmation(user: User, order: Order): Promise<void> {
+  await sendEmail(user.email, 'Order confirmed');
+  await logTransaction(user.id, order.id);
+}
+
+async function processUserOrder(userId: string, orderId: string): Promise<void> {
+  const user = await fetchUser(userId);
+  const order = await fetchOrder(orderId);
+  
+  await validateOrder(user, order);
+  await processPayment(user, order);
+  await notifyOrderConfirmation(user, order);
+}
+```
+
+#### 4. **Consistent Error Messages (Czech UI)**
+```typescript
+// ✅ Create a centralized error messages file
+// lib/errorMessages.ts
+export const ERROR_MESSAGES = {
+  FILE_TOO_LARGE: (maxSize: number) => 
+    `Soubor je příliš velký. Maximální velikost je ${maxSize}MB.`,
+  FILE_INVALID_TYPE: (allowedTypes: string[]) => 
+    `Neplatný typ souboru. Povolené typy: ${allowedTypes.join(', ')}`,
+  UPLOAD_FAILED: 'Nahrávání selhalo. Zkuste to prosím znovu.',
+  NETWORK_ERROR: 'Chyba připojení. Zkontrolujte své internetové připojení.',
+} as const;
+
+// Usage
+if (file.size > MAX_FILE_SIZE) {
+  throw new ValidationError(
+    ERROR_MESSAGES.FILE_TOO_LARGE(MAX_FILE_SIZE / 1024 / 1024)
+  );
+}
+```
+
+#### 5. **Version Control Best Practices**
+```bash
+# ✅ GOOD - Descriptive commit messages
+git commit -m "feat(upload): Add drag-and-drop file upload functionality"
+git commit -m "fix(validation): Correct file size validation logic"
+git commit -m "refactor(api): Extract common API error handling"
+git commit -m "docs(readme): Update setup instructions"
+
+# ❌ BAD - Vague commit messages
+git commit -m "fix stuff"
+git commit -m "updates"
+git commit -m "wip"
+```
+
+### Debugging & Troubleshooting
+
+#### 1. **Comprehensive Logging**
+```typescript
+// ✅ GOOD - Rich context for debugging
+async function uploadFile(file: File): Promise<UploadResult> {
+  const log = useLogger('uploadFile');
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+  
+  log.info('Starting file upload', {
+    requestId,
+    filename: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+  });
+  
+  try {
+    const result = await performUpload(file, requestId);
+    
+    log.info('Upload successful', {
+      requestId,
+      jobId: result.jobId,
+      duration: Date.now() - startTime,
+    });
+    
+    return result;
+  } catch (error) {
+    log.error('Upload failed', {
+      requestId,
+      filename: file.name,
+      error,
+      duration: Date.now() - startTime,
+    });
+    throw error;
+  }
+}
+```
+
+#### 2. **Request ID Propagation**
+```typescript
+// ✅ GOOD - Trace requests across services
+export async function fetchFromBackend(
+  endpoint: string,
+  options: RequestInit & { requestId?: string }
+): Promise<Response> {
+  const requestId = options.requestId || generateRequestId();
+  
+  return fetch(endpoint, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'X-Request-ID': requestId,  // Propagate to backend
+    },
+  });
+}
+```
+
+## 19. TESTING MINDSET & QUALITY ASSURANCE
+
+### Manual Testing Checklist (Pre-Commit)
+
+**Functionality**:
+- ✅ All user flows work end-to-end
+- ✅ Error states display correctly
+- ✅ Loading states appear during async operations
+- ✅ Success messages show after completion
+
+**Accessibility**:
+- ✅ Keyboard navigation works (Tab, Enter, Esc)
+- ✅ Screen reader announces correctly (test with VoiceOver/NVDA)
+- ✅ Focus indicators visible (`focus-visible:ring`)
+- ✅ Color contrast meets WCAG AA (4.5:1)
+- ✅ Forms have proper labels and error messages
+
+**Responsiveness**:
+- ✅ Works on mobile (320px+)
+- ✅ Works on tablet (768px+)
+- ✅ Works on desktop (1024px+)
+- ✅ No horizontal scrolling on narrow screens
+
+**Performance**:
+- ✅ Initial page load < 3s
+- ✅ No layout shifts (CLS)
+- ✅ Smooth animations (60fps)
+- ✅ No console errors/warnings
+
+**Czech Localization**:
+- ✅ All UI text in Czech
+- ✅ Natural Czech phrasing (not machine-translated)
+- ✅ Dates formatted for cs-CZ locale
+- ✅ Numbers formatted with Czech decimal separator
+
+**Cross-Browser**:
+- ✅ Chrome/Edge (latest)
+- ✅ Firefox (latest)
+- ✅ Safari (latest)
+
+### Code Review Checklist
+
+**Before Submitting PR**:
+- ✅ Run `npx @biomejs/biome check --apply`
+- ✅ Run `npm run build` successfully
+- ✅ Run `npm run check` (Astro type checking)
+- ✅ No linter errors
+- ✅ No console.log statements (use logger)
+- ✅ JSDoc comments for public APIs
+- ✅ Types exported for reusability
+- ✅ Tests pass (if applicable)
+
+**Code Quality**:
+- ✅ Follows naming conventions
+- ✅ Uses path aliases (@/...)
+- ✅ No `any` types without justification
+- ✅ Error handling present
+- ✅ Logging implemented
+- ✅ Components use feature folder structure
+- ✅ Extracted logic into hooks/actions
+- ✅ Responsive design implemented
+- ✅ Accessibility attributes present
+
+## 20. QUICK DECISION TREE
 
 **When to use .astro vs .tsx?**
 - Static content, SEO-focused → `.astro`
@@ -589,18 +1594,122 @@ clearTimeout(timeoutId)
 - Server: Security (always validate again)
 - Both: Best practice
 
+**When to extract a custom hook?**
+- Logic used in multiple components → Extract
+- Component state + side effects → Extract
+- Component > 200 lines → Extract logic
+- Business logic mixed with presentation → Extract
+
+**When to create a new component?**
+- JSX repeated in multiple places → Component
+- Logic/UI can be reused → Component
+- Component > 200 lines → Split into sub-components
+- Different concerns mixed → Separate components
+
 ---
 
-## SUMMARY
+## SUMMARY: PRINCIPLES FOR EXCELLENCE
 
-This frontend is a **modern, accessible, performant SSR application** built with:
-- Astro for SSR and static generation
-- React for interactive components (islands)
-- Tailwind + Radix UI for styling
-- TypeScript for type safety
-- Czech UI with accessibility as priority
-- Comprehensive logging on server & client
-- File-based routing with API routes
-- Progressive enhancement principles
+This frontend is a **production-grade, enterprise-quality, scalable application** designed for:
 
-**Key Principles**: Accessibility-first, performance-optimized, type-safe, well-logged, Czech localization, progressive enhancement.
+### 🎯 Core Values
+1. **Accessibility First**: WCAG AA compliant, keyboard navigable, screen reader friendly
+2. **Type Safety**: Strict TypeScript, no `any`, comprehensive type guards
+3. **Maintainability**: Self-documenting code, clear structure, consistent patterns
+4. **Scalability**: Feature-based architecture, code splitting, performance optimization
+5. **Developer Experience**: Path aliases, comprehensive logging, clear error messages
+6. **User Experience**: Czech localization, responsive design, progressive enhancement
+
+### 🏗️ Architecture Highlights
+- **Framework**: Astro 4+ (SSR) + React 18 (islands) for optimal performance
+- **Styling**: Tailwind CSS + shadcn/ui design system for consistency
+- **Type System**: TypeScript 5+ strict mode with comprehensive JSDoc
+- **Code Quality**: Biome for linting/formatting, automated code organization
+- **Logging**: Structured logging (Pino server, custom client) with request tracing
+- **Monitoring**: Sentry for error tracking and performance monitoring
+
+### 📁 Organization Standards
+```
+Feature-Based Architecture:
+  ✅ Components grouped by feature, not type
+  ✅ Each feature has: index.tsx, types.ts, hooks/, components/, actions/
+  ✅ Shared utilities in lib/, reusable UI in components/ui/
+  ✅ Path aliases (@/) for clean imports
+  ✅ Separation of client-safe and server-only code
+```
+
+### 💎 Code Quality Standards
+- **TypeScript**: Strict mode, no `any`, explicit types, discriminated unions
+- **Documentation**: JSDoc for all public APIs with examples
+- **Error Handling**: Type-safe errors, comprehensive logging, Czech error messages
+- **Testing**: Manual checklist (accessibility, responsiveness, cross-browser)
+- **Version Control**: Semantic commit messages, feature branches
+
+### 🚀 Performance & Scalability
+- **Code Splitting**: Lazy loading for heavy components
+- **Optimization**: Memoization, virtual scrolling for large lists
+- **Caching**: Appropriate cache headers, static asset optimization
+- **Bundle Size**: Tree-shaking, minimal dependencies
+- **Request Tracing**: Request IDs across frontend → backend → services
+
+### ♿ Accessibility (Non-Negotiable)
+- Semantic HTML with proper ARIA attributes
+- Keyboard navigation for all interactive elements
+- Focus indicators (focus-visible:ring)
+- Color contrast WCAG AA (4.5:1)
+- Screen reader tested (VoiceOver/NVDA)
+- Motion preferences respected (prefers-reduced-motion)
+
+### 🌐 Czech Localization
+- All UI text in natural Czech (not machine-translated)
+- Dates formatted with cs-CZ locale
+- Error messages centralized and user-friendly
+- Numbers with Czech decimal separator
+
+### 🛠️ Developer Workflow
+```bash
+# Before committing:
+1. npx @biomejs/biome check --apply  # Format & lint
+2. npm run build                      # Ensure builds
+3. npm run check                      # Type check
+4. Manual testing (see checklist)
+5. Commit with semantic message
+```
+
+### 📋 Key Files Reference
+| File | Purpose |
+|------|---------|
+| `client-constants.ts` | Client-safe constants (PUBLIC_ env vars) |
+| `server-constants.ts` | Server-only constants (API URLs, secrets) |
+| `lib/logger.ts` | Server-side structured logging (Pino) |
+| `lib/client-logger.ts` | Client-side browser logging |
+| `lib/middleware.ts` | API middleware (logging, error handling) |
+| `lib/utils.ts` | Utilities (cn, withBasePath, URL helpers) |
+| `biome.json` | Code quality configuration |
+| `tsconfig.json` | TypeScript strict configuration |
+| `astro.config.mjs` | Astro SSR + path aliases setup |
+
+### 🎓 Guiding Principles
+1. **Write code for humans**: Clear names, self-documenting, well-commented
+2. **Fail fast and loudly**: Validate early, throw descriptive errors, log everything
+3. **Composition over complexity**: Small functions, extracted hooks, reusable components
+4. **Progressive enhancement**: Works without JS when possible, enhanced with JS
+5. **Performance as a feature**: Optimize for real users, measure what matters
+6. **Accessibility as standard**: Not an afterthought, baked into every component
+7. **Type safety as foundation**: Catch errors at compile time, not runtime
+8. **Scalability by design**: Feature folders, clear boundaries, reusable patterns
+
+### 🔗 Quick Reference Links
+- **TypeScript Best Practices**: Section 4 (Strict Mode, JSDoc)
+- **Component Organization**: Section 2 (Feature Folders)
+- **Code Quality**: Section 11 (Biome, Standards, Error Handling)
+- **Accessibility**: Section 10 (A11Y, ARIA, Keyboard Nav)
+- **Scalability**: Section 17 (Architecture Patterns)
+- **Maintainability**: Section 18 (Code Practices, Debugging)
+- **Testing**: Section 19 (Manual QA, Code Review)
+
+---
+
+**This is not just code; this is craftsmanship. Every line written with intention. Every component designed for longevity. Every user interaction optimized for accessibility and delight.**
+
+**Build with pride. Build for the long term. Build for all users.**

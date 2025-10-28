@@ -228,9 +228,37 @@ make db            # Connect to PostgreSQL
 
 ### Orchestration API (localhost:3001)
 
-- `GET /health` - Health check
+#### Interactive Documentation
+
+The API includes interactive Swagger UI documentation:
+
+- **Swagger UI**: http://localhost:3001/api-docs
+- **OpenAPI Spec JSON**: http://localhost:3001/openapi.json
+
+#### Core Endpoints
+
+**Health Check**
+- `GET /health` - Health check with service status
+
+**Document Processing**
+- `POST /documents/validate-pdf` - Upload and validate PDF document
+- `GET /documents/status/{jobId}` - Get job status and validation results
+- `POST /documents/generate-excel` - Generate Excel from validation results
+- `GET /documents/download/{jobId}/{filename}` - Download generated Excel file
+- `GET /documents/jobs` - List all jobs (admin/debug)
+
+**Foundation Documents** (Additional endpoints for foundation document processing)
+- `POST /documents/process-foundation` - Process foundation documents
+- `POST /documents/upload-foundation` - Upload foundation documents
+- `GET /documents/list-foundation` - List foundation documents
+- `GET /documents/download-foundation` - Download foundation documents
+- `PATCH /documents/update-foundation-status` - Update foundation document status
+
+**Webhooks** (If webhook routes exist)
 - `POST /webhooks/directus/document-created` - Directus document upload webhook
 - `POST /webhooks/directus/review-approved` - Document review approval webhook
+
+**Workflows** (If workflow routes exist)
 - `POST /workflows/start` - Manually start workflow
 - `GET /workflows/:workflowId/status` - Get workflow status
 - `POST /workflows/:workflowId/signal/:signalName` - Send signal to workflow
@@ -241,6 +269,94 @@ make db            # Connect to PostgreSQL
 
 - `GET /health` - Health check
 - Email processing runs automatically based on configuration
+
+## OpenAPI Specification
+
+### Auto-Generated Documentation
+
+The API uses **OpenAPI 3.0** with automatic spec generation from JSDoc comments in the code. This ensures the documentation always stays in sync with the implementation.
+
+### Accessing the Documentation
+
+1. **Interactive Swagger UI** (recommended for testing):
+   ```
+   http://localhost:3001/api-docs
+   ```
+   - Try out endpoints directly from the browser
+   - View request/response schemas
+   - Test authentication and parameters
+
+2. **OpenAPI JSON Spec** (for tooling integration):
+   ```
+   http://localhost:3001/openapi.json
+   ```
+   - Use with API clients (Postman, Insomnia, etc.)
+   - Generate client SDKs
+   - Import into API testing tools
+
+### Generating Static OpenAPI File
+
+To generate a static `openapi.json` file (useful for version control or external tools):
+
+```bash
+cd backend/orchestration-api
+npm run generate-openapi
+```
+
+This will create/update `openapi.json` in the orchestration-api directory.
+
+### Adding New API Endpoints
+
+When adding new endpoints, document them with JSDoc comments using the `@openapi` tag:
+
+```typescript
+/**
+ * @openapi
+ * /your-endpoint:
+ *   get:
+ *     tags:
+ *       - YourTag
+ *     summary: Short description
+ *     description: Detailed description of what the endpoint does
+ *     operationId: uniqueOperationId
+ *     parameters:
+ *       - name: paramName
+ *         in: path
+ *         required: true
+ *         description: Parameter description
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/YourSchema'
+ */
+router.get("/your-endpoint", handler);
+```
+
+**Key points:**
+- Place `@openapi` JSDoc comments directly above route definitions
+- Use `$ref` to reference shared schemas defined in `src/lib/swagger.ts`
+- Follow OpenAPI 3.0 specification format
+- Documentation updates automatically when the server starts
+- Run `npm run generate-openapi` to update the static file
+
+### OpenAPI Schema Components
+
+All reusable schemas are defined in `src/lib/swagger.ts` under `components.schemas`. Current schemas include:
+
+- `HealthResponse` - Health check response
+- `ValidationResponse` - PDF validation response
+- `JobStatusResponse` - Job status with validation results
+- `ValidationResult` - Extracted data and validation details
+- `ExtractedData` - Waste management document data
+- `JobListResponse` - List of all jobs
+- `ErrorResponse` - Standard error response
+
+Add new schemas to this file when introducing new data structures.
 
 ## Development
 

@@ -4,24 +4,26 @@ services:
       context: ../../orchestration-api
       dockerfile: Dockerfile
       target: ${DOCKER_BUILD_TARGET:-production}
-    container_name: ${PROJECT_PREFIX}-orchestration-api
+    container_name: orchestration-api
+    env_file:
+      - ../../.env
     environment:
       # Temporal connection
-      TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
       TEMPORAL_TASK_QUEUE: ${TEMPORAL_TASK_QUEUE:-document-processing}
       
       # Database connection
-      DB_HOST: ${PROJECT_PREFIX}-postgres
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       
       # Directus connection
-      DIRECTUS_URL: http://${PROJECT_PREFIX}-directus:8055
+      DIRECTUS_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
-      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}x
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
       
       # API settings
       PORT: 3001
@@ -38,8 +40,12 @@ services:
       # LLM Configuration
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
-    ports:
-      - "${ORCHESTRATION_PORT:-3001}:3001"
+    networks:
+      - backend-internal
+    # Ports not exposed - internal service only
+    # Access via frontend API proxy
+    # ports:
+    #   - "${ORCHESTRATION_PORT:-3001}:3001"
     depends_on:
       directus:
         condition: service_started
@@ -59,5 +65,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    labels:
+      # Not exposed via Traefik - internal service only
+      - "traefik.enable=false"
 
 

@@ -1,0 +1,94 @@
+# Traefik Static Configuration
+# Documentation: https://doc.traefik.io/traefik/
+
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+# API and Dashboard
+api:
+  dashboard: true
+  insecure: true  # Enabled for local development
+
+# Entry Points
+entryPoints:
+  web:
+    address: ":80"
+    # For local development, HTTP redirect to HTTPS is disabled
+    # Uncomment for production:
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure
+    #       scheme: https
+    #       permanent: true
+  
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "dejtoai.cz"
+            sans:
+              - "*.dejtoai.cz"
+          - main: "dev-dejtoai.local"
+            sans:
+              - "*.dev-dejtoai.local"
+
+# Certificate Resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ${ACME_EMAIL:-admin@dejtoai.cz}
+      storage: /certificates/acme.json
+      # Use staging server for testing
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      
+      # HTTP Challenge (recommended for single server)
+      httpChallenge:
+        entryPoint: web
+      
+      # DNS Challenge (for wildcard certificates)
+      # dnsChallenge:
+      #   provider: cloudflare
+      #   resolvers:
+      #     - "1.1.1.1:53"
+      #     - "8.8.8.8:53"
+
+# Docker Provider
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik-public
+    watch: true
+  
+  file:
+    filename: /etc/traefik/dynamic-config.yml
+    watch: true
+
+# Logging
+log:
+  level: DEBUG
+  format: json
+
+# Access Logs
+accessLog:
+  format: json
+  bufferingSize: 100
+  filters:
+    statusCodes:
+      - "400-599"
+
+# Metrics (optional - for monitoring)
+# metrics:
+#   prometheus:
+#     addEntryPointsLabels: true
+#     addServicesLabels: true
+#     entryPoint: metrics
+
+# Ping endpoint for health checks
+ping:
+  entryPoint: web
+

@@ -1,0 +1,58 @@
+name: office-automation
+
+# Main orchestration file - manages all services
+# Production domain: dejtoai.cz
+# Development domain: dev-dejtoai.local
+#
+# Environment files:
+# - Root .env: Traefik and Docker settings (loaded automatically)
+# - backend/.env: Backend service configurations (loaded by included services)
+# - frontend/.env: Frontend configurations (loaded by included service)
+#
+# Note: To avoid variable substitution warnings, ensure backend/.env exists
+# before running docker compose commands. Variables are loaded by included services.
+
+include:
+  # Reverse Proxy & SSL
+  - ./docker/traefik/traefik.yml
+  
+  # Backend Services
+  - ./backend/docker/postgres/postgres.yml
+  - ./backend/docker/keydb/keydb.yml
+  - ./backend/docker/minio/minio.yml
+  - ./backend/docker/directus/directus.yml
+  - ./backend/docker/orchestration/orchestration.yml
+  - ./backend/docker/mailhog/mailhog.yml
+  
+  # Frontend
+  - ./frontend/docker/frontend.yml
+  
+  # Future services (commented out)
+  # - ./backend/docker/temporal/temporal.yml
+  # - ./backend/docker/workers/workers.yml
+  # - ./backend/docker/email-collector/email-collector.yml
+
+networks:
+  # Public network - for Traefik and publicly accessible services
+  traefik-public:
+    name: traefik-public
+    driver: bridge
+  
+  # Internal backend network - for service-to-service communication
+  backend-internal:
+    name: backend-internal
+    driver: bridge
+    internal: false  # Set to true in production for complete isolation
+
+volumes:
+  # Traefik
+  traefik-certificates:
+    name: traefik-certificates
+  
+  # Backend volumes (defined in respective service files)
+  # These are just documented here for reference
+  # postgres_data:
+  # keydb_data:
+  # minio_data:
+  # directus_uploads:
+

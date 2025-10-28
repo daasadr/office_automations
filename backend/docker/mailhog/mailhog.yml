@@ -1,11 +1,16 @@
 services:
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: ${PROJECT_PREFIX}-mailhog
+    container_name: mailhog
+    networks:
+      - backend-internal
+    # Ports for development/debugging only
     ports:
       - "${MAILHOG_SMTP_PORT:-1025}:1025"
       - "${MAILHOG_UI_PORT:-8025}:8025"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "1025"]
       interval: 10s

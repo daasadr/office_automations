@@ -3,13 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${PROJECT_PREFIX}-postgres
+    container_name: postgres
     env_file:
       - ../../.env
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # PostgreSQL variables are loaded from env_file above
       # Additional PostgreSQL configurations
       POSTGRES_INITDB_ARGS: "--data-checksums"
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -20,14 +18,19 @@ services:
       - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
       # Mounting initialization scripts
       - ./config/init:/docker-entrypoint-initdb.d
-    ports:
-      - "${POSTGRES_PORT}:5432"
+    networks:
+      - backend-internal
+    # Port not exposed externally - internal service only
+    # ports:
+    #   - "${POSTGRES_PORT}:5432"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+          "pg_isready -U app -d app",
         ]
       interval: 10s
       timeout: 5s
@@ -42,4 +45,4 @@ services:
 
 volumes:
   postgres-data:
-    name: ${PROJECT_PREFIX}-postgres-data
+    name: postgres-data

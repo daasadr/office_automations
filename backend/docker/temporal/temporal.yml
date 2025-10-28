@@ -1,13 +1,13 @@
 services:
   temporal:
     image: temporalio/auto-setup:1.25.0
-    container_name: ${PROJECT_PREFIX}-temporal
+    container_name: temporal
     environment:
       - DB=postgres12
       - DB_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PWD=${POSTGRES_PASSWORD}
-      - POSTGRES_SEEDS=${PROJECT_PREFIX}-postgres
+      - POSTGRES_SEEDS=postgres
       - POSTGRES_DB=${POSTGRES_DB}
       - ENABLE_ES=false
     ports:
@@ -31,9 +31,9 @@ services:
   # Optional Temporal UI - enable with profile for debugging
   temporal-ui:
     image: temporalio/ui:2.26.2
-    container_name: ${PROJECT_PREFIX}-temporal-ui
+    container_name: temporal-ui
     environment:
-      TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_CORS_ORIGINS: http://localhost:3000
     ports:
       - "${TEMPORAL_UI_PORT:-8085}:8080"

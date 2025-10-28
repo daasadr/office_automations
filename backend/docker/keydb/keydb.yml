@@ -1,14 +1,19 @@
 services:
   keydb:
     image: eqalpha/keydb:latest
-    container_name: ${PROJECT_PREFIX}-keydb
+    container_name: keydb
     env_file: ../../.env
     volumes:
       - keydb-data:/data
       - ./config/keydb.conf:/etc/keydb/keydb.conf
-    ports:
-      - "${KEYDB_PORT:-6379}:6379"
+    networks:
+      - backend-internal
+    # Port not exposed externally - internal service only
+    # ports:
+    #   - "${KEYDB_PORT:-6379}:6379"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
     command: keydb-server /etc/keydb/keydb.conf --requirepass "${KEYDB_PASSWORD}"
     healthcheck:
       test:
@@ -31,4 +36,4 @@ services:
         
 volumes:
   keydb-data:
-    name: ${PROJECT_PREFIX}-keydb-data
+    name: keydb-data

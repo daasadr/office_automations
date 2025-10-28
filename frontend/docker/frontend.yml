@@ -1,0 +1,77 @@
+services:
+  frontend:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+        PUBLIC_BASE_PATH: /gFF1cnio0udVeqRarLTy
+    container_name: frontend
+    environment:
+      # Internal service URLs (server-side)
+      DIRECTUS_URL: http://directus:8055
+      ORCHESTRATION_API_URL: http://orchestration-api:3001
+      
+      # Public URLs (client-side)
+      PUBLIC_DOMAIN: ${DOMAIN:-dev-dejtoai.local}
+      PUBLIC_DIRECTUS_URL: https://directus.${DOMAIN:-dev-dejtoai.local}
+      PUBLIC_API_URL: https://${DOMAIN:-dev-dejtoai.local}/api
+      PUBLIC_BASE_PATH: /gFF1cnio0udVeqRarLTy
+      
+      # Directus auth
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      
+      # Session
+      SESSION_SECRET: ${SESSION_SECRET}
+      
+      # Environment
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 4321
+    networks:
+      - traefik-public
+      - backend-internal
+    # Port not exposed - access via Traefik only
+    # ports:
+    #   - "${FRONTEND_PORT:-4321}:4321"
+    depends_on:
+      directus:
+        condition: service_started
+      orchestration-api:
+        condition: service_started
+    restart: unless-stopped
+    # Health check disabled for local development
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:4321/"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      
+      # HTTP Router for frontend with base path (HTTP)
+      - "traefik.http.routers.frontend-http.rule=Host(`${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.frontend-http.entrypoints=web"
+      - "traefik.http.routers.frontend-http.middlewares=security-headers@file,compress@file"
+      
+      # HTTPS Router for frontend with base path
+      - "traefik.http.routers.frontend-https.rule=Host(`${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.frontend-https.entrypoints=websecure"
+      - "traefik.http.routers.frontend-https.tls=true"
+      - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend-https.middlewares=security-headers@file,compress@file"
+      
+      # Service definition
+      - "traefik.http.services.frontend.loadbalancer.server.port=4321"
+      
+      # Health check
+      - "traefik.http.services.frontend.loadbalancer.healthcheck.path=/gFF1cnio0udVeqRarLTy/"
+      - "traefik.http.services.frontend.loadbalancer.healthcheck.interval=30s"
+

@@ -9,11 +9,16 @@ import sentry from '@sentry/astro';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Get base path from environment variable
+const basePath = process.env.PUBLIC_BASE_PATH || '';
+
 export default defineConfig({
   output: 'server',
   adapter: node({
     mode: 'standalone'
   }),
+  // Set the base path for the application
+  base: basePath,
   integrations: [react(), tailwind({ applyBaseStyles: false }), sentry({
     project: "odpady-astro-app",
       authToken: process.env.SENTRY_AUTH_TOKEN,

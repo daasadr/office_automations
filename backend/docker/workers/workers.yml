@@ -4,26 +4,26 @@ services:
     build:
       context: ../../workers
       dockerfile: Dockerfile
-    container_name: ${PROJECT_PREFIX}-unified-worker
+    container_name: unified-worker
     env_file:
       - ../../.env
     environment:
       # Temporal connection
-      TEMPORAL_ADDRESS: ${PROJECT_PREFIX}-temporal:7233
+      TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_NAMESPACE: default
       
       # Database connection
-      DB_HOST: ${PROJECT_PREFIX}-postgres
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       
       # Storage connection
-      S3_ENDPOINT: http://${PROJECT_PREFIX}-minio:9000
+      S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       S3_SECRET_KEY: ${MINIO_SECRET_KEY}
-      S3_BUCKET: ${PROJECT_PREFIX}
+      S3_BUCKET: ${MINIO_BUCKET}
       
       # LLM settings
       

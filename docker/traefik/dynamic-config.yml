@@ -1,0 +1,75 @@
+# Traefik Dynamic Configuration
+# Middlewares, TLS options, etc.
+
+http:
+  middlewares:
+    # Security Headers
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: false  # Disabled for local development (enable in production)
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: false  # Disabled for local development (enable in production)
+        stsIncludeSubdomains: false
+        stsPreload: false
+        stsSeconds: 31536000
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+    
+    # Rate Limiting (optional)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s
+    
+    # CORS Headers (for API)
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowOriginList:
+          - "https://dejtoai.cz"
+          - "https://dev-dejtoai.local"
+        accessControlMaxAge: 3600
+        addVaryHeader: true
+    
+    # Strip prefix for admin routes
+    strip-admin-prefix:
+      stripPrefix:
+        prefixes:
+          - "/admin"
+    
+    # Compress responses
+    compress:
+      compress: {}
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_AES_128_GCM_SHA256
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true
+
+# Self-signed certificates for local development
+# tls:
+#   certificates:
+#     - certFile: /certificates/local-cert.pem
+#       keyFile: /certificates/local-key.pem
+

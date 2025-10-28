@@ -110,6 +110,12 @@ This office automation system processes PDF documents, validates their content u
 
 **Architecture Components:**
 
+**Reverse Proxy Layer:**
+- **Traefik**: Modern reverse proxy with automatic HTTPS via Let's Encrypt
+- **SSL/TLS Termination**: Automatic certificate management and renewal
+- **Domain Routing**: Route traffic based on domain/path (dejtoai.cz, /admin)
+- **Security**: Headers, rate limiting, and network isolation
+
 **Frontend Layer:**
 - **Astro Web Application**: Modern SSR/SSG framework with React components
 - **API Integration**: Proxies requests to orchestration API
@@ -125,6 +131,10 @@ This office automation system processes PDF documents, validates their content u
 **External Services:**
 - **Gemini AI**: Google's Generative AI for document content extraction
 - **MailHog**: Email testing service for development
+
+**Network Architecture:**
+- **traefik-public**: Public-facing services (Frontend, Directus)
+- **backend-internal**: Internal services (API, Database, Cache, Storage)
 
 ### Technology Stack
 
@@ -148,6 +158,7 @@ This office automation system processes PDF documents, validates their content u
 - **XLSX** - Excel file generation and manipulation
 
 **Infrastructure:**
+- **Traefik** - Modern reverse proxy with automatic HTTPS
 - **Docker & Docker Compose** - Full containerization of all services
 - **PostgreSQL** - Relational database
 - **MinIO** - S3-compatible object storage
@@ -203,6 +214,48 @@ The following features are planned for future development:
 
 ## Quick Start
 
+### Production Deployment with Traefik (Recommended) 🚀
+
+**For production deployment with HTTPS, domain routing, and security:**
+
+```bash
+# 1. Configure root environment (Traefik & Docker)
+./setup.sh
+
+# 2. Configure backend services
+cd backend
+cp env.template .env
+nano .env  # Set passwords, API keys, etc.
+
+# 3. Configure frontend
+cd ../frontend
+cp env.template .env
+nano .env  # Set session secrets
+
+# 4. Start all services
+cd ..
+
+# Using the helper script (recommended - loads all env files):
+./docker-start.sh up -d
+
+# OR using Make:
+make up
+
+# OR direct docker compose (you may see env variable warnings):
+docker compose up -d
+
+# 5. Import Directus schema (first time only)
+cd backend && ./scripts/quick-import-schema.sh
+
+# Access:
+# - Frontend: https://dejtoai.cz
+# - Admin: https://dejtoai.cz/admin
+```
+
+📚 **See [TRAEFIK_SETUP.md](TRAEFIK_SETUP.md) for complete production setup guide**
+
+### Development Setup
+
 ### Prerequisites
 
 - **Docker Engine** (v24.0+) and Docker Compose (v2.20+)
@@ -214,100 +267,139 @@ The following features are planned for future development:
 
 ### Environment Setup
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd office_automations
-   ```
+The project uses three separate environment files:
 
-2. **Set up backend environment variables:**
-   ```bash
-   cd backend
-   # Create .env file (see backend/ENVIRONMENT.md for template)
-   
-   # Required variables:
-   PROJECT_PREFIX=spur_odpady_
-   POSTGRES_PASSWORD=your_secure_password
-   KEYDB_PASSWORD=your_secure_password
-   MINIO_ACCESS_KEY=your_access_key
-   MINIO_SECRET_KEY=your_secret_key
-   ADMIN_EMAIL=admin@example.com
-   ADMIN_PASSWORD=your_admin_password
-   KEY=$(openssl rand -hex 16)
-   SECRET=$(openssl rand -base64 32)
-   API_SECRET_KEY=$(openssl rand -hex 32)
-   DIRECTUS_API_TOKEN=your_directus_token
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
+1. **Root environment** (Traefik & Docker): `.env`
+2. **Backend environment** (Services): `backend/.env`
+3. **Frontend environment** (Web app): `frontend/.env`
 
-3. **Set up frontend environment variables:**
-   ```bash
-   cd ../frontend
-   cp env.example .env
-   
-   # For Docker deployment:
-   DIRECTUS_URL=http://spur_odpady_-directus:8055
-   ORCHESTRATION_API_URL=http://spur_odpady_-orchestration-api:3001
-   
-   # For local development:
-   DIRECTUS_URL=http://localhost:8055
-   ORCHESTRATION_API_URL=http://localhost:3001
-   ```
+**Quick Setup:**
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd office_automations
+
+# 2. Root environment (Traefik & Docker)
+./setup.sh  # Interactive setup for domain, SSL, etc.
+# OR manually:
+cp env.template .env
+nano .env
+
+# 3. Backend environment (all backend services)
+cd backend
+cp env.template .env
+nano .env  # Configure:
+# - Database passwords
+# - Redis/KeyDB password
+# - MinIO credentials
+# - Directus admin and API tokens
+# - Gemini API key
+# - All backend secrets
+
+# 4. Frontend environment
+cd ../frontend
+cp env.template .env
+nano .env  # Configure:
+# - Service URLs (internal & public)
+# - Directus token
+# - Session secret
+
+# 5. Generate secrets
+# Use these commands to generate secure values:
+KEY=$(openssl rand -hex 16)
+SECRET=$(openssl rand -base64 32)
+API_SECRET_KEY=$(openssl rand -hex 32)
+SESSION_SECRET=$(openssl rand -hex 32)
+```
+
+**Environment File Locations:**
+- `/.env` - Traefik, domain, and Docker settings
+- `/backend/.env` - All backend service configurations
+- `/frontend/.env` - Frontend app configuration
 
 ### Running the Application
 
-**Option 1: Full Docker Stack (Recommended)**
+> **📝 Note:** Use `./docker-start.sh` or `make up` instead of `docker compose up` directly. This ensures all environment files are loaded properly and avoids variable substitution warnings.
+
+**Option 1: Production with Traefik (Recommended) 🚀**
 ```bash
-# 1. Start all backend services
-cd backend
+# Complete production stack with HTTPS
+# All services behind Traefik reverse proxy
+
+# From project root (recommended methods):
+make up
+# OR:
+./docker-start.sh up -d
+# OR (with warnings):
 docker compose up -d
 
-# Wait for services to be healthy (check with: docker compose ps)
+# Import schema (first time)
+cd backend && ./scripts/quick-import-schema.sh
 
-# 2. Import Directus schema (first time only)
-./scripts/quick-import-schema.sh
-
-# 3. Start frontend
-cd ../frontend
-./docker-setup.sh  # or: docker compose up -d
+# Access via domain:
+# https://dejtoai.cz (frontend)
+# https://dejtoai.cz/admin (Directus)
+# https://traefik.dejtoai.cz (Traefik dashboard)
 ```
 
-**Option 2: Hybrid (Docker Backend + Local Frontend)**
+**Option 2: Development (Local Domain)**
 ```bash
-# 1. Start backend services
-cd backend
+# Add to /etc/hosts:
+# 127.0.0.1 dev-dejtoai.local traefik.dev-dejtoai.local
+
+# Set DOMAIN=dev-dejtoai.local in .env
+# Then:
 docker compose up -d
 
-# 2. Install and run frontend locally
-cd ../frontend
-npm install
-npm run dev
+# Access via:
+# https://dev-dejtoai.local
+# https://dev-dejtoai.local/admin
 ```
 
-**Option 3: Local Development (Backend API only)**
+**Option 3: Hybrid (Docker Backend + Local Frontend)**
 ```bash
-# 1. Start infrastructure services
-cd backend
-docker compose up postgres directus minio keydb -d
+# 1. Start backend services only
+docker compose up -d traefik postgres directus keydb minio orchestration-api
 
-# 2. Run orchestration API locally
-cd orchestration-api
+# 2. Run frontend locally with hot reload
+cd frontend
 npm install
-npm run dev
-
-# 3. Run frontend locally (new terminal)
-cd ../../frontend
-npm install
-npm run dev
+npm run dev  # Access: http://localhost:4321
 ```
 
-**Access the applications:**
-- **Frontend Application**: http://localhost:4321
+**Option 4: Local Development (Direct Ports)**
+```bash
+# Uncomment port mappings in service configs
+# Then start services:
+docker compose up -d
+
+# Direct access (no Traefik):
+# - Frontend: http://localhost:4321
+# - Directus: http://localhost:8055
+# - Orchestration API: http://localhost:3001
+# - MinIO Console: http://localhost:9001
+# - MailHog: http://localhost:8025
+```
+
+**Service URLs:**
+
+**Production (via Traefik):**
+- **Frontend**: https://dejtoai.cz
+- **Directus Admin**: https://dejtoai.cz/admin
+- **Traefik Dashboard**: https://traefik.dejtoai.cz
+
+**Development (via Traefik):**
+- **Frontend**: https://dev-dejtoai.local
+- **Directus Admin**: https://dev-dejtoai.local/admin
+- **Traefik Dashboard**: https://traefik.dev-dejtoai.local
+
+**Direct Access (when ports exposed):**
+- **Frontend**: http://localhost:4321
 - **Orchestration API**: http://localhost:3001
-- **Directus Admin**: http://localhost:8055
+- **Directus**: http://localhost:8055
 - **MinIO Console**: http://localhost:9001
-- **MailHog**: http://localhost:8025 (development)
-- **API Health Check**: http://localhost:3001/health
+- **MailHog**: http://localhost:8025
 
 ## Development
 
@@ -349,6 +441,31 @@ backend/
 ```
 
 ### Available Commands
+
+**Root Level (from project root):**
+```bash
+# Using Make (recommended)
+make up              # Start all services
+make down            # Stop all services
+make restart         # Restart all services
+make logs            # View all logs
+make status          # Show service status
+make build           # Build all services
+make clean           # Remove everything (data too!)
+make health          # Check service health
+make help            # Show all commands
+
+# Using helper script
+./docker-start.sh up -d              # Start detached
+./docker-start.sh down               # Stop services
+./docker-start.sh logs -f            # Follow logs
+./docker-start.sh build --no-cache   # Rebuild
+
+# Direct docker compose (may show warnings)
+docker compose up -d
+docker compose down
+docker compose logs -f
+```
 
 **Backend API (from `/backend/orchestration-api` directory):**
 ```bash
@@ -394,16 +511,17 @@ npm run check          # Run Astro checks
 
 #### Service Overview
 
-| Service | Port | Purpose | Technology |
-|---------|------|---------|------------|
-| **Frontend** | 4321 | Web interface | Astro + React |
-| **Orchestration API** | 3001 | Document processing | Express.js + TypeScript |
-| **Directus** | 8055 | CMS and admin interface | Directus 11 |
-| **PostgreSQL** | 5432 | Database | PostgreSQL 16 |
-| **MinIO** | 9000 | Object storage | MinIO (S3-compatible) |
-| **MinIO Console** | 9001 | Storage admin UI | MinIO Console |
-| **KeyDB** | 6379 | Cache layer | KeyDB (Redis-compatible) |
-| **MailHog** | 8025 | Email testing | MailHog (dev only) |
+| Service | Port/URL | Purpose | Access | Technology |
+|---------|----------|---------|--------|------------|
+| **Traefik** | 80, 443, 8080 | Reverse proxy & HTTPS | Public | Traefik v3 |
+| **Frontend** | https://dejtoai.cz | Web interface | Public via Traefik | Astro + React |
+| **Directus** | /admin path | CMS and admin | Public via Traefik | Directus 11 |
+| **Orchestration API** | 3001 (internal) | Document processing | Internal only | Express.js + TypeScript |
+| **PostgreSQL** | 5432 (internal) | Database | Internal only | PostgreSQL 16 |
+| **MinIO** | 9000 (internal) | Object storage | Internal only | MinIO (S3-compatible) |
+| **MinIO Console** | 9001 (dev) | Storage admin UI | Dev only | MinIO Console |
+| **KeyDB** | 6379 (internal) | Cache layer | Internal only | KeyDB (Redis-compatible) |
+| **MailHog** | 8025 (dev) | Email testing | Dev only | MailHog |
 
 #### Orchestration API
 **Technology:** Express.js + TypeScript
@@ -604,6 +722,30 @@ Response:
 
 ### Common Issues
 
+**Environment variable warnings:**
+```bash
+WARN[0000] The "POSTGRES_DB" variable is not set. Defaulting to a blank string.
+```
+
+**Cause:** Docker Compose loads only the root `.env` by default, but backend services need variables from `backend/.env`.
+
+**Solution:**
+```bash
+# Use the helper script (recommended):
+./docker-start.sh up -d
+
+# OR use Make:
+make up
+
+# OR manually load env files:
+export $(cat .env | xargs)
+export $(cat backend/.env | xargs)
+export $(cat frontend/.env | xargs)
+docker compose up -d
+```
+
+The warnings are harmless - variables are still loaded into containers via `env_file` directives in service configs. But to avoid them, use the helper script.
+
 **Backend services won't start:**
 ```bash
 # Check Docker service status
@@ -741,9 +883,15 @@ docker compose up -d
 
 ## Additional Documentation
 
+### Infrastructure & Deployment
+- **[Traefik Production Setup](TRAEFIK_SETUP.md)** - Complete guide for HTTPS, reverse proxy, and production deployment
+- **[Environment Configuration](ENVIRONMENT_RESTRUCTURE.md)** - Three-tier environment structure guide
+- **[Environment Warnings Fix](ENVIRONMENT_WARNINGS_FIX.md)** - How to avoid "variable not set" warnings
+- **[Docker Setup Guide](DOCKER_SETUP.md)** - Full stack Docker deployment
+- **[Backend Environment Variables](backend/ENVIRONMENT.md)** - Backend service configuration reference
+- **Environment Templates**: [Root](env.template) | [Backend](backend/env.template) | [Frontend](frontend/env.template)
+
 ### Backend Documentation
-- **[Complete Docker Setup Guide](DOCKER_SETUP.md)** - Full stack Docker deployment
-- **[Environment Variables](backend/ENVIRONMENT.md)** - Complete environment configuration
 - **[Async Processing Flow](ASYNC_PROCESSING_FLOW.md)** - How asynchronous processing works
 - **[Foundation Document Processing](FOUNDATION_PROCESSING_COMPLETE.md)** - Foundation augmentation feature
 - **[Directus Integration](backend/orchestration-api/DIRECTUS_INTEGRATION.md)** - CMS integration details
@@ -797,7 +945,6 @@ npm run preview
 
 For additional support or questions:
 - Check the [troubleshooting section](#troubleshooting)
-- Review the [documentation links](#additional-documentation)
 - Examine Docker logs: `docker compose logs -f`
 - Check service health: `curl http://localhost:3001/health`
 - Create an issue in the repository

@@ -6,53 +6,73 @@
 
 ## 📋 Table of Contents
 
-- [Quick Start (5 Minutes)](#-quick-start-5-minutes)
+- [Quick Start](#-quick-start)
 - [Prerequisites](#-prerequisites)
+- [Development vs Production](#-development-vs-production)
 - [Setup Process Flow](#-setup-process-flow)
 - [Detailed Setup Process](#-detailed-setup-process)
+- [Development Environment](#-development-environment)
+- [Production Environment](#-production-environment)
+- [Commands Reference](#-commands-reference)
 - [Accessing Your Application](#-accessing-your-application)
 - [Managing Credentials](#-managing-credentials)
-- [Useful Commands](#-useful-commands)
-- [Troubleshooting](#-troubleshooting)
 - [Development Workflow](#-development-workflow)
+- [Troubleshooting](#-troubleshooting)
 - [Architecture Overview](#-architecture-overview)
 - [Implementation Details](#-implementation-details)
 - [Advanced Topics](#-advanced-topics)
 
 ---
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Quick Start
 
-### One Command Setup
-
-```bash
-make setup-dev
-```
-
-**That's it!** This single command will:
-
-1. ✅ Generate secure passwords and secrets
-2. ✅ Create all environment files
-3. ✅ Setup local domain (dev-dejtoai.local)
-4. ✅ Build and start all Docker services
-5. ✅ Import Directus database schema
-6. ✅ Guide you through API token creation
-7. ✅ Test all services
-8. ✅ Show you how to access everything
-
-### For Production
+### Development (with Hot-Reload)
 
 ```bash
-make setup-prod
+# One command setup with hot module reload
+make dev-up
 ```
 
-Same automated process, optimized for production deployment!
+That's it! Your development environment is now running with:
+- ✅ **Frontend** - Hot reload enabled (changes reflect instantly)
+- ✅ **Orchestration API** - Auto-restart on code changes
+- ✅ **All Services** - Postgres, KeyDB, MinIO, Directus, MailHog
+
+**Access your app:**
+- Frontend: http://dev-dejtoai.local or http://localhost:4321
+- Directus: http://directus.dev-dejtoai.local or http://localhost:8055
+- MailHog: http://mailhog.dev-dejtoai.local or http://localhost:8025
+
+### Production (Optimized Builds)
+
+```bash
+# Production setup with optimized builds
+make prod-up
+```
+
+### First Time Setup
+
+If this is your first time:
+
+```bash
+# Generate environment files and configure everything
+make setup-dev    # For development
+# or
+make setup-prod   # For production
+```
+
+This will:
+1. Generate secure passwords and secrets
+2. Create all environment files
+3. Setup local domain (dev only)
+4. Build and start all Docker services
+5. Import Directus database schema
+6. Guide you through API token creation
+7. Test all services
 
 ---
 
 ## 📋 Prerequisites
-
-Before running setup, make sure you have:
 
 ### Required
 
@@ -77,9 +97,59 @@ Before running setup, make sure you have:
 
 ---
 
+## 🔄 Development vs Production
+
+The project has separate Docker Compose configurations optimized for different environments:
+
+### Quick Comparison
+
+| Feature | Development (`make dev-up`) | Production (`make prod-up`) |
+|---------|----------------------------|----------------------------|
+| **Start Command** | `make dev-up` | `make prod-up` |
+| **Frontend Build** | Dockerfile.dev (fast) | Dockerfile (optimized) |
+| **API Build** | development target | production target |
+| **Hot Reload** | ✅ Yes (instant) | ❌ No |
+| **Volume Mounts** | ✅ Yes (source code) | ❌ No (immutable) |
+| **Build Time** | ~30 seconds | ~2-3 minutes |
+| **Code Changes** | Instant | Requires rebuild |
+| **Optimization** | None (faster dev) | Full (minify, tree-shake) |
+| **Source Maps** | ✅ Yes | ❌ No |
+| **MailHog** | ✅ Included | ❌ Not included |
+| **Container User** | root (dev mode) | nodejs (non-root) |
+| **Bundle Size** | Larger | Optimized/Smaller |
+| **Debugging** | Easy | Limited |
+
+### When to Use Which
+
+**Use Development (`make dev-up`) when:**
+- Daily coding and development
+- Testing new features
+- Debugging issues
+- You want instant feedback on code changes
+
+**Use Production (`make prod-up`) when:**
+- Testing production builds locally
+- Deploying to server
+- Performance testing
+- Final validation before deployment
+
+### Switching Between Environments
+
+```bash
+# Currently running dev? Switch to prod:
+make dev-down
+make prod-up
+
+# Currently running prod? Switch to dev:
+make prod-down
+make dev-up
+```
+
+---
+
 ## 📊 Setup Process Flow
 
-Here's a visual overview of what happens when you run `make setup-dev`:
+Here's a visual overview of what happens when you run `make setup-dev` or `make setup-prod`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -209,13 +279,6 @@ Here's a visual overview of what happens when you run `make setup-dev`:
                       │   ✅ SETUP COMPLETE! 🎉         │
                       │   Your app is ready to use!     │
                       └─────────────────────────────────┘
-                                       │
-                    ┌──────────────────▼──────────────────┐
-                    │  Start Developing                   │
-                    │  • http://localhost:4321            │
-                    │  • http://localhost:8055            │
-                    │  • http://localhost:3001            │
-                    └─────────────────────────────────────┘
 ```
 
 **Key Features:**
@@ -372,6 +435,281 @@ You'll receive:
 
 ---
 
+## 🔥 Development Environment
+
+The development environment is optimized for rapid development with instant feedback.
+
+### Features
+
+- **Frontend (Astro)**: Hot module reload with live changes
+- **Orchestration API**: TypeScript watch mode with automatic restart
+- **Volume Mounts**: Source code is mounted, so changes reflect immediately
+- **MailHog**: Email testing interface
+- **All Backend Services**: PostgreSQL, KeyDB, MinIO, Directus
+
+### How Hot Module Reload Works
+
+#### Frontend Hot Reload
+
+**How it works:**
+1. Source code mounted: `./frontend/src:/app/src`
+2. Astro dev server watches for changes
+3. Browser hot-reloads automatically
+
+**What triggers reload:**
+- `.astro` files
+- `.tsx` / `.jsx` components
+- `.ts` / `.js` files
+- `.css` files
+- Config changes (astro.config.mjs, etc.)
+
+**What gets mounted:**
+- `frontend/src/` → Hot reload for all components, pages, layouts
+- `frontend/public/` → Static assets
+- `frontend/*.config.*` → Configuration files
+- `frontend/node_modules` → Preserved in container (platform-specific)
+
+#### Orchestration API Hot Reload
+
+**How it works:**
+1. Source code mounted: `./backend/orchestration-api/src:/app/src`
+2. `tsx watch` monitors TypeScript files
+3. Server restarts automatically on changes
+
+**What triggers reload:**
+- `.ts` files in `src/`
+- Changes to imported modules
+- Configuration files (tsconfig.json)
+
+**What gets mounted:**
+- `backend/orchestration-api/src/` → Hot reload for all TypeScript code
+- `backend/orchestration-api/tsconfig.json` → TypeScript configuration
+- `backend/orchestration-api/node_modules` → Preserved in container
+
+### Node Modules Preservation
+
+Both services use named volumes for `node_modules`:
+- `frontend_node_modules:/app/node_modules`
+- `orchestration_node_modules:/app/node_modules`
+
+This ensures:
+- Platform-specific builds stay in container
+- Faster startup (no rebuild on every mount)
+- No conflicts between host and container packages
+
+### Adding New Dependencies
+
+When you add new npm packages:
+
+**Frontend:**
+```bash
+cd frontend
+npm install <package-name>
+
+# Rebuild container with new dependencies
+make dev-down
+make dev-build
+make dev-up
+```
+
+**Orchestration API:**
+```bash
+cd backend/orchestration-api
+npm install <package-name>
+
+# Rebuild container with new dependencies
+make dev-down
+make dev-build
+make dev-up
+```
+
+### Development Workflow
+
+#### Starting Your Day
+```bash
+# Start development environment
+make dev-up
+
+# Watch logs in separate terminal (optional)
+make dev-logs-frontend
+# or
+make dev-logs-api
+```
+
+#### During Development
+- Edit files in `frontend/src/` or `backend/orchestration-api/src/`
+- Changes automatically detected and reloaded
+- No need to restart services
+
+#### Configuration Changes
+If you modify:
+- `package.json` → Rebuild: `make dev-build`
+- `Dockerfile` or `Dockerfile.dev` → Rebuild: `make dev-build`
+- Environment variables → Restart: `make dev-restart`
+
+#### Ending Your Day
+```bash
+make dev-down
+```
+
+### File Structure for Development
+
+```
+office_automations/
+├── docker-compose.dev.yml          # Development configuration
+├── backend/
+│   ├── orchestration-api/
+│   │   ├── Dockerfile              # Multi-stage: development & production
+│   │   └── src/                    # Mounted in dev, copied in prod
+│   └── docker/
+│       └── orchestration/
+│           ├── orchestration.yml         # Base config (shared)
+│           ├── orchestration.dev.yml     # Dev overrides
+│           └── orchestration.prod.yml    # Prod overrides
+└── frontend/
+    ├── docker/
+    │   ├── Dockerfile              # Production build
+    │   ├── Dockerfile.dev          # Development build
+    │   └── frontend.yml            # Base config (shared)
+    └── src/                        # Mounted in dev, copied in prod
+```
+
+---
+
+## 🚀 Production Environment
+
+The production environment is optimized for performance, security, and stability.
+
+### Features
+
+**Frontend:**
+- Uses `Dockerfile` (optimized production build)
+- Code baked into image (no volumes)
+- Runs `npm run start` (production mode)
+- Minified, tree-shaken, optimized
+
+**Orchestration API:**
+- Uses Dockerfile `production` target
+- Code baked into image (no volumes)
+- Runs `node dist/index.js` (compiled)
+- Non-root user for security
+
+**Backend Services:**
+- Postgres, KeyDB, MinIO, Directus
+- No MailHog (not needed in production)
+
+### Security Features
+
+- ✅ Non-root users in containers
+- ✅ No volume mounts (immutable containers)
+- ✅ No development tools included
+- ✅ Healthchecks enabled
+- ✅ HTTPS via Let's Encrypt
+- ✅ Resource limits can be added
+
+### Deploying to Production
+
+1. **Run production setup** on server:
+   ```bash
+   make setup-prod
+   ```
+
+2. **Or update existing** deployment:
+   ```bash
+   git pull
+   make prod-up
+   ```
+
+3. **Monitor deployment:**
+   ```bash
+   make status
+   make health
+   make logs
+   ```
+
+---
+
+## 📚 Commands Reference
+
+### Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `make dev-up` | Start development with hot-reload |
+| `make dev-down` | Stop development |
+| `make dev-restart` | Restart development |
+| `make dev-logs` | View all dev logs |
+| `make dev-logs-frontend` | View frontend logs |
+| `make dev-logs-api` | View API logs |
+| `make dev-build` | Rebuild dev containers |
+
+### Production Commands
+
+| Command | Description |
+|---------|-------------|
+| `make prod-up` | Start production |
+| `make prod-down` | Stop production |
+| `make prod-logs` | View all prod logs |
+| `make prod-build` | Rebuild prod containers |
+
+### General Commands (Auto-detect)
+
+| Command | Description |
+|---------|-------------|
+| `make status` | Show service status |
+| `make logs` | View logs |
+| `make down` | Stop all services |
+| `make logs-frontend` | View frontend logs |
+| `make logs-api` | View API logs |
+| `make health` | Test all services |
+| `make restart` | Restart services |
+
+### Setup Commands
+
+| Command | Alias For | Description |
+|---------|-----------|-------------|
+| `make setup-dev` | `make dev-up` | First-time development setup |
+| `make setup-prod` | `make prod-up` | First-time production setup |
+| `make setup-env` | - | Generate environment files only |
+| `make setup-directus-token` | - | Update API token interactively |
+| `make setup-domain` | - | Setup local domain |
+
+### Maintenance Commands
+
+```bash
+# Import Directus schema
+make import-schema
+
+# Backup database
+make backup
+
+# Pull latest images
+make pull
+
+# Full rebuild
+make rebuild
+
+# Access container shells
+make shell-api
+make shell-frontend
+make shell-directus
+make shell-postgres
+
+# Rebuild API after dependency changes
+make rebuild-orchestration
+
+# Clean everything (WARNING: destroys data!)
+make clean
+```
+
+### See All Commands
+
+```bash
+make help
+```
+
+---
+
 ## 🌐 Accessing Your Application
 
 After setup completes, you can access:
@@ -395,7 +733,8 @@ After setup completes, you can access:
 | Service | URL |
 |---------|-----|
 | **Main Site** | http://dev-dejtoai.local |
-| **Directus** | http://dev-dejtoai.local/admin |
+| **Directus** | http://directus.dev-dejtoai.local |
+| **MailHog** | http://mailhog.dev-dejtoai.local |
 
 ### Production Environment
 
@@ -453,86 +792,101 @@ If you lose your credentials, you can find them in:
 
 ---
 
-## 🛠 Useful Commands
+## 🔄 Development Workflow
 
-### Daily Use
+### Typical Daily Usage
 
 ```bash
-# Check if services are running
-make status
+# Day 1: Initial setup
+git clone <repo>
+cd office_automations
+make setup-dev
+# ... coffee break while it sets up ...
+# Access app at http://localhost:4321
 
-# View logs
-make logs                    # All services
-make logs-orchestration      # API logs
-make logs-frontend           # Frontend logs
-make logs-directus           # Directus logs
-make logs-traefik            # Traefik logs
+# Day 2+: Development
+make dev-up                # Start if not running
+# Edit code in src/
+# Changes auto-reload!
 
-# Stop services
-make down
+# View logs in separate terminal
+make dev-logs-frontend
+# or
+make dev-logs-api
 
-# Restart services
-make restart
+# After dependency changes
+make dev-down
+make dev-build
+make dev-up
+
+# Stop when done
+make dev-down
 ```
 
-### Development
+### Making Code Changes
+
+#### Frontend Development
 
 ```bash
-# Start in development mode (hot-reloading)
-make start-dev
+# Frontend code is in:
+cd frontend/src/
 
-# Start in production mode (optimized)
-make start-prod
+# Key directories:
+# - components/  - React components
+# - pages/       - Astro pages & API routes
+# - layouts/     - Page layouts
+# - lib/         - Utilities
 
-# Access container shells
-make shell-api
-make shell-frontend
-make shell-directus
-make shell-postgres
-
-# Rebuild API after dependency changes
-make rebuild-orchestration
+# Changes auto-reload in development mode!
+# Edit any file and watch it update in browser
 ```
 
-### Maintenance
+#### Backend API Development
 
 ```bash
-# Test all services
-make health                  # or make test-services
+# Backend API code is in:
+cd backend/orchestration-api/src/
 
-# Import Directus schema
-make import-schema
+# Key directories:
+# - routes/      - API endpoints
+# - services/    - Business logic
+# - middleware/  - Custom middleware
+# - utils/       - Utilities
 
-# Update API token interactively
-make setup-directus-token
-
-# Setup local domain
-make setup-domain
-
-# Backup database
-make backup
-
-# Pull latest images
-make pull
-
-# Full rebuild
-make rebuild
+# Changes auto-reload in development mode!
+# Edit any TypeScript file and server restarts automatically
 ```
 
-### Environment Management
+### Making Schema Changes
+
+1. **Modify collections/fields** in Directus admin panel
+
+2. **Export schema:**
+   ```bash
+   cd backend
+   docker compose exec directus npx directus schema snapshot ./snapshots/new_schema.json
+   ```
+
+3. **Commit the schema file:**
+   ```bash
+   git add docker/directus/schema/
+   git commit -m "Update Directus schema"
+   ```
+
+### Testing Changes
 
 ```bash
-# Generate environment files only (no Docker start)
-make setup-env
+# Check service health
+make health
 
-# Check environment files exist
-make check-env
-```
+# View real-time logs
+make dev-logs              # All services
+make dev-logs-api          # API only
+make dev-logs-frontend     # Frontend only
 
-### See All Commands
-
-```bash
-make help
+# Test API endpoints
+curl http://localhost:3001/health
+curl http://localhost:3001/api-docs
 ```
 
 ---
@@ -584,6 +938,37 @@ docker compose restart <service-name>
 make restart
 ```
 
+#### Changes Not Reflecting (Development)
+
+**Frontend:**
+```bash
+# Check if volumes are mounted correctly
+docker compose -f docker-compose.dev.yml exec frontend ls -la /app/src
+
+# Restart the frontend service
+docker compose -f docker-compose.dev.yml restart frontend
+# or
+make dev-restart
+```
+
+**Orchestration API:**
+```bash
+# Check logs for errors
+make dev-logs-api
+
+# Restart the API service
+docker compose -f docker-compose.dev.yml restart orchestration-api
+```
+
+#### "Cannot find module" Errors
+
+Node modules might be out of sync:
+```bash
+make dev-down
+make dev-build
+make dev-up
+```
+
 #### Can't Access Frontend
 
 1. Check if service is running:
@@ -598,7 +983,7 @@ make restart
 
 3. Check logs:
    ```bash
-   make logs-frontend
+   make dev-logs-frontend
    ```
 
 4. Check browser console for errors
@@ -615,9 +1000,14 @@ If you see "port already in use" errors:
 
 2. Stop the conflicting service
 
-3. Restart:
+3. Or stop all environments:
    ```bash
-   make restart
+   make down
+   ```
+
+4. Restart:
+   ```bash
+   make dev-up
    ```
 
 **Common ports used:**
@@ -628,6 +1018,7 @@ If you see "port already in use" errors:
 - 5432 (PostgreSQL)
 - 6379 (Redis/KeyDB)
 - 9000, 9001 (MinIO)
+- 8025 (MailHog - dev only)
 
 #### Domain Not Working (Development)
 
@@ -639,7 +1030,7 @@ cat /etc/hosts | grep dev-dejtoai.local
 make setup-domain
 
 # Or manually:
-echo "127.0.0.1 dev-dejtoai.local traefik.dev-dejtoai.local" | sudo tee -a /etc/hosts
+echo "127.0.0.1 dev-dejtoai.local directus.dev-dejtoai.local mailhog.dev-dejtoai.local traefik.dev-dejtoai.local" | sudo tee -a /etc/hosts
 ```
 
 #### Directus Schema Import Failed
@@ -669,6 +1060,8 @@ cd backend
 3. **Restart affected services:**
    ```bash
    docker compose restart orchestration-api frontend
+   # or
+   make dev-restart
    ```
 
 4. **Check Directus token permissions** (should be Admin)
@@ -678,7 +1071,7 @@ cd backend
 ```bash
 # Wait a bit longer (services may still be initializing)
 sleep 30
-make test-services
+make health
 
 # Check if containers are running
 docker compose ps
@@ -700,7 +1093,7 @@ cat backend/.env | grep GEMINI_API_KEY
 curl http://localhost:3001/health
 
 # Check API logs
-make logs-orchestration
+make dev-logs-api
 
 # Test with a small PDF file first
 ```
@@ -722,6 +1115,17 @@ make clean
 make setup-dev
 ```
 
+#### Permission Issues
+
+The containers run as specific users. If you get permission errors:
+```bash
+# Frontend (runs as node user in container)
+docker compose -f docker-compose.dev.yml exec frontend whoami
+
+# API (runs as root in dev, nodejs in prod)
+docker compose -f docker-compose.dev.yml exec orchestration-api whoami
+```
+
 #### Setup Script Failed
 
 ```bash
@@ -738,120 +1142,9 @@ make setup-dev
 ### Getting Help
 
 - 📖 Check this guide's relevant sections
-- 🔍 View service logs: `make logs`
+- 🔍 View service logs: `make logs` or `make dev-logs`
 - 🧪 Test services: `make health`
 - 📚 Read README.md for architecture details
-
----
-
-## 🔄 Development Workflow
-
-### Typical Daily Usage
-
-```bash
-# Day 1: Initial setup
-git clone <repo>
-cd office_automations
-make setup-dev
-# ... coffee break while it sets up ...
-# Access app at http://localhost:4321
-
-# Day 2+: Development
-make start-dev              # Start if not running
-# Edit code in src/
-make logs-orchestration     # View logs
-# Changes auto-reload!
-
-# After dependency changes
-make rebuild-orchestration
-
-# Stop when done
-make down
-```
-
-### Making Code Changes
-
-#### Frontend Development
-
-```bash
-# Frontend code is in:
-cd frontend/src/
-
-# Key directories:
-# - components/  - React components
-# - pages/       - Astro pages & API routes
-# - layouts/     - Page layouts
-# - lib/         - Utilities
-
-# Changes auto-reload in development mode!
-```
-
-#### Backend API Development
-
-```bash
-# Backend API code is in:
-cd backend/orchestration-api/src/
-
-# Key directories:
-# - routes/      - API endpoints
-# - services/    - Business logic
-# - middleware/  - Custom middleware
-# - utils/       - Utilities
-
-# Changes auto-reload in development mode!
-```
-
-### Making Schema Changes
-
-1. **Modify collections/fields** in Directus admin panel
-
-2. **Export schema:**
-   ```bash
-   cd backend
-   docker compose exec directus npx directus schema snapshot ./snapshots/new_schema.json
-   ```
-
-3. **Commit the schema file:**
-   ```bash
-   git add docker/directus/schema/
-   git commit -m "Update Directus schema"
-   ```
-
-### Testing Changes
-
-```bash
-# Check service health
-make health
-
-# View real-time logs
-make logs-orchestration   # API
-make logs-frontend        # Frontend
-make logs-directus        # Directus
-
-# Test API endpoints
-curl http://localhost:3001/health
-curl http://localhost:3001/api-docs
-```
-
-### Deploying to Production
-
-1. **Run production setup** on server:
-   ```bash
-   make setup-prod
-   ```
-
-2. **Or update existing** deployment:
-   ```bash
-   git pull
-   make start-prod
-   ```
-
-3. **Monitor deployment:**
-   ```bash
-   make status
-   make health
-   make logs
-   ```
 
 ---
 
@@ -919,6 +1212,7 @@ curl http://localhost:3001/api-docs
 - **directus_uploads** - File uploads
 - **traefik-certificates** - SSL certificates
 - **orchestration_node_modules** - API dependencies
+- **frontend_node_modules** - Frontend dependencies (dev only)
 
 ---
 
@@ -967,7 +1261,9 @@ All secrets use cryptographically secure methods:
 
 #### 5. Local Domain Setup (Development Only)
 - Adds `dev-dejtoai.local` to `/etc/hosts` (requires sudo)
+- Adds `directus.dev-dejtoai.local` for CMS
 - Adds `traefik.dev-dejtoai.local` for dashboard
+- Adds `mailhog.dev-dejtoai.local` for email testing
 - Configures Traefik for local routing
 
 #### 6. Docker Services Startup
@@ -1047,7 +1343,7 @@ openssl rand -base64 32     # For SECRET
 openssl rand -hex 32        # For API_SECRET_KEY
 
 # 4. Start services
-make start-dev
+make dev-up
 ```
 
 ### Updating Configuration
@@ -1061,6 +1357,8 @@ nano backend/.env
 
 # Restart API
 docker compose restart orchestration-api
+# or
+make dev-restart
 ```
 
 #### Update Directus API Token
@@ -1073,6 +1371,8 @@ make setup-directus-token
 nano backend/.env    # Update DIRECTUS_API_TOKEN
 nano frontend/.env   # Update DIRECTUS_TOKEN
 docker compose restart orchestration-api frontend
+# or
+make dev-restart
 ```
 
 #### Change Domain (Production)
@@ -1114,20 +1414,28 @@ make restart
 ### Custom Docker Builds
 
 ```bash
-# Build specific service
-docker compose build --no-cache <service-name>
+# Build specific service (development)
+docker compose -f docker-compose.dev.yml build --no-cache <service-name>
+
+# Build specific service (production)
+docker compose -f docker-compose.prod.yml build --no-cache <service-name>
 
 # Build with specific target
 DOCKER_BUILD_TARGET=development docker compose build orchestration-api
 
 # Build and start
-docker compose up -d --build <service-name>
+docker compose -f docker-compose.dev.yml up -d --build <service-name>
 ```
 
 ### Accessing Container Logs
 
 ```bash
-# Follow logs for specific service
+# Follow logs for specific service (auto-detect environment)
+make logs-frontend
+make logs-api
+make logs-directus
+
+# Or use docker compose directly
 docker compose logs -f <service-name>
 
 # View last 100 lines
@@ -1172,6 +1480,34 @@ docker compose exec frontend ping directus
 docker compose exec orchestration-api ping postgres
 ```
 
+### IDE Integration
+
+#### VS Code
+
+Your IDE works directly with source files. Changes are immediately reflected in Docker containers via volume mounts (development mode).
+
+**Recommended extensions:**
+- Astro
+- ESLint
+- Prettier
+- Docker
+
+#### Debugging
+
+**Frontend (Browser):**
+- Dev tools work normally
+- Source maps available
+- React DevTools compatible
+
+**API (Node.js):**
+```bash
+# Attach to running container
+docker compose -f docker-compose.dev.yml exec orchestration-api sh
+
+# Check logs
+make dev-logs-api
+```
+
 ---
 
 ## ✅ Setup Checklist
@@ -1204,29 +1540,43 @@ Your Office Automation environment is now fully configured and running!
 
 ### Quick Access Links
 
-- 🌐 **Frontend:** http://localhost:4321
-- 🎛️ **Directus:** http://localhost:8055  
+**Development:**
+- 🌐 **Frontend:** http://dev-dejtoai.local or http://localhost:4321
+- 🎛️ **Directus:** http://directus.dev-dejtoai.local or http://localhost:8055
 - 🔧 **API:** http://localhost:3001
 - 📊 **API Docs:** http://localhost:3001/api-docs
 - 💾 **MinIO Console:** http://localhost:9001
-- 📧 **MailHog:** http://localhost:8025
+- 📧 **MailHog:** http://mailhog.dev-dejtoai.local or http://localhost:8025
+
+**Production:**
+- 🌐 **Frontend:** https://your-domain.com
+- 🎛️ **Directus:** https://your-domain.com/admin
+- 🔧 **Traefik Dashboard:** https://traefik.your-domain.com
 
 ### Essential Commands
 
 ```bash
-# Daily use
-make status                 # Check services
-make logs                   # View logs
-make health                 # Test services
+# Development (daily use)
+make dev-up                # Start with hot-reload
+make dev-down              # Stop development
+make dev-logs              # View all logs
+make dev-logs-frontend     # View frontend logs
+make dev-logs-api          # View API logs
 
-# Development
-make start-dev              # Start with hot-reload
-make logs-orchestration     # View API logs
-make rebuild-orchestration  # Rebuild API
+# Production
+make prod-up               # Start production
+make prod-down             # Stop production
+make prod-logs             # View all logs
 
-# Stop/restart
-make down                   # Stop all
-make restart                # Restart all
+# General (auto-detect environment)
+make status                # Check services
+make logs                  # View logs
+make health                # Test services
+make down                  # Stop all
+make restart               # Restart all
+
+# Get help
+make help                  # See all commands
 ```
 
 ### Next Steps
@@ -1235,7 +1585,18 @@ make restart                # Restart all
 2. **Browse Directus admin** - View collections and data
 3. **Check the API docs** - http://localhost:3001/api-docs
 4. **Start developing** - Edit code in `frontend/src/` or `backend/orchestration-api/src/`
+   - Changes auto-reload in development mode!
 5. **Read the main README** - Full project documentation
+
+### Development Tips
+
+- 💡 Use `make dev-up` for daily development (hot-reload enabled)
+- 💡 Use `make prod-up` to test production builds
+- 💡 Use `make status` to check what's running
+- 💡 Use `make dev-logs-frontend` or `make dev-logs-api` to follow logs
+- 💡 Use `make down` to stop everything
+- 💡 Source code changes are picked up automatically in dev mode
+- 💡 After adding new npm packages, rebuild: `make dev-build`
 
 ---
 
@@ -1270,6 +1631,10 @@ make status                 # Check service status
 make health                 # Test all services
 make logs                   # View all logs
 
+# Development specific
+make dev-logs-frontend      # Frontend logs
+make dev-logs-api           # API logs
+
 # Specific service
 docker compose logs <service-name>
 docker compose restart <service-name>
@@ -1281,9 +1646,18 @@ docker compose restart <service-name>
 # Services won't start
 make restart
 
+# Changes not reflecting (dev mode)
+make dev-restart
+
 # Port conflict
 lsof -i :PORT  # Find what's using the port
-make restart
+make down      # Stop all environments
+make dev-up    # Start development
+
+# Module errors after adding packages
+make dev-down
+make dev-build
+make dev-up
 
 # Reset everything (loses data!)
 make clean
@@ -1294,11 +1668,11 @@ make setup-dev
 
 - 📖 Check relevant sections in this guide
 - 🔍 Search the README.md
-- 📝 Check service logs: `make logs`
+- 📝 Check service logs: `make logs` or `make dev-logs`
 - 🧪 Test health: `make health`
 
 ---
 
-**Happy Coding!** ✨
+**Happy Coding with Hot-Reload!** 🚀✨
 
-**Setup system ready for production use with comprehensive automation, documentation, and user guidance.** 🚀
+**Complete setup system ready for development and production use with comprehensive automation, hot module reload, and user guidance.**

@@ -1,7 +1,7 @@
 # Office Automation - Makefile
 # Convenient commands for managing the entire stack
 
-.PHONY: help up down restart logs status build rebuild clean shell setup check-env setup-domain setup-dev setup-prod setup-env import-schema setup-directus-token start-dev start-prod rebuild-orchestration logs-orchestration
+.PHONY: help up down restart logs status build rebuild clean shell setup check-env setup-domain setup-dev setup-prod setup-env import-schema setup-directus-token start-dev start-prod dev-up dev-down dev-restart dev-logs prod-up prod-down rebuild-orchestration logs-orchestration
 
 # Default target
 .DEFAULT_GOAL := help
@@ -19,8 +19,8 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(YELLOW)Quick Start:$(NC)"
 	@echo "  make setup-env   - Copy environment templates (first time)"
-	@echo "  make setup-dev   - Start dev environment (after env files ready)"
-	@echo "  make setup-prod  - Start prod environment (after env files ready)"
+	@echo "  make dev-up      - Start dev environment with hot-reload (recommended)"
+	@echo "  make prod-up     - Start prod environment (optimized builds)"
 	@echo ""
 	@echo "$(YELLOW)Available Commands:$(NC)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
@@ -42,41 +42,83 @@ check-env: ## Check if all environment files exist
 	fi
 	@echo "$(GREEN)✓ All environment files found$(NC)"
 
-up: check-env ## Start all services
-	@echo "$(GREEN)Starting all services...$(NC)"
-	@./scripts/docker-start.sh up -d
+up: dev-up ## Start services (defaults to development with hot-reload)
 
-down: ## Stop all services
+down: ## Stop all services (detects which compose file is running)
 	@echo "$(YELLOW)Stopping all services...$(NC)"
-	@docker compose down
+	@if docker compose -f docker-compose.dev.yml ps -q > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml down; \
+	elif docker compose -f docker-compose.prod.yml ps -q > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml down; \
+	else \
+		docker compose down; \
+	fi
 
-restart: down up ## Restart all services
+restart: down dev-up ## Restart all services (defaults to development)
 
-logs: ## View logs (all services)
-	@docker compose logs -f
+logs: ## View logs (detects which environment is running)
+	@if docker compose -f docker-compose.dev.yml ps -q > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml logs -f; \
+	elif docker compose -f docker-compose.prod.yml ps -q > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml logs -f; \
+	else \
+		docker compose logs -f; \
+	fi
 
 logs-traefik: ## View Traefik logs
 	@docker compose logs -f traefik
 
-logs-frontend: ## View frontend logs
-	@docker compose logs -f frontend
+logs-frontend: ## View frontend logs (detects environment)
+	@if docker compose -f docker-compose.dev.yml ps -q frontend > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml logs -f frontend; \
+	elif docker compose -f docker-compose.prod.yml ps -q frontend > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml logs -f frontend; \
+	else \
+		docker compose logs -f frontend; \
+	fi
 
 logs-directus: ## View Directus logs
 	@docker compose logs -f directus
 
-logs-api: ## View orchestration API logs
-	@docker compose logs -f orchestration-api
+logs-api: ## View orchestration API logs (detects environment)
+	@if docker compose -f docker-compose.dev.yml ps -q orchestration-api > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml logs -f orchestration-api; \
+	elif docker compose -f docker-compose.prod.yml ps -q orchestration-api > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml logs -f orchestration-api; \
+	else \
+		docker compose logs -f orchestration-api; \
+	fi
 
-status: ## Show status of all services
-	@docker compose ps
+status: ## Show status of all services (detects environment)
+	@if docker compose -f docker-compose.dev.yml ps > /dev/null 2>&1; then \
+		echo "$(GREEN)Development Environment Status:$(NC)"; \
+		docker compose -f docker-compose.dev.yml ps; \
+	elif docker compose -f docker-compose.prod.yml ps > /dev/null 2>&1; then \
+		echo "$(GREEN)Production Environment Status:$(NC)"; \
+		docker compose -f docker-compose.prod.yml ps; \
+	else \
+		docker compose ps; \
+	fi
 
-build: check-env ## Build all services
+build: check-env ## Build all services (detects environment)
 	@echo "$(GREEN)Building all services...$(NC)"
-	@./docker-start.sh build
+	@if docker compose -f docker-compose.dev.yml ps > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml build; \
+	elif docker compose -f docker-compose.prod.yml ps > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml build; \
+	else \
+		echo "$(YELLOW)No environment running. Use 'make dev-build' or 'make prod-build'$(NC)"; \
+	fi
 
-rebuild: check-env ## Rebuild all services without cache
+rebuild: check-env ## Rebuild all services without cache (detects environment)
 	@echo "$(GREEN)Rebuilding all services (no cache)...$(NC)"
-	@./docker-start.sh build --no-cache
+	@if docker compose -f docker-compose.dev.yml ps > /dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml build --no-cache; \
+	elif docker compose -f docker-compose.prod.yml ps > /dev/null 2>&1; then \
+		docker compose -f docker-compose.prod.yml build --no-cache; \
+	else \
+		echo "$(YELLOW)No environment running. Use 'make dev-build' or 'make prod-build'$(NC)"; \
+	fi
 
 clean: ## Stop and remove all containers, volumes, and networks
 	@echo "$(RED)⚠️  This will remove all data!$(NC)"
@@ -101,21 +143,11 @@ shell-directus: ## Access Directus container shell
 shell-postgres: ## Access PostgreSQL container shell
 	@docker compose exec postgres psql -U directus directus
 
-setup: setup-dev ## Alias for setup-dev (default setup)
+setup: dev-up ## Alias for dev-up (default setup with hot-reload)
 
-setup-dev: ## Check env files and start development environment
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  Development Environment Setup                         ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@./scripts/setup-environment.sh
+setup-dev: dev-up ## Alias for dev-up (development environment setup)
 
-setup-prod: ## Check env files and start production environment
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  Production Environment Setup                          ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@./scripts/setup-environment.sh
+setup-prod: prod-up ## Alias for prod-up (production environment setup)
 
 setup-env: ## Copy environment templates (first time setup)
 	@echo "$(YELLOW)Generating environment files from templates...$(NC)"
@@ -226,3 +258,78 @@ rebuild-orchestration: ## Rebuild orchestration-api (after dependency changes)
 
 logs-orchestration: ## View orchestration API logs
 	@docker compose logs -f orchestration-api
+
+# ========================================
+# Development Environment (Hot-Reload)
+# ========================================
+
+dev-up: check-env ## Start development environment with hot-reload
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Starting Development Environment (Hot-Reload)         ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Features:$(NC)"
+	@echo "  • Frontend: Hot module reload (Astro)"
+	@echo "  • Orchestration API: Hot module reload (tsx watch)"
+	@echo "  • Source code mounted via volumes"
+	@echo "  • MailHog for email testing"
+	@echo ""
+	@docker compose -f docker-compose.dev.yml up -d --build
+	@echo ""
+	@echo "$(GREEN)✓ Development environment started$(NC)"
+	@echo ""
+	@echo "$(CYAN)Access points:$(NC)"
+	@echo "  • Main site: $(YELLOW)http://dev-dejtoai.local$(NC)"
+	@echo "  • Directus: $(YELLOW)http://directus.dev-dejtoai.local$(NC)"
+	@echo "  • MailHog: $(YELLOW)http://mailhog.dev-dejtoai.local$(NC)"
+	@echo ""
+	@docker compose -f docker-compose.dev.yml ps
+
+dev-down: ## Stop development environment
+	@echo "$(YELLOW)Stopping development environment...$(NC)"
+	@docker compose -f docker-compose.dev.yml down
+	@echo "$(GREEN)✓ Development environment stopped$(NC)"
+
+dev-restart: dev-down dev-up ## Restart development environment
+
+dev-logs: ## View logs from development environment
+	@docker compose -f docker-compose.dev.yml logs -f
+
+dev-logs-frontend: ## View frontend logs (dev)
+	@docker compose -f docker-compose.dev.yml logs -f frontend
+
+dev-logs-api: ## View orchestration API logs (dev)
+	@docker compose -f docker-compose.dev.yml logs -f orchestration-api
+
+dev-build: check-env ## Rebuild development services
+	@echo "$(GREEN)Rebuilding development services...$(NC)"
+	@docker compose -f docker-compose.dev.yml build --no-cache
+	@echo "$(GREEN)✓ Development services rebuilt$(NC)"
+
+# ========================================
+# Production Environment
+# ========================================
+
+prod-up: check-env ## Start production environment
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Starting Production Environment                       ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@docker compose -f docker-compose.prod.yml up -d --build
+	@echo ""
+	@echo "$(GREEN)✓ Production environment started$(NC)"
+	@echo ""
+	@docker compose -f docker-compose.prod.yml ps
+
+prod-down: ## Stop production environment
+	@echo "$(YELLOW)Stopping production environment...$(NC)"
+	@docker compose -f docker-compose.prod.yml down
+	@echo "$(GREEN)✓ Production environment stopped$(NC)"
+
+prod-logs: ## View logs from production environment
+	@docker compose -f docker-compose.prod.yml logs -f
+
+prod-build: check-env ## Rebuild production services
+	@echo "$(GREEN)Rebuilding production services...$(NC)"
+	@docker compose -f docker-compose.prod.yml build --no-cache
+	@echo "$(GREEN)✓ Production services rebuilt$(NC)"

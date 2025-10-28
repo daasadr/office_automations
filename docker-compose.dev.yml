@@ -1,0 +1,222 @@
+name: office-automation
+
+# Development orchestration file - manages all services with hot reload
+# Development domain: dev-dejtoai.local
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Environment files:
+# - Root .env: Traefik and Docker settings (loaded automatically)
+# - backend/.env: Backend service configurations (loaded by included services)
+# - frontend/.env: Frontend configurations (loaded by included service)
+#
+# Features:
+# - Hot module reload for frontend (mounted volumes)
+# - Hot module reload for orchestration API (mounted volumes)
+# - Development build targets
+# - Local domain routing via Traefik
+# - MailHog for email testing
+
+include:
+  # Reverse Proxy & SSL
+  - ./traefik/docker/traefik.yml
+  
+  # Backend Services
+  - ./backend/docker/postgres/postgres.yml
+  - ./backend/docker/keydb/keydb.yml
+  - ./backend/docker/minio/minio.yml
+  - ./backend/docker/directus/directus.yml
+  
+  # Development email testing
+  - ./backend/docker/mailhog/mailhog.yml
+  
+  # Future services (commented out)
+  # - ./backend/docker/temporal/temporal.yml
+  # - ./backend/docker/workers/workers.yml
+  # - ./backend/docker/email-collector/email-collector.yml
+
+# Development service configurations (not using include to allow overrides)
+services:
+  # Orchestration API - Development Configuration with Hot Reload
+  orchestration-api:
+    build:
+      context: ./backend/orchestration-api
+      dockerfile: Dockerfile
+      target: development
+    container_name: orchestration-api
+    env_file:
+      - ./backend/.env
+    environment:
+      # Temporal connection
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      TEMPORAL_TASK_QUEUE: ${TEMPORAL_TASK_QUEUE:-document-processing}
+      
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # API settings
+      PORT: 3001
+      NODE_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      
+      # Security
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:4321,http://localhost:8055}
+      
+      # LLM Configuration
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+    networks:
+      - backend-internal
+    volumes:
+      # Mount source code for hot-reloading
+      - ./backend/orchestration-api/src:/app/src
+      - ./backend/orchestration-api/tsconfig.json:/app/tsconfig.json
+      # Preserve node_modules from container
+      - orchestration_node_modules:/app/node_modules
+    depends_on:
+      directus:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=false"
+  
+  # Frontend - Development Configuration with Hot Reload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile.dev
+      args:
+        NODE_ENV: development
+        PUBLIC_BASE_PATH: /gFF1cnio0udVeqRarLTy
+    container_name: frontend
+    environment:
+      # Internal service URLs (server-side)
+      DIRECTUS_URL: http://directus:8055
+      ORCHESTRATION_API_URL: http://orchestration-api:3001
+      
+      # Public URLs (client-side)
+      PUBLIC_DOMAIN: ${DOMAIN:-dev-dejtoai.local}
+      PUBLIC_DIRECTUS_URL: https://directus.${DOMAIN:-dev-dejtoai.local}
+      PUBLIC_API_URL: https://${DOMAIN:-dev-dejtoai.local}/api
+      PUBLIC_BASE_PATH: /gFF1cnio0udVeqRarLTy
+      
+      # Directus auth
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      
+      # Session
+      SESSION_SECRET: ${SESSION_SECRET}
+      
+      # Environment
+      NODE_ENV: development
+      PORT: 4321
+    networks:
+      - traefik-public
+      - backend-internal
+    volumes:
+      # Mount source code for hot-reloading
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      # Mount config files
+      - ./frontend/astro.config.mjs:/app/astro.config.mjs
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tailwind.config.mjs:/app/tailwind.config.mjs
+      - ./frontend/sentry.client.config.js:/app/sentry.client.config.js
+      - ./frontend/sentry.server.config.js:/app/sentry.server.config.js
+      # Preserve node_modules from container
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      directus:
+        condition: service_started
+      orchestration-api:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      
+      # HTTP Router for frontend (HTTP)
+      - "traefik.http.routers.frontend-http.rule=Host(`${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.frontend-http.entrypoints=web"
+      - "traefik.http.routers.frontend-http.middlewares=security-headers@file,compress@file"
+      
+      # HTTPS Router for frontend
+      - "traefik.http.routers.frontend-https.rule=Host(`${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.frontend-https.entrypoints=websecure"
+      - "traefik.http.routers.frontend-https.tls=true"
+      - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend-https.middlewares=security-headers@file,compress@file"
+      
+      # Service definition
+      - "traefik.http.services.frontend.loadbalancer.server.port=4321"
+      
+      # Health check
+      - "traefik.http.services.frontend.loadbalancer.healthcheck.path=/gFF1cnio0udVeqRarLTy/"
+      - "traefik.http.services.frontend.loadbalancer.healthcheck.interval=30s"
+
+networks:
+  # Public network - for Traefik and publicly accessible services
+  traefik-public:
+    name: traefik-public
+    driver: bridge
+  
+  # Internal backend network - for service-to-service communication
+  backend-internal:
+    name: backend-internal
+    driver: bridge
+    internal: false  # Allow external access in development for debugging
+
+volumes:
+  # Traefik
+  traefik-certificates:
+    name: traefik-certificates
+  
+  # Backend volumes
+  postgres_data:
+  keydb_data:
+  minio_data:
+  directus_uploads:
+  
+  # Development node_modules volumes (preserve container-built modules)
+  orchestration_node_modules:
+  frontend_node_modules:
+

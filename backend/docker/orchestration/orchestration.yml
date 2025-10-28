@@ -20,6 +20,14 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
       # Directus connection
       DIRECTUS_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}

@@ -1,0 +1,41 @@
+# Development Dockerfile for Astro frontend application
+# This Dockerfile is designed to work with volume mounts for hot reloading
+
+FROM node:22-alpine
+WORKDIR /app
+
+# Install git (required by some npm packages)
+RUN apk add --no-cache git
+
+# Set development environment
+ENV NODE_ENV=development
+
+# Copy package files first for better caching
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including dev dependencies)
+# Configure npm to include optional dependencies and handle platform-specific packages
+RUN npm config set fund false && \
+    npm config set audit false && \
+    npm install --include=optional --legacy-peer-deps && \
+    npm install --save-optional @rollup/rollup-linux-arm64-musl
+
+# Copy configuration files that don't change often
+COPY astro.config.mjs tsconfig.json tailwind.config.mjs ./
+COPY sentry.client.config.js sentry.server.config.js ./
+
+# Accept build arguments
+ARG PUBLIC_BASE_PATH=/gFF1cnio0udVeqRarLTy
+ENV PUBLIC_BASE_PATH=${PUBLIC_BASE_PATH}
+
+# Expose the port the app runs on
+EXPOSE 4321
+
+# Set the host to allow external connections
+ENV HOST=0.0.0.0
+ENV PORT=4321
+
+# Start the development server
+# Note: Source code will be mounted as a volume from docker-compose
+CMD ["npm", "run", "dev"]
+

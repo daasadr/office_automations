@@ -29,6 +29,19 @@ export default defineConfig({
     host: true
   },
   vite: {
+    server: {
+      allowedHosts: [
+        'dejtoai.cz',
+        'dev-dejtoai.local',
+        '.dev-dejtoai.local', // Allow all subdomains
+        'localhost',
+        '127.0.0.1'
+      ],
+      hmr: {
+        clientPort: 443,
+        protocol: 'wss'
+      }
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

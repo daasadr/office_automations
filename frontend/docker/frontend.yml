@@ -4,7 +4,7 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        NODE_ENV: ${NODE_ENV:-production}
+        NODE_ENV: ${NODE_ENV:-development}
         PUBLIC_BASE_PATH: /gFF1cnio0udVeqRarLTy
     container_name: frontend
     environment:
@@ -25,7 +25,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       
       # Environment
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 4321
     networks:
       - traefik-public
@@ -33,6 +33,16 @@ services:
     # Port not exposed - access via Traefik only
     # ports:
     #   - "${FRONTEND_PORT:-4321}:4321"
+    volumes:
+      # Mount only source directories for hot reloading (not node_modules or package-lock.json)
+      - ../src:/app/src
+      - ../public:/app/public
+      # Mount config files (optional, can be removed if you don't change these often)
+      - ../astro.config.mjs:/app/astro.config.mjs
+      - ../tsconfig.json:/app/tsconfig.json
+      - ../tailwind.config.mjs:/app/tailwind.config.mjs
+      # Keep node_modules in container (platform-specific builds)
+      - /app/node_modules
     depends_on:
       directus:
         condition: service_started

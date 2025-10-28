@@ -42,7 +42,7 @@ A modern, accessible Astro application for uploading, processing, and downloadin
 
 2. **Configure environment**:
    ```bash
-   cp env.example .env
+   cp env.template .env
    ```
    
    Edit `.env` with your configuration:

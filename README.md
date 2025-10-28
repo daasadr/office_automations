@@ -577,7 +577,7 @@ npm run check          # Run Astro checks
 
 **See Also:**
 - `backend/ENVIRONMENT.md` - Complete environment variable documentation
-- `frontend/env.example` - Frontend environment template
+- `frontend/env.template` - Frontend environment template
 
 ### Gemini API Configuration
 

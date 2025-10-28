@@ -39,12 +39,21 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
         if (response.ok) {
           const data = await response.json();
 
+          // Log raw data for debugging
+          log.info("Received response data", {
+            hasData: !!data,
+            hasValidationResult: !!data.validationResult,
+            dataKeys: data ? Object.keys(data) : [],
+          });
+
           // Check if we have complete validation data
+          // Need to handle both null and undefined, and ensure arrays are valid
           if (
             data.validationResult &&
-            data.validationResult.present !== undefined &&
-            data.validationResult.missing !== undefined &&
-            data.validationResult.confidence !== undefined
+            typeof data.validationResult === "object" &&
+            Array.isArray(data.validationResult.present) &&
+            Array.isArray(data.validationResult.missing) &&
+            typeof data.validationResult.confidence === "number"
           ) {
             log.info("Valid validation data received - stopping polling", {
               hasPresent: !!data.validationResult.present,
@@ -54,6 +63,8 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
                 present: data.validationResult.present?.length,
                 missing: data.validationResult.missing?.length,
                 confidence: data.validationResult.confidence,
+                hasExtractedData: !!data.validationResult.extracted_data,
+                extractedDataLength: data.validationResult.extracted_data?.length,
               },
             });
 
@@ -72,6 +83,18 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
               status: data.status,
               hasValidationResult: !!data.validationResult,
               validationResultKeys: data.validationResult ? Object.keys(data.validationResult) : [],
+              validationResultType: data.validationResult
+                ? typeof data.validationResult
+                : "undefined",
+              presentType: data.validationResult?.present
+                ? `${typeof data.validationResult.present} ${Array.isArray(data.validationResult.present) ? "(array)" : ""}`
+                : "undefined",
+              missingType: data.validationResult?.missing
+                ? `${typeof data.validationResult.missing} ${Array.isArray(data.validationResult.missing) ? "(array)" : ""}`
+                : "undefined",
+              confidenceType: data.validationResult?.confidence
+                ? typeof data.validationResult.confidence
+                : "undefined",
             });
           }
         } else {

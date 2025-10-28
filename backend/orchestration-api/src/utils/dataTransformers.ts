@@ -75,7 +75,9 @@ export function getStringValue(
   defaultValue = ""
 ): string {
   const value = record[key];
-  return typeof value === "string" ? value : defaultValue;
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return defaultValue;
 }
 
 /**

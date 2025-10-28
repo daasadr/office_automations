@@ -118,6 +118,12 @@ async function checkKeyDB(): Promise<ServiceCheck> {
       lazyConnect: true,
     });
 
+    // Add error event listener to prevent "Unhandled error event" warnings
+    redis.on("error", () => {
+      // Error will be caught by the try-catch block
+      // This listener prevents Node.js from emitting unhandled error warnings
+    });
+
     await redis.connect();
     await redis.ping();
 

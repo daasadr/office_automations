@@ -8,7 +8,20 @@ export interface ExtractedDataRecord {
     název?: string;
     adresa?: string;
     "zodpovědná osoba"?: string;
+    // Support multiple field name variations
+    "SAMOSTATNÁ PROVOZOVNA"?: {
+      "číslo provozovny"?: string;
+      název?: string;
+      adresa?: string;
+      "zodpovědná osoba"?: string;
+    };
     "samostatná provozovna"?: {
+      "číslo provozovny"?: string;
+      název?: string;
+      adresa?: string;
+      "zodpovědná osoba"?: string;
+    };
+    samostatna_provozovna?: {
       "číslo provozovny"?: string;
       název?: string;
       adresa?: string;
@@ -19,12 +32,26 @@ export interface ExtractedDataRecord {
     IČO?: string;
     název?: string;
     adresa?: string;
+    // Support multiple field name variations
+    "samostatná provozovna"?: {
+      "číslo provozovny"?: string;
+      název?: string;
+      adresa?: string;
+      "zodpovědná osoba"?: string;
+    };
+    samostatna_provozovna?: {
+      "číslo provozovny"?: string;
+      název?: string;
+      adresa?: string;
+      "zodpovědná osoba"?: string;
+    };
   };
   tabulka?: Array<{
-    "pořadové číslo"?: string;
+    "pořadové číslo"?: string | number;
     "datum vzniku"?: string;
-    "množství vznikého odpadu"?: string;
-    "množství předaného odpadu"?: string;
+    // Fixed typo: should be "vzniklého" not "vznikého"
+    "množství vzniklého odpadu"?: string | number;
+    "množství předaného odpadu"?: string | number;
   }>;
 }
 

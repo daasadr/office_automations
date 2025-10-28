@@ -21,7 +21,10 @@ export interface Puvod {
   název: string;
   adresa: string;
   "zodpovědná osoba": string | null;
-  "SAMOSTATNÁ PROVOZOVNA": SamostatnaProv | null;
+  // Support multiple field name variations from different LLM responses
+  "SAMOSTATNÁ PROVOZOVNA"?: SamostatnaProv | null;
+  "samostatná provozovna"?: SamostatnaProv | null;
+  samostatna_provozovna?: SamostatnaProv | null;
 }
 
 /**
@@ -31,6 +34,9 @@ export interface Odberatel {
   IČO: string;
   název: string;
   adresa: string;
+  // Support multiple field name variations from different LLM responses
+  "samostatná provozovna"?: SamostatnaProv | null;
+  samostatna_provozovna?: SamostatnaProv | null;
 }
 
 /**
@@ -39,8 +45,9 @@ export interface Odberatel {
 export interface TabulkaRecord {
   "pořadové číslo": number;
   "datum vzniku": string;
-  "množství vzniklého odpadu": string | null;
-  "množství předaného odpadu": string | null;
+  // Use number type for quantities (without units like "t" or "kg")
+  "množství vzniklého odpadu": number | null;
+  "množství předaného odpadu": number | null;
 }
 
 /**

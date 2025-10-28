@@ -771,6 +771,7 @@ export class DirectusDocumentService {
       logger.error("[Directus] Failed to retrieve foundation documents", {
         operation: "getAllFoundationDocuments",
         error: error instanceof Error ? error.message : String(error),
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
         stack: error instanceof Error ? error.stack : undefined,
       });
       return [];

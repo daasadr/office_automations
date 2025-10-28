@@ -140,25 +140,43 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
                       </tr>
                     </thead>
                     <tbody>
-                      {data.tabulka.map((record, recordIndex: number) => (
-                        <tr
-                          key={`record-${record["pořadové číslo"]}-${record["datum vzniku"]}-${recordIndex}`}
-                          className="border-b border-gray-100 dark:border-gray-800 last:border-0"
-                        >
-                          <td className="py-2 px-3 text-gray-900 dark:text-white">
-                            {record["pořadové číslo"] || "-"}
-                          </td>
-                          <td className="py-2 px-3 text-gray-900 dark:text-white">
-                            {record["datum vzniku"] || "-"}
-                          </td>
-                          <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
-                            {record["množství vznikého odpadu"] || "-"}
-                          </td>
-                          <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
-                            {record["množství předaného odpadu"] || "-"}
-                          </td>
-                        </tr>
-                      ))}
+                      {data.tabulka.map((record, recordIndex: number) => {
+                        // Handle both old typo "vznikého" and correct "vzniklého"
+                        const mnozstviVzniklého =
+                          record["množství vzniklého odpadu"] || record["množství vznikého odpadu"];
+                        const mnozstviPředaného = record["množství předaného odpadu"];
+
+                        // Format quantity values - handle both numbers and strings
+                        const formatQuantity = (value: string | number | undefined | null) => {
+                          if (value == null) return "-";
+                          // If it's a number, format with 2 decimal places
+                          if (typeof value === "number") {
+                            return value.toFixed(2);
+                          }
+                          // If it's a string, return as is (might have units)
+                          return String(value);
+                        };
+
+                        return (
+                          <tr
+                            key={`record-${record["pořadové číslo"]}-${record["datum vzniku"]}-${recordIndex}`}
+                            className="border-b border-gray-100 dark:border-gray-800 last:border-0"
+                          >
+                            <td className="py-2 px-3 text-gray-900 dark:text-white">
+                              {record["pořadové číslo"] || "-"}
+                            </td>
+                            <td className="py-2 px-3 text-gray-900 dark:text-white">
+                              {record["datum vzniku"] || "-"}
+                            </td>
+                            <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
+                              {formatQuantity(mnozstviVzniklého)}
+                            </td>
+                            <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
+                              {formatQuantity(mnozstviPředaného)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

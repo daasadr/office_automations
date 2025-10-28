@@ -7,14 +7,22 @@ interface ValidationResultsProps {
 }
 
 export function ValidationResults({ present, missing, confidence }: ValidationResultsProps) {
+  // Defensive checks - ensure arrays are valid
+  const safePresent = Array.isArray(present) ? present : [];
+  const safeMissing = Array.isArray(missing) ? missing : [];
+  const safeConfidence =
+    typeof confidence === "number" && !Number.isNaN(confidence) ? confidence : 0;
+
   return (
     <div className="space-y-6">
       {/* Confidence Score */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        <div className="text-2xl font-semibold">Úplnost dokumentu: {confidence.toFixed(1)}%</div>
-        {confidence >= 80 ? (
+        <div className="text-2xl font-semibold">
+          Úplnost dokumentu: {safeConfidence.toFixed(1)}%
+        </div>
+        {safeConfidence >= 80 ? (
           <CheckCircle className="w-8 h-8 text-green-500" />
-        ) : confidence >= 50 ? (
+        ) : safeConfidence >= 50 ? (
           <AlertCircle className="w-8 h-8 text-yellow-500" />
         ) : (
           <XCircle className="w-8 h-8 text-red-500" />
@@ -29,12 +37,16 @@ export function ValidationResults({ present, missing, confidence }: ValidationRe
             Nalezené informace
           </h3>
           <ul className="space-y-2">
-            {present.map((item) => (
-              <li key={item} className="flex items-start gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>{item}</span>
-              </li>
-            ))}
+            {safePresent.length > 0 ? (
+              safePresent.map((item, index) => (
+                <li key={`present-${index}-${item}`} className="flex items-start gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-sm text-muted-foreground">Žádné informace nalezeny</li>
+            )}
           </ul>
         </div>
 
@@ -45,12 +57,16 @@ export function ValidationResults({ present, missing, confidence }: ValidationRe
             Chybějící informace
           </h3>
           <ul className="space-y-2">
-            {missing.map((item) => (
-              <li key={item} className="flex items-start gap-2 text-sm">
-                <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                <span>{item}</span>
-              </li>
-            ))}
+            {safeMissing.length > 0 ? (
+              safeMissing.map((item, index) => (
+                <li key={`missing-${index}-${item}`} className="flex items-start gap-2 text-sm">
+                  <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-sm text-muted-foreground">Vše nalezeno</li>
+            )}
           </ul>
         </div>
       </div>

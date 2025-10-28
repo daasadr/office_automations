@@ -484,15 +484,24 @@ log_info "Testing key service health..."
 # Test key services only
 FAILED_SERVICES=()
 
+# Determine URLs based on environment
+if [ "$ENVIRONMENT" = "development" ]; then
+    FRONTEND_URL="http://dev-dejtoai.local"
+    DIRECTUS_URL="http://directus.dev-dejtoai.local/server/ping"
+else
+    FRONTEND_URL="https://$DOMAIN"
+    DIRECTUS_URL="https://$DOMAIN/admin/server/ping"
+fi
+
 # Test Frontend
-if curl -sf http://dev-dejtoai.local > /dev/null 2>&1; then
+if curl -sf "$FRONTEND_URL" > /dev/null 2>&1; then
     log_success "Frontend is running"
 else
     log_warning "Frontend is not responding (may still be starting)"
 fi
 
 # Test Directus
-if curl -sf http://directus.dev-dejtoai.local/server/ping > /dev/null 2>&1; then
+if curl -sf "$DIRECTUS_URL" > /dev/null 2>&1; then
     log_success "Directus is running"
 else
     log_error "Directus is not responding"

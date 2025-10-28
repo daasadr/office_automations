@@ -14,7 +14,7 @@ name: office-automation
 
 include:
   # Reverse Proxy & SSL
-  - ./docker/traefik/traefik.yml
+  - ./traefik/docker/traefik.yml
   
   # Backend Services
   - ./backend/docker/postgres/postgres.yml

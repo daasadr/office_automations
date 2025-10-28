@@ -9,7 +9,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-CONTAINER_NAME="${PROJECT_PREFIX:-office-automation_}-directus"
+CONTAINER_NAME="directus"
 SCHEMA_FILE="$PROJECT_ROOT/docker/directus/schema/directus11_schema_snapshot.json"
 
 echo "🚀 Quick importing Directus schema..."
@@ -21,7 +21,7 @@ if [ ! -f "$SCHEMA_FILE" ]; then
 fi
 
 # Check if container exists and is running
-CONTAINER_PATTERN="office-automation[_-]directus"
+CONTAINER_PATTERN="directus"
 RUNNING_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E "^${CONTAINER_PATTERN}$")
 
 if [ -z "$RUNNING_CONTAINER" ]; then

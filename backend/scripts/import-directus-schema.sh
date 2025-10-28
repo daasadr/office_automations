@@ -147,6 +147,30 @@ fi
 log_info "Cleaning up temporary files..."
 docker exec "$CONTAINER_NAME" rm -f "$CONTAINER_SCHEMA_PATH" 2>/dev/null || true
 
+# Step 8: Import policies (if policies file exists)
+POLICIES_FILE="$PROJECT_ROOT/docker/directus/policies/directus_policies_snapshot.json"
+if [ -f "$POLICIES_FILE" ]; then
+    echo ""
+    log_info "Found policies snapshot, importing..."
+    read -p "Do you want to import policies, roles, and permissions? (y/N): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [ -x "$SCRIPT_DIR/import-directus-policies.sh" ]; then
+            if "$SCRIPT_DIR/import-directus-policies.sh"; then
+                log_success "Policies imported successfully!"
+            else
+                log_warning "Policies import failed, but schema was applied successfully"
+            fi
+        else
+            log_warning "Policies import script not found or not executable"
+        fi
+    else
+        log_info "Skipped policies import"
+    fi
+else
+    log_info "No policies snapshot found, skipping policies import"
+fi
+
 # Final success message
 echo ""
 log_success "✅ Directus schema import completed!"

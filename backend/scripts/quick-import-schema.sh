@@ -67,5 +67,26 @@ docker exec "$CONTAINER_NAME" npx directus schema apply --yes "/directus/snapsho
 docker exec "$CONTAINER_NAME" rm -f "/directus/snapshots/import.json" 2>/dev/null || true
 
 echo "✅ Schema import completed!"
+
+# Import policies if file exists
+POLICIES_FILE="$PROJECT_ROOT/docker/directus/policies/directus_policies_snapshot.json"
+if [ -f "$POLICIES_FILE" ]; then
+    echo ""
+    echo "📋 Importing policies..."
+    if [ -x "$SCRIPT_DIR/import-directus-policies.sh" ]; then
+        if "$SCRIPT_DIR/import-directus-policies.sh"; then
+            echo "✅ Policies imported!"
+        else
+            echo "⚠️  Policies import failed (continuing anyway)"
+        fi
+    else
+        echo "⚠️  Policies import script not found"
+    fi
+else
+    echo "⚠️  No policies snapshot found, skipping"
+fi
+
+echo ""
+echo "✅ Complete! Schema and policies imported."
 echo "🌐 Access Directus: http://localhost:8055"
 

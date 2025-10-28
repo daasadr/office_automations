@@ -12,324 +12,22 @@
     {
       "url": "http://localhost:3001",
       "description": "Development server"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Default development server"
     }
   ],
-  "paths": {
-    "/health": {
-      "get": {
-        "tags": ["Health"],
-        "summary": "Health check endpoint",
-        "description": "Returns the health status of the API and its dependencies",
-        "operationId": "getHealth",
-        "responses": {
-          "200": {
-            "description": "Service is healthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service is unhealthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
     },
-    "/documents/validate-pdf": {
-      "post": {
-        "tags": ["Documents"],
-        "summary": "Validate PDF document",
-        "description": "Upload and validate a PDF document using AI services to extract waste management data",
-        "operationId": "validatePdf",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "PDF file to validate (max 10MB)"
-                  }
-                },
-                "required": ["file"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PDF validation started successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - no file uploaded or invalid file type",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error during validation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/documents/status/{jobId}": {
-      "get": {
-        "tags": ["Documents"],
-        "summary": "Get job status",
-        "description": "Retrieve the status and results of a document validation job",
-        "operationId": "getJobStatus",
-        "parameters": [
-          {
-            "name": "jobId",
-            "in": "path",
-            "required": true,
-            "description": "Unique job identifier",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Job status retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobStatusResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/documents/generate-excel": {
-      "post": {
-        "tags": ["Documents"],
-        "summary": "Generate Excel file",
-        "description": "Generate an Excel file from validation results of a completed job",
-        "operationId": "generateExcel",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "jobId": {
-                    "type": "string",
-                    "description": "Job ID with completed validation results"
-                  }
-                },
-                "required": ["jobId"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Excel file generated successfully",
-            "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            },
-            "headers": {
-              "Content-Disposition": {
-                "description": "Attachment with filename",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - missing job ID",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found or no validation data available",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error during Excel generation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/documents/download/{jobId}/{filename}": {
-      "get": {
-        "tags": ["Documents"],
-        "summary": "Download Excel file",
-        "description": "Download a previously generated Excel file for a job",
-        "operationId": "downloadExcel",
-        "parameters": [
-          {
-            "name": "jobId",
-            "in": "path",
-            "required": true,
-            "description": "Job identifier",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "filename",
-            "in": "path",
-            "required": true,
-            "description": "Excel filename",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Excel file downloaded successfully",
-            "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            },
-            "headers": {
-              "Content-Disposition": {
-                "description": "Attachment with filename",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Excel file not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/documents/jobs": {
-      "get": {
-        "tags": ["Documents"],
-        "summary": "List all jobs",
-        "description": "Get a list of all jobs for debugging and administrative purposes",
-        "operationId": "getAllJobs",
-        "responses": {
-          "200": {
-            "description": "Jobs retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobListResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "Documents",
+      "description": "Document processing and validation endpoints"
     }
-  },
+  ],
   "components": {
     "schemas": {
       "HealthResponse": {
@@ -337,7 +35,7 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["healthy"]
+            "enum": ["healthy", "unhealthy"]
           },
           "timestamp": {
             "type": "string",
@@ -350,46 +48,99 @@
             "type": "object",
             "properties": {
               "api": {
-                "type": "string",
-                "enum": ["running"]
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
+              },
+              "directus": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
+              },
+              "postgres": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
+              },
+              "keydb": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
+              },
+              "minio": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
               },
               "gemini": {
-                "type": "string",
-                "enum": ["configured", "not_configured"]
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["healthy", "unhealthy", "not_configured"]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "latency": {
+                    "type": "number"
+                  }
+                }
               }
             }
           }
         },
         "required": ["status", "timestamp", "environment", "services"]
-      },
-      "HealthErrorResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["unhealthy"]
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "environment": {
-            "type": "string"
-          },
-          "error": {
-            "type": "string"
-          },
-          "services": {
-            "type": "object",
-            "properties": {
-              "api": {
-                "type": "string",
-                "enum": ["running"]
-              }
-            }
-          }
-        },
-        "required": ["status", "timestamp", "environment", "error", "services"]
       },
       "ValidationResponse": {
         "type": "object",
@@ -403,6 +154,15 @@
           "provider": {
             "type": "string",
             "enum": ["gemini"]
+          },
+          "directusSourceDocumentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
           }
         },
         "required": ["success", "jobId", "provider"]
@@ -671,14 +431,320 @@
       }
     }
   },
-  "tags": [
-    {
-      "name": "Health",
-      "description": "Health check endpoints"
+  "paths": {
+    "/documents/download/{jobId}/{filename}": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "Download Excel file",
+        "description": "Download a previously generated Excel file for a job",
+        "operationId": "downloadExcel",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Job identifier",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "description": "Excel filename",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel file downloaded successfully",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment with filename",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Excel file not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     },
-    {
-      "name": "Documents",
-      "description": "Document processing and validation endpoints"
+    "/documents/generate-excel": {
+      "post": {
+        "tags": ["Documents"],
+        "summary": "Generate Excel file",
+        "description": "Generate an Excel file from validation results of a completed job",
+        "operationId": "generateExcel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": {
+                    "type": "string",
+                    "description": "Job ID with completed validation results"
+                  }
+                },
+                "required": ["jobId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excel file generated successfully",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment with filename",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing job ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found or no validation data available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error during Excel generation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/jobs": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "List all jobs",
+        "description": "Get a list of all jobs for debugging and administrative purposes",
+        "operationId": "getAllJobs",
+        "responses": {
+          "200": {
+            "description": "Jobs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/status/{jobId}": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "Get job status",
+        "description": "Retrieve the status and results of a document validation job",
+        "operationId": "getJobStatus",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Unique job identifier",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/validate-pdf": {
+      "post": {
+        "tags": ["Documents"],
+        "summary": "Validate PDF document",
+        "description": "Upload and validate a PDF document using AI services to extract waste management data",
+        "operationId": "validatePdf",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF file to validate (max 10MB)"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF validation started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - no file uploaded or invalid file type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error during validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check endpoint",
+        "description": "Returns the health status of the API and its dependencies",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is healthy or partially healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
-  ]
+  }
 }

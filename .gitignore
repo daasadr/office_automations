@@ -82,6 +82,9 @@ out
 .nuxt
 dist
 
+# Astro build / cache output
+.astro/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
@@ -284,4 +287,15 @@ temp/
 # OS generated thumbnails
 .thumbs/
 
+# Traefik
+traefik/letsencrypt/
+traefik/certs/*.pem
+traefik/certs/*.key
+traefik/certs/*.crt
+traefik/logs/
+
+# Archive directory (old/deprecated files)
+archiv/
+
+# Root package-lock.json (subproject lock files are tracked)
 /package-lock.json

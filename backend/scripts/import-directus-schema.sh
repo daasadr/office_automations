@@ -77,24 +77,37 @@ log_info "Schema file: ${SCHEMA_FILE}"
 log_info "Creating snapshots directory in container..."
 docker exec "$CONTAINER_NAME" mkdir -p "$BACKUP_DIR" 2>/dev/null || true
 
-# Step 2: Backup current schema (optional but recommended)
-BACKUP_FILE="backup-$(date +%F_%H-%M-%S).json"
-BACKUP_PATH="${BACKUP_DIR}/${BACKUP_FILE}"
-
-log_info "Creating backup of current schema..."
-if docker exec "$CONTAINER_NAME" npx directus schema snapshot "$BACKUP_PATH" >/dev/null 2>&1; then
-    log_success "Current schema backed up to: ${BACKUP_PATH}"
+# Verify directory exists
+if ! docker exec "$CONTAINER_NAME" test -d "$BACKUP_DIR"; then
+    log_warning "Snapshots directory doesn't exist, using alternative approach..."
+    # Copy to /tmp first, then move
+    if docker cp "$SCHEMA_FILE" "${CONTAINER_NAME}:/tmp/schema_import.json"; then
+        docker exec "$CONTAINER_NAME" sh -c "mkdir -p $BACKUP_DIR && mv /tmp/schema_import.json ${CONTAINER_SCHEMA_PATH}"
+        log_success "Schema file copied to container (via /tmp)"
+    else
+        log_error "Failed to copy schema file to container"
+        exit 1
+    fi
 else
-    log_warning "Failed to create schema backup (this is normal for fresh installations)"
-fi
+    # Step 2: Backup current schema (optional but recommended)
+    BACKUP_FILE="backup-$(date +%F_%H-%M-%S).json"
+    BACKUP_PATH="${BACKUP_DIR}/${BACKUP_FILE}"
 
-# Step 3: Copy schema file to container
-log_info "Copying schema file to container..."
-if docker cp "$SCHEMA_FILE" "${CONTAINER_NAME}:${CONTAINER_SCHEMA_PATH}"; then
-    log_success "Schema file copied to container"
-else
-    log_error "Failed to copy schema file to container"
-    exit 1
+    log_info "Creating backup of current schema..."
+    if docker exec "$CONTAINER_NAME" npx directus schema snapshot "$BACKUP_PATH" >/dev/null 2>&1; then
+        log_success "Current schema backed up to: ${BACKUP_PATH}"
+    else
+        log_warning "Failed to create schema backup (this is normal for fresh installations)"
+    fi
+
+    # Step 3: Copy schema file to container
+    log_info "Copying schema file to container..."
+    if docker cp "$SCHEMA_FILE" "${CONTAINER_NAME}:${CONTAINER_SCHEMA_PATH}"; then
+        log_success "Schema file copied to container"
+    else
+        log_error "Failed to copy schema file to container"
+        exit 1
+    fi
 fi
 
 # Step 4: Show schema diff (optional)

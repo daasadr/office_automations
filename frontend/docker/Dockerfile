@@ -4,11 +4,14 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Install git (required by some npm packages)
+RUN apk add --no-cache git
 
-# Install dependencies
-RUN npm ci
+# Copy package files
+COPY package.json ./
+
+# Install dependencies (using npm install instead of npm ci to avoid platform-specific lock issues)
+RUN npm install
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
@@ -31,16 +34,18 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
+# Install git (required by some npm packages)
+RUN apk add --no-cache git
+
 # Set production environment
 ENV NODE_ENV=production
 
 # Copy necessary files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/package-lock.json ./package-lock.json
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Expose the port the app runs on
 EXPOSE 4321

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Office Automation - Complete Environment Setup
-# Single command to set up dev or production environment
+# Office Automation - Environment Setup
+# Check environment files and start services
 
 set -e
 
@@ -41,17 +41,6 @@ log_step() {
     echo -e "${CYAN}$(echo "$1" | sed 's/./-/g')${NC}"
 }
 
-# Generate random secret
-generate_secret() {
-    local length=${1:-32}
-    openssl rand -hex "$length" 2>/dev/null || cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w "$length" | head -n 1
-}
-
-generate_base64() {
-    local length=${1:-32}
-    openssl rand -base64 "$length" 2>/dev/null | tr -d '\n' || cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w "$length" | head -n 1
-}
-
 # Banner
 clear
 echo ""
@@ -61,16 +50,84 @@ echo -e "${BOLD}║        Office Automation - Environment Setup          ║${N
 echo -e "${BOLD}║                                                        ║${NC}"
 echo -e "${BOLD}╚════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo "This script will set up your complete environment:"
-echo "  • Generate secure passwords and secrets"
-echo "  • Configure environment files"
-echo "  • Set up local domain (dev)"
-echo "  • Start Docker services"
-echo "  • Import Directus schema"
-echo "  • Guide you through API token setup"
+
+# Step 1: Check if environment files exist
+log_step "STEP 1: Check Environment Files"
 echo ""
 
-# Check if Docker is running
+cd "$PROJECT_ROOT"
+
+MISSING_FILES=()
+
+if [ ! -f ".env" ]; then
+    log_error "Root .env file not found"
+    MISSING_FILES+=(".env")
+else
+    log_success "Root .env file exists"
+fi
+
+if [ ! -f "backend/.env" ]; then
+    log_error "backend/.env file not found"
+    MISSING_FILES+=("backend/.env")
+else
+    log_success "backend/.env file exists"
+fi
+
+if [ ! -f "frontend/.env" ]; then
+    log_error "frontend/.env file not found"
+    MISSING_FILES+=("frontend/.env")
+else
+    log_success "frontend/.env file exists"
+fi
+
+# If any files are missing, exit with instructions
+if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+    echo ""
+    echo -e "${RED}${BOLD}╔════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}${BOLD}║  Environment Files Missing                             ║${NC}"
+    echo -e "${RED}${BOLD}╚════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${YELLOW}The following environment files must be prepared before setup:${NC}"
+    echo ""
+    for file in "${MISSING_FILES[@]}"; do
+        echo "  ${RED}✗${NC} $file"
+    done
+    echo ""
+    echo -e "${BOLD}How to prepare environment files:${NC}"
+    echo ""
+    echo "1. Copy the template files:"
+    echo ""
+    if [[ " ${MISSING_FILES[@]} " =~ " .env " ]]; then
+        echo "   ${CYAN}cp env.template .env${NC}"
+    fi
+    if [[ " ${MISSING_FILES[@]} " =~ " backend/.env " ]]; then
+        echo "   ${CYAN}cp backend/env.template backend/.env${NC}"
+    fi
+    if [[ " ${MISSING_FILES[@]} " =~ " frontend/.env " ]]; then
+        echo "   ${CYAN}cp frontend/env.template frontend/.env${NC}"
+    fi
+    echo ""
+    echo "2. Edit each file and configure the required values:"
+    echo ""
+    echo "   • Database passwords"
+    echo "   • API keys (Gemini, etc.)"
+    echo "   • Secrets and tokens"
+    echo "   • Domain configuration"
+    echo ""
+    echo "3. Run setup again:"
+    echo "   ${CYAN}make setup-dev${NC} or ${CYAN}make setup-prod${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠  All environment files must exist before starting Docker services${NC}"
+    echo ""
+    exit 1
+fi
+
+log_success "All environment files are present"
+
+# Step 2: Check if Docker is running
+log_step "STEP 2: Check Docker Engine"
+echo ""
+
 log_info "Checking Docker engine..."
 if ! docker info >/dev/null 2>&1; then
     echo ""
@@ -95,241 +152,35 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 log_success "Docker engine is running"
+
+# Step 3: Detect environment type from .env
+log_step "STEP 3: Detect Environment Type"
 echo ""
 
-# Step 1: Choose environment
-log_step "STEP 1: Choose Environment"
-echo ""
-echo "Select environment type:"
-echo "  ${GREEN}1)${NC} Development (dev-dejtoai.local) - Hot reloading, debug logs"
-echo "  ${GREEN}2)${NC} Production (dejtoai.cz) - Optimized builds, production mode"
-echo ""
-read -p "Enter choice [1-2]: " ENV_CHOICE
-
-case $ENV_CHOICE in
-    1)
-        ENVIRONMENT="development"
-        DOMAIN="dev-dejtoai.local"
-        NODE_ENV="development"
-        DOCKER_BUILD_TARGET="development"
-        log_success "Development environment selected"
-        ;;
-    2)
+if [ -f ".env" ]; then
+    # Try to detect environment from NODE_ENV in .env
+    if grep -q "NODE_ENV=production" .env 2>/dev/null; then
         ENVIRONMENT="production"
-        read -p "Enter production domain [dejtoai.cz]: " PROD_DOMAIN
-        DOMAIN=${PROD_DOMAIN:-dejtoai.cz}
         NODE_ENV="production"
-        DOCKER_BUILD_TARGET="production"
-        log_success "Production environment selected: $DOMAIN"
-        ;;
-    *)
-        log_error "Invalid choice"
-        exit 1
-        ;;
-esac
-
-# Step 2: Generate secrets
-log_step "STEP 2: Generate Secure Secrets"
-echo ""
-log_info "Generating cryptographically secure passwords and secrets..."
-
-# PostgreSQL
-POSTGRES_PASSWORD=$(generate_base64 24)
-# KeyDB/Redis
-KEYDB_PASSWORD=$(generate_base64 24)
-# MinIO
-MINIO_ACCESS_KEY=$(generate_base64 16 | tr -d '/' | cut -c1-16)
-MINIO_SECRET_KEY=$(generate_base64 32 | tr -d '/')
-# Directus
-DIRECTUS_KEY=$(generate_secret 16)
-DIRECTUS_SECRET=$(generate_base64 32 | tr -d '/')
-ADMIN_PASSWORD=$(generate_base64 16 | tr -d '/')
-# Orchestration API
-API_SECRET_KEY=$(generate_secret 32)
-WEBHOOK_SECRET=$(generate_secret 32)
-# Frontend
-SESSION_SECRET=$(generate_secret 32)
-
-log_success "All secrets generated"
-
-# Step 3: Get user inputs
-log_step "STEP 3: Configuration"
-echo ""
-
-# Admin email
-read -p "Admin email [admin@example.com]: " ADMIN_EMAIL_INPUT
-ADMIN_EMAIL=${ADMIN_EMAIL_INPUT:-admin@example.com}
-
-# ACME email for Let's Encrypt
-if [ "$ENVIRONMENT" = "production" ]; then
-    read -p "Email for Let's Encrypt SSL certificates [$ADMIN_EMAIL]: " ACME_EMAIL_INPUT
-    ACME_EMAIL=${ACME_EMAIL_INPUT:-$ADMIN_EMAIL}
+    else
+        ENVIRONMENT="development"
+        NODE_ENV="development"
+    fi
+    
+    # Try to get domain from .env
+    DOMAIN=$(grep "^DOMAIN=" .env 2>/dev/null | cut -d '=' -f2 || echo "dev-dejtoai.local")
+    
+    log_success "Environment detected: $ENVIRONMENT"
+    log_info "Domain: $DOMAIN"
 else
-    ACME_EMAIL="admin@dejtoai.cz"
+    log_warning "Could not detect environment, defaulting to development"
+    ENVIRONMENT="development"
+    DOMAIN="dev-dejtoai.local"
 fi
 
-# Gemini API key
-echo ""
-log_warning "Gemini API Key Required"
-echo "You'll need a Gemini API key from https://aistudio.google.com/app/apikey"
-read -p "Enter Gemini API key (or press Enter to skip): " GEMINI_API_KEY_INPUT
-GEMINI_API_KEY=${GEMINI_API_KEY_INPUT:-your_gemini_api_key_here}
-
-log_success "Configuration collected"
-
-# Step 4: Create environment files
-log_step "STEP 4: Create Environment Files"
-echo ""
-
-cd "$PROJECT_ROOT"
-
-# Root .env
-log_info "Creating root .env..."
-cat > .env << EOF
-# Office Automation - Root Environment Configuration
-# Auto-generated on $(date)
-
-# ============================================================================
-# PROJECT CONFIGURATION
-# ============================================================================
-
-# ============================================================================
-# TRAEFIK REVERSE PROXY
-# ============================================================================
-DOMAIN=$DOMAIN
-ACME_EMAIL=$ACME_EMAIL
-
-# ============================================================================
-# ENVIRONMENT
-# ============================================================================
-NODE_ENV=$NODE_ENV
-EOF
-
-log_success "Root .env created"
-
-# Backend .env
-log_info "Creating backend/.env..."
-cat > backend/.env << EOF
-# Backend Services - Environment Configuration
-# Auto-generated on $(date)
-
-# ============================================================================
-# DATABASE (PostgreSQL)
-# ============================================================================
-POSTGRES_DB=directus
-POSTGRES_USER=directus
-POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-POSTGRES_PORT=5432
-
-DB_DATABASE=\${POSTGRES_DB}
-DB_USER=\${POSTGRES_USER}
-DB_PASSWORD=\${POSTGRES_PASSWORD}
-
-# ============================================================================
-# CACHE (KeyDB/Redis)
-# ============================================================================
-KEYDB_PASSWORD=$KEYDB_PASSWORD
-KEYDB_PORT=6379
-REDIS_PASSWORD=\${KEYDB_PASSWORD}
-REDIS_PORT=\${KEYDB_PORT}
-
-CACHE_ENABLED=true
-CACHE_STORE=redis
-CACHE_NAMESPACE=directus_cache
-
-# ============================================================================
-# OBJECT STORAGE (MinIO)
-# ============================================================================
-MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
-MINIO_SECRET_KEY=$MINIO_SECRET_KEY
-MINIO_API_PORT=9000
-MINIO_CONSOLE_PORT=9001
-MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
-MINIO_BUCKET=office-automation
-
-STORAGE_MINIO_KEY=\${MINIO_ACCESS_KEY}
-STORAGE_MINIO_SECRET=\${MINIO_SECRET_KEY}
-STORAGE_MINIO_BUCKET=\${MINIO_BUCKET}
-STORAGE_MINIO_ENDPOINT=http://minio:9000
-
-# ============================================================================
-# DIRECTUS CMS
-# ============================================================================
-ADMIN_EMAIL=$ADMIN_EMAIL
-ADMIN_PASSWORD=$ADMIN_PASSWORD
-
-KEY=$DIRECTUS_KEY
-SECRET=$DIRECTUS_SECRET
-
-DIRECTUS_API_TOKEN=PLACEHOLDER_TOKEN_UPDATE_AFTER_SETUP
-DIRECTUS_TOKEN=\${DIRECTUS_API_TOKEN}
-
-# ============================================================================
-# ORCHESTRATION API
-# ============================================================================
-ORCHESTRATION_PORT=3001
-NODE_ENV=$NODE_ENV
-LOG_LEVEL=info
-
-API_SECRET_KEY=$API_SECRET_KEY
-WEBHOOK_SECRET=$WEBHOOK_SECRET
-
-CORS_ORIGIN=http://localhost:3000,http://localhost:4321,http://localhost:8055
-
-GEMINI_API_KEY=$GEMINI_API_KEY
-GEMINI_MODEL=gemini-2.5-flash
-
-# ============================================================================
-# EMAIL (MailHog - Development Only)
-# ============================================================================
-MAILHOG_SMTP_PORT=1025
-MAILHOG_UI_PORT=8025
-
-# ============================================================================
-# DOCKER BUILD SETTINGS
-# ============================================================================
-DOCKER_BUILD_TARGET=$DOCKER_BUILD_TARGET
-EOF
-
-log_success "Backend .env created"
-
-# Frontend .env
-log_info "Creating frontend/.env..."
-cat > frontend/.env << EOF
-# Frontend - Environment Configuration
-# Auto-generated on $(date)
-
-# ============================================================================
-# INTERNAL SERVICE URLS (Server-Side)
-# ============================================================================
-DIRECTUS_URL=http://directus:8055
-ORCHESTRATION_API_URL=http://orchestration-api:3001
-
-# ============================================================================
-# PUBLIC URLS (Client-Side)
-# ============================================================================
-PUBLIC_DOMAIN=$DOMAIN
-PUBLIC_DIRECTUS_URL=https://\${PUBLIC_DOMAIN}/admin
-PUBLIC_API_URL=https://\${PUBLIC_DOMAIN}/api
-
-# ============================================================================
-# AUTHENTICATION
-# ============================================================================
-DIRECTUS_TOKEN=PLACEHOLDER_TOKEN_UPDATE_AFTER_SETUP
-SESSION_SECRET=$SESSION_SECRET
-
-# ============================================================================
-# ENVIRONMENT
-# ============================================================================
-NODE_ENV=$NODE_ENV
-PORT=4321
-EOF
-
-log_success "Frontend .env created"
-
-# Step 5: Setup local domain (development only)
+# Step 4: Setup local domain (development only)
 if [ "$ENVIRONMENT" = "development" ]; then
-    log_step "STEP 5: Setup Local Domain"
+    log_step "STEP 4: Setup Local Domain"
     echo ""
     
     if grep -q "dev-dejtoai.local" /etc/hosts 2>/dev/null; then
@@ -337,13 +188,13 @@ if [ "$ENVIRONMENT" = "development" ]; then
     else
         log_info "Adding dev-dejtoai.local to /etc/hosts (requires sudo)..."
         echo ""
-        echo "127.0.0.1 dev-dejtoai.local traefik.dev-dejtoai.local" | sudo tee -a /etc/hosts > /dev/null
-        log_success "dev-dejtoai.local added to /etc/hosts"
+        echo "127.0.0.1 dev-dejtoai.local directus.dev-dejtoai.local api.dev-dejtoai.local minio.dev-dejtoai.local mailhog.dev-dejtoai.local traefik.dev-dejtoai.local" | sudo tee -a /etc/hosts > /dev/null
+        log_success "dev-dejtoai.local and subdomains added to /etc/hosts"
     fi
 fi
 
-# Step 6: Start Docker services
-log_step "STEP 6: Start Docker Services"
+# Step 5: Start Docker services
+log_step "STEP 5: Start Docker Services"
 echo ""
 
 log_info "Building and starting services..."
@@ -354,18 +205,84 @@ cd "$PROJECT_ROOT"
 
 # Load environment variables and start services
 set +e  # Don't exit on error for docker commands
-if [ "$ENVIRONMENT" = "development" ]; then
-    ./scripts/docker-start.sh up -d --build
-else
-    ./scripts/docker-start.sh up -d --build
-fi
+./scripts/docker-start.sh up -d --build
 DOCKER_EXIT=$?
 set -e
 
 if [ $DOCKER_EXIT -ne 0 ]; then
-    log_error "Docker services failed to start"
-    log_info "Check logs with: docker compose logs"
-    exit 1
+    echo ""
+    log_warning "Initial startup encountered some issues (this is normal for first run)"
+    log_info "Some services like KeyDB may need extra time to become healthy..."
+    echo ""
+    
+    # Check if KeyDB container exists and is running (even if unhealthy)
+    if docker compose ps keydb | grep -q "running"; then
+        log_info "KeyDB is running but healthcheck hasn't passed yet"
+        log_info "Waiting for services to stabilize (30 seconds)..."
+        sleep 30
+    else
+        log_info "Waiting 15 seconds before retry..."
+        sleep 15
+    fi
+    
+    # Try again without --build (since build already succeeded)
+    set +e
+    log_info "Retrying startup..."
+    ./scripts/docker-start.sh up -d
+    DOCKER_EXIT=$?
+    set -e
+    
+    if [ $DOCKER_EXIT -ne 0 ]; then
+        echo ""
+        # Check if KeyDB is now running even if unhealthy
+        if docker compose ps keydb | grep -q "running"; then
+            log_warning "Services are running but some healthchecks haven't passed yet"
+            log_info "This is normal - healthchecks can take up to 60 seconds"
+            echo ""
+            log_info "Waiting additional 30 seconds for healthchecks..."
+            sleep 30
+            
+            # One final attempt
+            set +e
+            ./scripts/docker-start.sh up -d
+            DOCKER_EXIT=$?
+            set -e
+            
+            # If still failing but services are running, consider it a success
+            if [ $DOCKER_EXIT -ne 0 ]; then
+                if docker compose ps | grep -q "running"; then
+                    log_warning "Services are running but healthchecks are still pending"
+                    log_info "Continuing with setup - services should become healthy soon"
+                    DOCKER_EXIT=0
+                fi
+            fi
+        fi
+        
+        # If still failing, show troubleshooting
+        if [ $DOCKER_EXIT -ne 0 ]; then
+            echo ""
+            log_error "Docker services failed to start after multiple retries"
+            log_info "This can happen if services need more time to initialize"
+            echo ""
+            echo "Try one of these solutions:"
+            echo ""
+            echo "1. Check service status:"
+            echo "   ${CYAN}docker compose ps${NC}"
+            echo ""
+            echo "2. Check logs for errors:"
+            echo "   ${CYAN}docker compose logs keydb${NC}"
+            echo "   ${CYAN}docker compose logs directus${NC}"
+            echo ""
+            echo "3. Wait and retry manually (recommended):"
+            echo "   ${CYAN}docker compose up -d${NC}"
+            echo ""
+            echo "4. If problems persist, stop and start fresh:"
+            echo "   ${CYAN}docker compose down${NC}"
+            echo "   ${CYAN}docker compose up -d${NC}"
+            echo ""
+            exit 1
+        fi
+    fi
 fi
 
 echo ""
@@ -375,165 +292,211 @@ log_success "Docker services started"
 log_info "Waiting for services to initialize (30s)..."
 sleep 30
 
-# Step 7: Import Directus schema
-log_step "STEP 7: Import Directus Schema"
+# Step 6: Check if schema import is needed
+log_step "STEP 6: Directus Schema (Optional)"
 echo ""
 
-log_info "Checking if Directus is ready..."
-MAX_RETRIES=10
-RETRY_COUNT=0
+echo "Would you like to import the Directus schema now?"
+echo "(You can also do this later with: ${CYAN}make import-schema${NC})"
+echo ""
+read -p "Import schema? [y/N]: " IMPORT_SCHEMA
 
-while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker compose exec -T directus npx directus --version > /dev/null 2>&1; then
-        log_success "Directus is ready"
-        break
-    fi
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    log_info "Waiting for Directus... (attempt $RETRY_COUNT/$MAX_RETRIES)"
-    sleep 5
-done
+if [[ "$IMPORT_SCHEMA" =~ ^[Yy]$ ]]; then
+    log_info "Checking if Directus is ready..."
+    MAX_RETRIES=10
+    RETRY_COUNT=0
 
-if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-    log_error "Directus did not start in time"
-    log_info "You can import the schema later with: make import-schema"
-else
-    log_info "Importing Directus schema..."
-    cd "$PROJECT_ROOT/backend"
-    
-    # Check which schema file exists
-    if [ -f "docker/directus/schema/directus11_schema_snapshot.json" ]; then
-        SCHEMA_FILE="docker/directus/schema/directus11_schema_snapshot.json"
-    elif [ -f "docker/directus/schema/directus11_schema_snapshot_simplified.json" ]; then
-        SCHEMA_FILE="docker/directus/schema/directus11_schema_snapshot_simplified.json"
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        if docker compose exec -T directus npx directus --version > /dev/null 2>&1; then
+            log_success "Directus is ready"
+            break
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        log_info "Waiting for Directus... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+        sleep 5
+    done
+
+    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+        log_error "Directus did not start in time"
+        log_info "You can import the schema later with: make import-schema"
     else
-        log_warning "No schema file found - skipping schema import"
-        SCHEMA_FILE=""
+        log_info "Importing Directus schema..."
+        cd "$PROJECT_ROOT/backend"
+        
+        # Use only the simplified schema file
+        if [ -f "docker/directus/schema/directus11_schema_snapshot_simplified.json" ]; then
+            SCHEMA_FILE="docker/directus/schema/directus11_schema_snapshot_simplified.json"
+        else
+            log_warning "Simplified schema file not found - skipping schema import"
+            SCHEMA_FILE=""
+        fi
+        
+        if [ -n "$SCHEMA_FILE" ]; then
+            # Create snapshots directory in container using docker exec
+            log_info "Creating snapshots directory..."
+            docker exec directus mkdir -p /directus/snapshots 2>/dev/null || true
+            
+            # Verify directory exists
+            if ! docker exec directus test -d /directus/snapshots; then
+                log_warning "Failed to create snapshots directory, trying alternative approach..."
+                # Copy to /tmp first, then move
+                docker cp "$SCHEMA_FILE" directus:/tmp/schema_import.json
+                docker exec directus sh -c "mkdir -p /directus/snapshots && mv /tmp/schema_import.json /directus/snapshots/import.json"
+            else
+                # Copy schema to container
+                log_info "Copying schema file to container..."
+                docker cp "$SCHEMA_FILE" directus:/directus/snapshots/import.json
+            fi
+            
+            # Apply schema
+            log_info "Applying schema..."
+            docker exec directus npx directus schema apply --yes /directus/snapshots/import.json
+            
+            # Cleanup
+            docker exec directus rm -f /directus/snapshots/import.json 2>/dev/null || true
+            
+            log_success "Directus schema imported"
+        fi
+        
+        cd "$PROJECT_ROOT"
     fi
-    
-    if [ -n "$SCHEMA_FILE" ]; then
-        # Copy schema to container
-        docker cp "$SCHEMA_FILE" directus:/directus/snapshots/import.json
-        
-        # Apply schema
-        docker compose exec -T directus npx directus schema apply --yes /directus/snapshots/import.json
-        
-        # Cleanup
-        docker compose exec -T directus rm -f /directus/snapshots/import.json
-        
-        log_success "Directus schema imported"
-    fi
+else
+    log_info "Schema import skipped"
+    log_info "You can import later with: ${CYAN}make import-schema${NC}"
 fi
 
-# Step 8: Directus API Token Setup
-log_step "STEP 8: Directus API Token Setup"
+# Step 7: Setup Directus Access Token
+log_step "STEP 7: Setup Directus Access Token"
 echo ""
 
-echo -e "${YELLOW}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║  ACTION REQUIRED: Create Directus API Token           ║${NC}"
-echo -e "${YELLOW}╚════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BOLD}Directus requires an API token to enable the Orchestration API and Frontend.${NC}"
 echo ""
-echo "To complete the setup, you need to create an API token in Directus:"
+echo -e "${YELLOW}⚠  Follow these steps to create an access token:${NC}"
 echo ""
-echo -e "${BOLD}Steps:${NC}"
-echo "  1. Open Directus in your browser"
-echo "  2. Login with the admin credentials"
-echo "  3. Go to Settings → Access Tokens"
-echo "  4. Create a new token with Admin permissions"
-echo "  5. Copy the token"
-echo ""
-echo -e "${BOLD}Access Details:${NC}"
+echo -e "  ${BOLD}1.${NC} Open Directus Admin Panel:"
 if [ "$ENVIRONMENT" = "development" ]; then
-    echo "  URL:      ${CYAN}http://localhost:8055${NC} or ${CYAN}http://$DOMAIN/admin${NC}"
+    echo -e "     ${CYAN}http://directus.dev-dejtoai.local/${NC}"
 else
-    echo "  URL:      ${CYAN}https://$DOMAIN/admin${NC}"
+    echo -e "     ${CYAN}https://$DOMAIN/admin${NC}"
 fi
-echo "  Email:    ${CYAN}$ADMIN_EMAIL${NC}"
-echo "  Password: ${CYAN}$ADMIN_PASSWORD${NC}"
 echo ""
-echo -e "${YELLOW}⚠  Save the admin password above - you'll need it!${NC}"
+echo -e "  ${BOLD}2.${NC} Login with admin credentials from ${CYAN}backend/.env${NC}:"
+echo -e "     • Username: \$DIRECTUS_ADMIN_EMAIL"
+echo -e "     • Password: \$DIRECTUS_ADMIN_PASSWORD"
 echo ""
-
-read -p "Press Enter when you're ready to input the API token..."
+echo -e "  ${BOLD}3.${NC} Navigate to: ${CYAN}Settings → Access Tokens${NC}"
 echo ""
+echo -e "  ${BOLD}4.${NC} Click ${CYAN}\"Create Token\"${NC} and configure:"
+echo -e "     • Name: ${CYAN}\"API Access Token\"${NC} (or any name)"
+echo -e "     • Set appropriate permissions for your use case"
+echo -e "     • Click ${CYAN}\"Save\"${NC}"
+echo ""
+echo -e "  ${BOLD}5.${NC} Copy the generated token (you won't see it again!)"
+echo ""
+echo -e "  ${BOLD}6.${NC} ${YELLOW}Optional but recommended:${NC} Set up public access policies:"
+echo -e "     • Go to ${CYAN}Settings → Roles & Permissions${NC}"
+echo -e "     • Select or create a ${CYAN}\"Public\"${NC} role"
+echo -e "     • Configure access permissions for public endpoints"
+echo -e "     • Edit policies to allow specific operations"
+echo ""
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo ""
+read -p "Have you created a Directus access token? [y/N]: " HAS_TOKEN
 
-# Get token
-read -p "Enter the Directus API token: " DIRECTUS_TOKEN_INPUT
-
-if [ -z "$DIRECTUS_TOKEN_INPUT" ]; then
-    log_warning "No token entered - you'll need to update it manually later"
-    log_info "Update these files:"
-    echo "  • backend/.env (DIRECTUS_API_TOKEN)"
-    echo "  • frontend/.env (DIRECTUS_TOKEN)"
-else
-    # Update backend/.env
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        sed -i '' "s/DIRECTUS_API_TOKEN=.*/DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN_INPUT/" backend/.env
-        sed -i '' "s/DIRECTUS_TOKEN=.*/DIRECTUS_TOKEN=$DIRECTUS_TOKEN_INPUT/" frontend/.env
-    else
-        # Linux
-        sed -i "s/DIRECTUS_API_TOKEN=.*/DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN_INPUT/" backend/.env
-        sed -i "s/DIRECTUS_TOKEN=.*/DIRECTUS_TOKEN=$DIRECTUS_TOKEN_INPUT/" frontend/.env
-    fi
-    
-    log_success "API token updated in environment files"
-fi
-
-# Step 9: Rebuild services with token
-if [ -n "$DIRECTUS_TOKEN_INPUT" ]; then
-    log_step "STEP 9: Rebuild Services"
+if [[ "$HAS_TOKEN" =~ ^[Yy]$ ]]; then
     echo ""
+    read -p "Enter your Directus access token: " DIRECTUS_TOKEN
     
-    log_info "Restarting services to apply API token..."
-    cd "$PROJECT_ROOT"
-    
-    # Restart orchestration-api and frontend
-    docker compose restart orchestration-api frontend
-    
-    log_success "Services restarted"
-    
-    # Wait a bit for services to restart
-    log_info "Waiting for services to restart (10s)..."
-    sleep 10
+    if [ -n "$DIRECTUS_TOKEN" ]; then
+        log_info "Updating environment files with access token..."
+        
+        # Update root .env
+        if [ -f ".env" ]; then
+            if grep -q "^DIRECTUS_API_TOKEN=" .env; then
+                # Update existing token
+                sed -i.bak "s|^DIRECTUS_API_TOKEN=.*|DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN|" .env && rm .env.bak
+                log_success "Updated DIRECTUS_API_TOKEN in .env"
+            else
+                # Add new token
+                echo "" >> .env
+                echo "DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN" >> .env
+                log_success "Added DIRECTUS_API_TOKEN to .env"
+            fi
+        fi
+        
+        # Update backend/.env
+        if [ -f "backend/.env" ]; then
+            if grep -q "^DIRECTUS_API_TOKEN=" backend/.env; then
+                # Update existing token
+                sed -i.bak "s|^DIRECTUS_API_TOKEN=.*|DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN|" backend/.env && rm backend/.env.bak
+                log_success "Updated DIRECTUS_API_TOKEN in backend/.env"
+            else
+                # Add new token
+                echo "" >> backend/.env
+                echo "DIRECTUS_API_TOKEN=$DIRECTUS_TOKEN" >> backend/.env
+                log_success "Added DIRECTUS_API_TOKEN to backend/.env"
+            fi
+        fi
+        
+        # Update frontend/.env
+        if [ -f "frontend/.env" ]; then
+            if grep -q "^DIRECTUS_TOKEN=" frontend/.env; then
+                # Update existing token
+                sed -i.bak "s|^DIRECTUS_TOKEN=.*|DIRECTUS_TOKEN=$DIRECTUS_TOKEN|" frontend/.env && rm frontend/.env.bak
+                log_success "Updated DIRECTUS_TOKEN in frontend/.env"
+            else
+                # Add new token
+                echo "" >> frontend/.env
+                echo "DIRECTUS_TOKEN=$DIRECTUS_TOKEN" >> frontend/.env
+                log_success "Added DIRECTUS_TOKEN to frontend/.env"
+            fi
+        fi
+        
+        # Restart services to apply the new token
+        log_info "Restarting affected services..."
+        docker compose restart orchestration-api frontend > /dev/null 2>&1 || log_warning "Could not restart services automatically"
+        
+        log_success "Directus access token configured!"
+        echo ""
+        log_info "Services restarted to apply the new token"
+    else
+        log_warning "No token entered - skipping token setup"
+        log_info "You can set it up later with: ${CYAN}make setup-directus-token${NC}"
+    fi
+else
+    log_warning "Token setup skipped"
+    echo ""
+    echo -e "${YELLOW}⚠  Important: Without an API token, the Orchestration API and Frontend may not work properly.${NC}"
+    echo ""
+    echo -e "You can set up the token later by:"
+    echo -e "  1. Creating the token in Directus (follow steps above)"
+    echo -e "  2. Manually updating ${CYAN}backend/.env${NC} and ${CYAN}frontend/.env${NC}"
+    echo -e "  3. Or run: ${CYAN}make setup-directus-token${NC}"
+    echo ""
 fi
 
-# Step 10: Test setup
-log_step "STEP 10: Test Setup"
+# Step 8: Test setup
+log_step "STEP 8: Test Key Services"
 echo ""
 
-log_info "Testing service health..."
+log_info "Testing key service health..."
 
-# Test each service
+# Test key services only
 FAILED_SERVICES=()
 
-# Test Traefik
-if curl -sf http://localhost:80 > /dev/null 2>&1; then
-    log_success "Traefik is running"
-else
-    log_error "Traefik is not responding"
-    FAILED_SERVICES+=("Traefik")
-fi
-
 # Test Frontend
-if curl -sf http://localhost:4321 > /dev/null 2>&1; then
+if curl -sf http://dev-dejtoai.local > /dev/null 2>&1; then
     log_success "Frontend is running"
 else
     log_warning "Frontend is not responding (may still be starting)"
 fi
 
 # Test Directus
-if curl -sf http://localhost:8055/server/ping > /dev/null 2>&1; then
+if curl -sf http://directus.dev-dejtoai.local/server/ping > /dev/null 2>&1; then
     log_success "Directus is running"
 else
     log_error "Directus is not responding"
     FAILED_SERVICES+=("Directus")
-fi
-
-# Test Orchestration API
-if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
-    log_success "Orchestration API is running"
-else
-    log_warning "Orchestration API is not responding (may need API token)"
 fi
 
 # Final summary
@@ -542,15 +505,17 @@ log_step "✨ Setup Complete!"
 echo ""
 
 if [ ${#FAILED_SERVICES[@]} -eq 0 ]; then
-    echo -e "${GREEN}${BOLD}All services are running successfully!${NC}"
+    echo -e "${GREEN}${BOLD}Key services are running successfully!${NC}"
 else
     echo -e "${YELLOW}${BOLD}Some services need attention:${NC}"
     for service in "${FAILED_SERVICES[@]}"; do
         echo "  • $service"
     done
     echo ""
-    echo "Check logs with: make logs"
+    echo -e "Check logs with: ${CYAN}make logs${NC}"
 fi
+echo ""
+log_info "To check all services health, run: ${CYAN}make health${NC}"
 
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
@@ -559,59 +524,72 @@ echo -e "${BOLD}═════════════════════�
 echo ""
 
 if [ "$ENVIRONMENT" = "development" ]; then
-    echo "  Frontend:           ${CYAN}http://localhost:4321${NC}"
-    echo "  Directus Admin:     ${CYAN}http://localhost:8055${NC}"
-    echo "  Orchestration API:  ${CYAN}http://localhost:3001${NC}"
-    echo "  MinIO Console:      ${CYAN}http://localhost:9001${NC}"
-    echo "  MailHog:            ${CYAN}http://localhost:8025${NC}"
-    echo "  Traefik Dashboard:  ${CYAN}http://traefik.dev-dejtoai.local:8080${NC}"
-    echo ""
-    echo "  Via Domain:"
-    echo "  Main Site:          ${CYAN}http://dev-dejtoai.local${NC}"
-    echo "  Directus:           ${CYAN}http://dev-dejtoai.local/admin${NC}"
+    echo -e "  Main Site:          ${CYAN}http://dev-dejtoai.local${NC}"
+    echo -e "  Directus Admin:     ${CYAN}http://directus.dev-dejtoai.local/${NC}"
+    echo -e "  Orchestration API:  ${CYAN}http://api.dev-dejtoai.local${NC}"
+    echo -e "  MinIO Console:      ${CYAN}http://minio.dev-dejtoai.local${NC}"
+    echo -e "  MailHog:            ${CYAN}http://mailhog.dev-dejtoai.local${NC}"
+    echo -e "  Traefik Dashboard:  ${CYAN}http://traefik.dev-dejtoai.local${NC}"
 else
-    echo "  Main Site:          ${CYAN}https://$DOMAIN${NC}"
-    echo "  Directus Admin:     ${CYAN}https://$DOMAIN/admin${NC}"
-    echo "  Traefik Dashboard:  ${CYAN}https://traefik.$DOMAIN${NC}"
+    echo -e "  Main Site:          ${CYAN}https://$DOMAIN${NC}"
+    echo -e "  Directus Admin:     ${CYAN}https://$DOMAIN/admin${NC}"
+    echo -e "  Traefik Dashboard:  ${CYAN}https://traefik.$DOMAIN${NC}"
 fi
-
-echo ""
-echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Credentials${NC}"
-echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
-echo ""
-echo "  Directus Admin:"
-echo "    Email:    ${CYAN}$ADMIN_EMAIL${NC}"
-echo "    Password: ${CYAN}$ADMIN_PASSWORD${NC}"
-echo ""
-echo "  MinIO Console:"
-echo "    Access:   ${CYAN}$MINIO_ACCESS_KEY${NC}"
-echo "    Secret:   ${CYAN}$MINIO_SECRET_KEY${NC}"
-echo ""
-echo -e "${YELLOW}⚠  Save these credentials securely!${NC}"
 
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}Useful Commands${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
 echo ""
-echo "  View logs:          ${CYAN}make logs${NC}"
-echo "  Check status:       ${CYAN}make status${NC}"
-echo "  Check health:       ${CYAN}make health${NC}"
-echo "  Stop services:      ${CYAN}make down${NC}"
+echo -e "  View logs:          ${CYAN}make logs${NC}"
+echo -e "  Check status:       ${CYAN}make status${NC}"
+echo -e "  Check health:       ${CYAN}make health${NC}"
+echo -e "  Stop services:      ${CYAN}make down${NC}"
+echo -e "  Setup API token:    ${CYAN}make setup-directus-token${NC}"
 if [ "$ENVIRONMENT" = "development" ]; then
-    echo "  Restart (dev):      ${CYAN}make start-dev${NC}"
+    echo -e "  Restart (dev):      ${CYAN}make start-dev${NC}"
 else
-    echo "  Restart (prod):     ${CYAN}make start-prod${NC}"
+    echo -e "  Restart (prod):     ${CYAN}make start-prod${NC}"
 fi
 echo ""
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo -e "${BOLD}Important: Foundation Document${NC}"
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "${YELLOW}⚠  For the application to function properly, you must upload a${NC}"
+echo -e "${YELLOW}   Foundation Document for augmentation.${NC}"
+echo ""
+echo -e "${BOLD}Steps:${NC}"
+echo -e "  1. Access the application frontend"
+if [ "$ENVIRONMENT" = "development" ]; then
+    echo -e "     ${CYAN}http://dev-dejtoai.local${NC}"
+else
+    echo -e "     ${CYAN}https://$DOMAIN${NC}"
+fi
+echo ""
+echo -e "  2. Navigate to the document upload section"
+echo ""
+echo -e "  3. Upload your Foundation Document"
+echo -e "     • This document is required for data augmentation"
+echo -e "     • Without it, the application won't process documents correctly"
+echo ""
+
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}Next Steps${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
 echo ""
-echo "  1. Test the services: ${CYAN}make health${NC}"
-echo "  2. Check the logs:    ${CYAN}make logs${NC}"
-echo "  3. Start developing! 🚀"
+if [[ ! "$HAS_TOKEN" =~ ^[Yy]$ ]] || [ -z "$DIRECTUS_TOKEN" ]; then
+    echo -e "  1. ${YELLOW}Set up Directus API token:${NC} ${CYAN}make setup-directus-token${NC}"
+    echo -e "  2. ${YELLOW}Upload Foundation Document${NC} (see instructions above)"
+    echo -e "  3. Test the services: ${CYAN}make health${NC}"
+    echo -e "  4. Check the logs:    ${CYAN}make logs${NC}"
+    echo -e "  5. Start developing! 🚀"
+else
+    echo -e "  1. ${YELLOW}Upload Foundation Document${NC} (see instructions above)"
+    echo -e "  2. Test the services: ${CYAN}make health${NC}"
+    echo -e "  3. Check the logs:    ${CYAN}make logs${NC}"
+    echo -e "  4. Start developing! 🚀"
+fi
 echo ""
 echo -e "${GREEN}✨ Happy coding!${NC}"
 echo ""

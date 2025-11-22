@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { UploadForm } from "@/components/UploadForm/index";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 ---
 
 <BaseLayout title="Nahrání souboru" currentStep="upload">
@@ -13,6 +14,8 @@ import { UploadForm } from "@/components/UploadForm/index";
     </div>
     
     <div class="w-full max-w-2xl mx-auto space-y-6">
+      <NotificationPermissionBanner client:load />
+      
       <div id="enhanced-upload">
         <UploadForm client:load />
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLogger } from "@/lib/client-logger";
 import type { ValidationData } from "../types";
 import { withBasePath } from "@/lib/utils";
+import { notifyProcessingComplete } from "@/lib/notifications";
 
 interface UseValidationPollingProps {
   documentId?: string;
@@ -78,6 +79,11 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
             // Update state to stop polling and show results
             setValidationData(data);
             setIsPolling(false);
+
+            // Show browser notification when processing completes
+            notifyProcessingComplete().catch((err) => {
+              log.warn("Failed to show notification", err);
+            });
           } else {
             log.info("Validation data incomplete, will retry", {
               status: data.status,

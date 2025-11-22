@@ -42,6 +42,13 @@ interface EnvironmentConfig {
     intervalHours: number;
     enabled: boolean;
   };
+  sentry: {
+    dsn?: string;
+    enabled: boolean;
+    tracesSampleRate: number;
+    profilesSampleRate: number;
+    sendDefaultPii: boolean;
+  };
 }
 
 /**
@@ -125,6 +132,13 @@ function createConfig(): EnvironmentConfig {
       intervalHours: parseInt(process.env.JOB_CLEANUP_INTERVAL_HOURS || "1", 10),
       enabled: process.env.JOB_CLEANUP_ENABLED !== "false",
     },
+    sentry: {
+      dsn: process.env.SENTRY_DSN,
+      enabled: process.env.SENTRY_ENABLED !== "false",
+      tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1"),
+      profilesSampleRate: parseFloat(process.env.SENTRY_PROFILES_SAMPLE_RATE || "0.1"),
+      sendDefaultPii: process.env.SENTRY_SEND_DEFAULT_PII === "true",
+    },
   };
 }
 
@@ -175,5 +189,7 @@ if (config.nodeEnv === "development") {
     geminiConfigured: Boolean(config.gemini.apiKey),
     geminiModel: config.gemini.model,
     jobCleanup: config.jobCleanup,
+    sentryConfigured: Boolean(config.sentry.dsn),
+    sentryEnabled: config.sentry.enabled,
   });
 }

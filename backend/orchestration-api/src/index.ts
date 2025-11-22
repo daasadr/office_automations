@@ -1,4 +1,9 @@
+// Initialize Sentry first, before any other imports
+import { initializeSentry } from "./lib/sentry";
+initializeSentry();
+
 import express from "express";
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
@@ -45,6 +50,9 @@ app.get("/openapi.json", (_req, res) => {
 // Routes
 app.use("/health", healthRouter);
 app.use("/documents", documentRouter);
+
+// Sentry error handler must be registered before other error handlers
+Sentry.setupExpressErrorHandler(app);
 
 // Error handling
 app.use(errorHandler);

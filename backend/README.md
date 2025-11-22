@@ -16,7 +16,7 @@ The system follows a microservices architecture with the following components:
 
 ### Processing Services
 
-- **Orchestration API** - Webhook handler and workflow starter
+- **Orchestration API** - Webhook handler and workflow starter with Sentry error tracking
 - **Email Collector** - IMAP/Gmail/Graph API email processing
 - **Worker Services** - Document processing activities:
   - Classify/Parse/OCR Worker
@@ -102,6 +102,7 @@ The system implements the following workflow for document processing:
    - `KEY/SECRET` - Directus security keys
    - `TEMPORAL_ADDRESS` - Workflow engine
    - `API_SECRET_KEY/WEBHOOK_SECRET` - API security
+   - `SENTRY_DSN` - (Optional) Sentry error tracking for orchestration API
 
 3. **Generate security keys**:
    ```bash

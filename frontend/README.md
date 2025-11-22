@@ -12,6 +12,7 @@ A modern, accessible Astro application for uploading, processing, and downloadin
 - 🎨 **Modern UI**: Beautiful interface with dark mode support
 - ⚡ **Performance**: Server-side rendering with minimal client-side JavaScript
 - 🔧 **Progressive Enhancement**: Works without JavaScript in older browsers
+- 📲 **PWA Ready**: Installable on desktop and mobile devices - see [PWA Setup](./PWA-SETUP.md)
 
 ## Tech Stack
 
@@ -221,10 +222,13 @@ The app uses the Node.js adapter and can be deployed to any Node.js hosting serv
 
 ## Browser Support
 
-- **Modern browsers**: Full feature support with view transitions
+- **Modern browsers**: Full feature support with view transitions and PWA installation
 - **Older browsers**: Progressive enhancement ensures core functionality
 - **Internet Explorer**: Basic functionality (no animations/transitions)
 - **Screen readers**: Fully compatible with JAWS, NVDA, VoiceOver
+- **PWA Support**: Chrome, Edge, Safari 11.3+, Firefox, Samsung Internet
+
+> **Note**: To install the app on your device, see the [PWA Setup Guide](./PWA-SETUP.md)
 
 ## Performance Features
 

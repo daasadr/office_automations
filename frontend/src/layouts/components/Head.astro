@@ -18,6 +18,14 @@ const { title, description = "Aplikace pro zpracování souborů" } = Astro.prop
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>{title}</title>
   
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Odpady" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  
   <!-- Preload critical fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

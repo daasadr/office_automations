@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import sentry from '@sentry/astro';
+import AstroPWA from '@vite-pwa/astro';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,11 +20,66 @@ export default defineConfig({
   }),
   // Set the base path for the application
   base: basePath,
-  integrations: [react(), tailwind({ applyBaseStyles: false }), sentry({
+  integrations: [
+    react(), 
+    tailwind({ applyBaseStyles: false }), 
+    sentry({
     project: "odpady-astro-app",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       environment: import.meta.env.NODE_ENV || 'development',
-  })],
+    }),
+    AstroPWA({
+      mode: 'production',
+      base: basePath || '/',
+      scope: basePath || '/',
+      includeAssets: ['favicon.svg'],
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'Odpady Astro App',
+        short_name: 'Odpady',
+        description: 'Aplikace pro zpracování souborů',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'minimal-ui',
+        orientation: 'any',
+        icons: [
+          {
+            src: 'pwa-64x64.png',
+            sizes: '64x64',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ]
+      },
+      workbox: {
+        navigateFallback: '/',
+        globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}']
+      },
+      devOptions: {
+        enabled: false,
+        navigateFallbackAllowlist: [/^\//]
+      },
+      experimental: {
+        directoryAndTrailingSlashHandler: true
+      }
+    })
+  ],
   server: {
     port: 4321,
     host: true

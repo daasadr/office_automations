@@ -26,6 +26,32 @@ DŮLEŽITÉ PRO MNOŽSTVÍ:
 Při získávání informací z tabulky ber v potaz i ten fakt, že někdy dva řádky tabulky odpovídají jedné položce v poli extracted_data. Například dokument může obsahovat dva řádky jeden pro příjem a druhý pro zpracování. Reálně je to možné brát jako jeden řádek (extrahuj toto množství pod nazvem pole "waste_amount_generated").
 Dokument může být také ve formě faktury, né jenom přehledu/výpisu. V takovém případě hledej výše uvedené informace v kontextu fakturačních údajů - množství odpadu může být uvedeno jako fakturované množství (extrahuj toto množství pod polem "waste_amount_generated").
 
+MAPOVÁNÍ KLÍČŮ - Použij tyto anglické klíče pro následující české informace:
+- "waste_code" = kód odpadu (katalogové číslo)
+- "waste_name" = název/druh odpadu
+- "waste_category" = kategorie odpadu (O - ostatní, N - nebezpečný)
+- "handling_code" = kód způsobu nakládání
+- "originator" = původce odpadu
+  - "company_id" = IČO
+  - "name" = název
+  - "address" = adresa
+  - "responsible_person" = zodpovědná osoba
+  - "independent_establishment" = samostatná provozovna
+    - "establishment_number" = číslo provozovny
+    - "name" = název provozovny
+    - "address" = adresa provozovny
+    - "responsible_person" = zodpovědná osoba provozovny
+- "recipient" = odběratel odpadu
+  - "company_id" = IČO
+  - "name" = název
+  - "address" = adresa
+  - "independent_establishment" = samostatná provozovna (pokud existuje)
+- "records" = tabulka záznamů
+  - "serial_number" = pořadové číslo
+  - "date" = datum vzniku
+  - "waste_amount_generated" = množství vzniklého odpadu
+  - "waste_amount_transferred" = množství předaného odpadu
+
 FORMÁT ODPOVĚDI: Odpověz POUZE validním JSON objektem bez komentářů, vysvětlení nebo dalšího textu.
 Použij PŘESNĚ následující strukturu s anglickými klíči a podtržítky:
 

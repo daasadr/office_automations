@@ -7,8 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn, withBasePath } from "@/lib/utils";
 
 interface ValidationResult {
-  present?: string[];
-  missing?: string[];
+  present_fields?: string[];
+  missing_fields?: string[];
   confidence?: number;
   extracted_data?: unknown[];
 }

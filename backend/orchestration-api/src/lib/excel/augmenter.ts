@@ -38,8 +38,8 @@ export async function augmentExcelWithData(
       logger.info("=".repeat(80));
       logger.info("Full extracted data structure:", JSON.stringify(extractedData, null, 2));
 
-      // Handle both Czech names and snake_case names
-      const kodOdpadu = extractedData["kód odpadu"] || (extractedData as any).kod_odpadu;
+      // Get waste code from new English schema
+      const kodOdpadu = (extractedData as any).waste_code;
 
       // Helper function to extract all potential IČO numbers from the data
       const extractAllPotentialIcos = (
@@ -90,16 +90,12 @@ export async function augmentExcelWithData(
         return foundIcos;
       };
 
-      // Extract primary IČO values
-      const odberatelIco =
-        extractedData.odběratel?.IČO ||
-        (extractedData as any).odberatel?.ico ||
-        (extractedData as any).odberatel?.IČO ||
-        "";
+      // Extract primary IČO values from new English schema
+      const recipient = (extractedData as any).recipient;
+      const odberatelIco = recipient?.company_id || "";
 
-      const puvod =
-        extractedData.původce || (extractedData as any).puvod || (extractedData as any).původce;
-      const puvodceIco = puvod?.IČO || (puvod as any)?.ico || (puvod as any)?.IČO || "";
+      const originator = (extractedData as any).originator;
+      const puvodceIco = originator?.company_id || "";
 
       // Extract all potential IČO numbers from the entire data structure
       const allPotentialIcos = extractAllPotentialIcos(extractedData);
@@ -222,14 +218,12 @@ export async function augmentExcelWithData(
         });
 
         // Track sheets not found for user notification
-        const odberatelNazev =
-          extractedData.odběratel?.název || (extractedData as any).odberatel?.nazev || "";
-        const puvodceNazev = puvod?.název || (puvod as any)?.nazev || "";
+        const odberatelNazev = recipient?.name || "";
+        const puvodceNazev = originator?.name || "";
 
         sheetsNotFound.push({
           kodOdpadu,
-          nazevOdpadu:
-            extractedData["název/druh odpadu"] || (extractedData as any).nazev_druhu_odpadu || "",
+          nazevOdpadu: (extractedData as any).waste_name || "",
           odberatelIco,
           odberatelNazev: odberatelNazev,
           puvodceIco,
@@ -465,19 +459,13 @@ export async function augmentExcelWithData(
 
       logger.info("STEP 4: Processing table data");
 
-      // Handle multiple field name variations: "tabulka", "tabulka_evidence", "tabulka_pohybu"
-      const tabulka =
-        extractedData.tabulka ||
-        (extractedData as any).tabulka_evidence ||
-        (extractedData as any).tabulka_pohybu ||
-        [];
+      // Get records from new English schema
+      const tabulka = (extractedData as any).records || [];
 
       logger.info("Table data lookup", {
         sheetName: sheet.name(),
         extractedDataKeys: Object.keys(extractedData),
-        hasTabulka: !!extractedData.tabulka,
-        hasTabulkaEvidence: !!(extractedData as any).tabulka_evidence,
-        hasTabulkaPohybu: !!(extractedData as any).tabulka_pohybu,
+        hasRecords: !!(extractedData as any).records,
         foundTableLength: tabulka.length,
       });
 
@@ -565,21 +553,15 @@ export async function augmentExcelWithData(
         }
         logger.info("Borders set successfully");
 
-        // Now set the actual values
-        // Handle both Czech names and snake_case names for fields
+        // Now set the actual values from new English schema
         logger.info("Extracting quantity values from record...");
-        const pred = cleanQuantityString(
-          record["množství předaného odpadu"] || (record as any).mnozstvi_predaneho_odpadu
-        );
-        let vznik = cleanQuantityString(
-          record["množství vzniklého odpadu"] || (record as any).mnozstvi_vznikleho_odpadu
-        );
+        const pred = cleanQuantityString((record as any).waste_amount_transferred);
+        let vznik = cleanQuantityString((record as any).waste_amount_generated);
 
         logger.info("Quantity values extracted", {
-          predRaw: record["množství předaného odpadu"] || (record as any).mnozstvi_predaneho_odpadu,
+          predRaw: (record as any).waste_amount_transferred,
           predCleaned: pred,
-          vznikRaw:
-            record["množství vzniklého odpadu"] || (record as any).mnozstvi_vznikleho_odpadu,
+          vznikRaw: (record as any).waste_amount_generated,
           vznikCleaned: vznik,
         });
 
@@ -590,16 +572,9 @@ export async function augmentExcelWithData(
           });
         }
 
-        // Date cell - handle multiple field name formats
+        // Date cell from new English schema
         logger.info("Extracting date value from record...");
-        logger.info("Checking date field variations:", {
-          "datum vzniku": record["datum vzniku"],
-          datum_vzniku: (record as any).datum_vzniku,
-          datum: (record as any).datum,
-        });
-
-        const datumVzniku =
-          record["datum vzniku"] || (record as any).datum_vzniku || (record as any).datum;
+        const datumVzniku = (record as any).date;
         const datumFormatted = dateStringToDate(datumVzniku);
 
         logger.info("Date value extracted", {

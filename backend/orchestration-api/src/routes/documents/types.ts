@@ -9,15 +9,29 @@ import type { Request } from "express";
 import type { JobData } from "@orchestration-api/services/JobService";
 import type {
   LLMResponseSchema,
-  ExtractedData,
-  TabulkaRecord,
-  Odberatel,
-  Puvod,
-  SamostatnaProv,
+  ExtractedWasteData,
+  WasteRecord,
+  WasteRecipient,
+  WasteOriginator,
+  IndependentEstablishment,
 } from "@orchestration-api/llmResponseSchema";
 
 // Re-export types from other modules for convenience
-export type { LLMResponseSchema, ExtractedData, TabulkaRecord, Odberatel, Puvod, SamostatnaProv };
+export type {
+  LLMResponseSchema,
+  ExtractedWasteData,
+  WasteRecord,
+  WasteRecipient,
+  WasteOriginator,
+  IndependentEstablishment,
+};
+
+// Legacy type aliases for backward compatibility
+export type ExtractedData = ExtractedWasteData;
+export type TabulkaRecord = WasteRecord;
+export type Odberatel = WasteRecipient;
+export type Puvod = WasteOriginator;
+export type SamostatnaProv = IndependentEstablishment;
 
 export type {
   SourceDocument,
@@ -49,10 +63,10 @@ export interface RequestWithJob extends Request {
  * This interface is compatible with services/llm/types ValidationResult
  */
 export interface ValidationResult {
-  present: string[];
-  missing: string[];
+  present_fields: string[];
+  missing_fields: string[];
   confidence: number;
-  extracted_data: ExtractedData[];
+  extracted_data: ExtractedWasteData[];
   provider?: string;
 }
 
@@ -72,8 +86,8 @@ export interface FullValidationResult extends ValidationResult {
  * Type for response_json field from Directus Response
  */
 export interface DirectusResponseJson {
-  present?: string[];
-  missing?: string[];
+  present_fields?: string[];
+  missing_fields?: string[];
   confidence?: number;
   extracted_data?: unknown[];
   provider?: string;

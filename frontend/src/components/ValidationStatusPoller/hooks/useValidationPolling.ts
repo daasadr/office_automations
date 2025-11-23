@@ -52,17 +52,17 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
           if (
             data.validationResult &&
             typeof data.validationResult === "object" &&
-            Array.isArray(data.validationResult.present) &&
-            Array.isArray(data.validationResult.missing) &&
+            Array.isArray(data.validationResult.present_fields) &&
+            Array.isArray(data.validationResult.missing_fields) &&
             typeof data.validationResult.confidence === "number"
           ) {
             log.info("Valid validation data received - stopping polling", {
-              hasPresent: !!data.validationResult.present,
-              hasMissing: !!data.validationResult.missing,
+              hasPresentFields: !!data.validationResult.present_fields,
+              hasMissingFields: !!data.validationResult.missing_fields,
               hasConfidence: typeof data.validationResult.confidence !== "undefined",
               dataStructure: {
-                present: data.validationResult.present?.length,
-                missing: data.validationResult.missing?.length,
+                present_fields: data.validationResult.present_fields?.length,
+                missing_fields: data.validationResult.missing_fields?.length,
                 confidence: data.validationResult.confidence,
                 hasExtractedData: !!data.validationResult.extracted_data,
                 extractedDataLength: data.validationResult.extracted_data?.length,
@@ -92,11 +92,11 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
               validationResultType: data.validationResult
                 ? typeof data.validationResult
                 : "undefined",
-              presentType: data.validationResult?.present
-                ? `${typeof data.validationResult.present} ${Array.isArray(data.validationResult.present) ? "(array)" : ""}`
+              presentFieldsType: data.validationResult?.present_fields
+                ? `${typeof data.validationResult.present_fields} ${Array.isArray(data.validationResult.present_fields) ? "(array)" : ""}`
                 : "undefined",
-              missingType: data.validationResult?.missing
-                ? `${typeof data.validationResult.missing} ${Array.isArray(data.validationResult.missing) ? "(array)" : ""}`
+              missingFieldsType: data.validationResult?.missing_fields
+                ? `${typeof data.validationResult.missing_fields} ${Array.isArray(data.validationResult.missing_fields) ? "(array)" : ""}`
                 : "undefined",
               confidenceType: data.validationResult?.confidence
                 ? typeof data.validationResult.confidence
@@ -131,8 +131,8 @@ export function useValidationPolling({ documentId, jobId }: UseValidationPolling
   useEffect(() => {
     if (validationData) {
       log.info("ValidationData is set, should show results now", {
-        hasPresent: !!validationData.validationResult?.present,
-        hasMissing: !!validationData.validationResult?.missing,
+        hasPresentFields: !!validationData.validationResult?.present_fields,
+        hasMissingFields: !!validationData.validationResult?.missing_fields,
         hasConfidence: !!validationData.validationResult?.confidence,
       });
     }

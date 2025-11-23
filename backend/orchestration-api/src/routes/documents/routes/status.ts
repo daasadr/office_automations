@@ -63,8 +63,8 @@ router.get(
       // Include validation result but without image preview for status endpoint
       validationResult: job.validationResult
         ? {
-            present: job.validationResult.present,
-            missing: job.validationResult.missing,
+            present_fields: job.validationResult.present_fields,
+            missing_fields: job.validationResult.missing_fields,
             confidence: job.validationResult.confidence,
             extracted_data: job.validationResult.extracted_data,
             provider: job.validationResult.provider,

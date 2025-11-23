@@ -13,7 +13,7 @@ interface ResultsStateProps {
 export function ResultsState({ validationData, downloadUrl }: ResultsStateProps) {
   const extractedData = validationData.validationResult.extracted_data;
   const totalRecords =
-    extractedData?.reduce((sum: number, data) => sum + (data.tabulka?.length || 0), 0) || 0;
+    extractedData?.reduce((sum: number, data) => sum + (data.records?.length || 0), 0) || 0;
 
   return (
     <>
@@ -26,8 +26,8 @@ export function ResultsState({ validationData, downloadUrl }: ResultsStateProps)
         {/* Validation Results Section */}
         <div>
           <ValidationResults
-            present={validationData.validationResult.present}
-            missing={validationData.validationResult.missing}
+            present_fields={validationData.validationResult.present_fields}
+            missing_fields={validationData.validationResult.missing_fields}
             confidence={validationData.validationResult.confidence}
           />
         </div>

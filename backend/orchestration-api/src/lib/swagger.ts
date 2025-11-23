@@ -213,14 +213,14 @@ const options: swaggerJsdoc.Options = {
         ValidationResult: {
           type: "object",
           properties: {
-            present: {
+            present_fields: {
               type: "array",
               items: {
                 type: "string",
               },
               description: "Fields that were found in the document",
             },
-            missing: {
+            missing_fields: {
               type: "array",
               items: {
                 type: "string",
@@ -240,123 +240,129 @@ const options: swaggerJsdoc.Options = {
               type: "string",
             },
           },
-          required: ["present", "missing", "confidence", "extracted_data", "provider"],
+          required: [
+            "present_fields",
+            "missing_fields",
+            "confidence",
+            "extracted_data",
+            "provider",
+          ],
         },
         ExtractedData: {
           type: "object",
           properties: {
-            "kód odpadu": {
+            waste_code: {
               type: "string",
               nullable: true,
             },
-            "název/druh odpadu": {
+            waste_name: {
               type: "string",
               nullable: true,
             },
-            "kategorie odpadu": {
+            waste_category: {
               type: "string",
               nullable: true,
             },
-            "kód způsobu nakládání": {
+            handling_code: {
               type: "string",
               nullable: true,
             },
-            původce: {
-              $ref: "#/components/schemas/Původce",
+            originator: {
+              $ref: "#/components/schemas/WasteOriginator",
               nullable: true,
             },
-            odběratel: {
-              $ref: "#/components/schemas/Odběratel",
+            recipient: {
+              $ref: "#/components/schemas/WasteRecipient",
               nullable: true,
             },
-            tabulka: {
+            records: {
               type: "array",
               items: {
-                $ref: "#/components/schemas/TabulkaRow",
+                $ref: "#/components/schemas/WasteRecord",
               },
               nullable: true,
             },
           },
         },
-        Původce: {
+        WasteOriginator: {
           type: "object",
           properties: {
-            IČO: {
+            company_id: {
               type: "string",
               nullable: true,
             },
-            název: {
+            name: {
               type: "string",
               nullable: true,
             },
-            adresa: {
+            address: {
               type: "string",
               nullable: true,
             },
-            "zodpovědná osoba": {
+            responsible_person: {
               type: "string",
               nullable: true,
             },
-            "samostatná provozovna": {
-              $ref: "#/components/schemas/SamostatnáProvozovna",
+            independent_establishment: {
+              $ref: "#/components/schemas/IndependentEstablishment",
               nullable: true,
             },
           },
         },
-        SamostatnáProvozovna: {
+        IndependentEstablishment: {
           type: "object",
           properties: {
-            "číslo provozovny": {
+            establishment_number: {
               type: "string",
               nullable: true,
             },
-            název: {
+            name: {
               type: "string",
               nullable: true,
             },
-            adresa: {
+            address: {
               type: "string",
               nullable: true,
             },
-            "zodpovědná osoba": {
-              type: "string",
-              nullable: true,
-            },
-          },
-        },
-        Odběratel: {
-          type: "object",
-          properties: {
-            IČO: {
-              type: "string",
-              nullable: true,
-            },
-            název: {
-              type: "string",
-              nullable: true,
-            },
-            adresa: {
+            responsible_person: {
               type: "string",
               nullable: true,
             },
           },
         },
-        TabulkaRow: {
+        WasteRecipient: {
           type: "object",
           properties: {
-            "pořadové číslo": {
+            company_id: {
               type: "string",
               nullable: true,
             },
-            "datum vzniku": {
+            name: {
               type: "string",
               nullable: true,
             },
-            "množství vznikého odpadu": {
+            address: {
               type: "string",
               nullable: true,
             },
-            "množství předaného odpadu": {
+          },
+        },
+        WasteRecord: {
+          type: "object",
+          properties: {
+            serial_number: {
+              type: "number",
+              nullable: true,
+            },
+            date: {
+              type: "string",
+              nullable: true,
+            },
+            waste_amount_generated: {
+              type: "number",
+              nullable: true,
+            },
+            waste_amount_transferred: {
               type: "string",
               nullable: true,
             },

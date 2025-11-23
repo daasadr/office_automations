@@ -1,56 +1,35 @@
 export interface ExtractedData {
-  "kód odpadu"?: string;
-  "název/druh odpadu"?: string;
-  "kategorie odpadu"?: string;
-  "kód způsobu nakládání"?: string;
-  původce?: {
-    IČO?: string;
-    název?: string;
-    adresa?: string;
-    "zodpovědná osoba"?: string;
-    // Support multiple field name variations
-    "SAMOSTATNÁ PROVOZOVNA"?: {
-      "číslo provozovny"?: string;
-      název?: string;
-      adresa?: string;
-      "zodpovědná osoba"?: string;
-    };
-    "samostatná provozovna"?: {
-      "číslo provozovny"?: string;
-      název?: string;
-      adresa?: string;
-      "zodpovědná osoba"?: string;
-    };
-    samostatna_provozovna?: {
-      "číslo provozovny"?: string;
-      název?: string;
-      adresa?: string;
-      "zodpovědná osoba"?: string;
+  waste_code?: string;
+  waste_name?: string;
+  waste_category?: string;
+  handling_code?: string;
+  originator?: {
+    company_id?: string;
+    name?: string;
+    address?: string;
+    responsible_person?: string;
+    independent_establishment?: {
+      establishment_number?: string;
+      name?: string;
+      address?: string;
+      responsible_person?: string;
     };
   };
-  odběratel?: {
-    IČO?: string;
-    název?: string;
-    adresa?: string;
-    // Support multiple field name variations
-    "samostatná provozovna"?: {
-      "číslo provozovny"?: string;
-      název?: string;
-      adresa?: string;
-      "zodpovědná osoba"?: string;
-    };
-    samostatna_provozovna?: {
-      "číslo provozovny"?: string;
-      název?: string;
-      adresa?: string;
-      "zodpovědná osoba"?: string;
+  recipient?: {
+    company_id?: string;
+    name?: string;
+    address?: string;
+    independent_establishment?: {
+      establishment_number?: string;
+      name?: string;
+      address?: string;
+      responsible_person?: string;
     };
   };
-  tabulka?: Array<{
-    "pořadové číslo"?: string | number;
-    "datum vzniku"?: string;
-    // Fixed typo: should be "vzniklého" not "vznikého"
-    "množství vzniklého odpadu"?: string | number;
-    "množství předaného odpadu"?: string | number;
+  records?: Array<{
+    serial_number?: string | number;
+    date?: string;
+    waste_amount_generated?: string | number;
+    waste_amount_transferred?: string | number;
   }>;
 }

@@ -4,86 +4,81 @@
  */
 
 /**
- * Samostatná provozovna (Independent establishment)
+ * Independent establishment (Samostatná provozovna)
  */
-export interface SamostatnaProv {
-  "číslo provozovny": string;
-  název: string;
-  adresa: string;
-  "zodpovědná osoba": string | null;
+export interface IndependentEstablishment {
+  establishment_number: string | null;
+  name: string | null;
+  address: string | null;
+  responsible_person: string | null;
 }
 
 /**
- * Původce odpadu (Waste originator)
+ * Waste originator (Původce odpadu)
  */
-export interface Puvod {
-  IČO: string;
-  název: string;
-  adresa: string;
-  "zodpovědná osoba": string | null;
-  // Support multiple field name variations from different LLM responses
-  "SAMOSTATNÁ PROVOZOVNA"?: SamostatnaProv | null;
-  "samostatná provozovna"?: SamostatnaProv | null;
-  samostatna_provozovna?: SamostatnaProv | null;
+export interface WasteOriginator {
+  company_id: string;
+  name: string;
+  address: string;
+  responsible_person: string | null;
+  independent_establishment?: IndependentEstablishment | null;
 }
 
 /**
- * Odběratel odpadu (Waste recipient)
+ * Waste recipient (Odběratel odpadu)
  */
-export interface Odberatel {
-  IČO: string;
-  název: string;
-  adresa: string;
-  // Support multiple field name variations from different LLM responses
-  "samostatná provozovna"?: SamostatnaProv | null;
-  samostatna_provozovna?: SamostatnaProv | null;
+export interface WasteRecipient {
+  company_id: string;
+  name: string;
+  address: string;
+  independent_establishment?: IndependentEstablishment | null;
 }
 
 /**
- * Tabulka záznam (Table record)
+ * Waste record (Záznam o odpadu)
  */
-export interface TabulkaRecord {
-  "pořadové číslo": number;
-  "datum vzniku": string;
+export interface WasteRecord {
+  serial_number: number;
+  date: string;
   // Use number type for quantities (without units like "t" or "kg")
-  "množství vzniklého odpadu": number | null;
-  "množství předaného odpadu": number | null;
+  waste_amount_generated: number | null;
+  waste_amount_transferred?: number | null;
 }
 
 /**
- * Extrahovaná data (Extracted data)
+ * Extracted waste data (Extrahovaná data o odpadu)
  */
-export interface ExtractedData {
-  "kód odpadu": string;
-  "název/druh odpadu": string;
-  "kategorie odpadu": string | null;
-  "kód způsobu nakládání": string | null;
-  původce: Puvod;
-  odběratel: Odberatel;
-  tabulka: TabulkaRecord[];
+export interface ExtractedWasteData {
+  waste_code: string;
+  waste_name: string;
+  waste_category: string | null;
+  handling_code: string | null;
+  originator: WasteOriginator;
+  recipient: WasteRecipient;
+  records: WasteRecord[];
 }
 
 /**
- * Hlavní LLM odpověď schéma (Main LLM response schema)
+ * Main LLM response schema (Hlavní LLM odpověď schéma)
  */
 export interface LLMResponseSchema {
   /**
-   * Seznam přítomných polí v dokumentu
+   * List of fields present in the document
    */
-  present: string[];
+  present_fields: string[];
 
   /**
-   * Seznam chybějících polí v dokumentu
+   * List of fields missing from the document
    */
-  missing: string[];
+  missing_fields: string[];
 
   /**
-   * Míra jistoty extrakce (0-100)
+   * Extraction confidence score (0-100)
    */
   confidence: number;
 
   /**
-   * Pole extrahovaných dat o odpadu
+   * Array of extracted waste data
    */
-  extracted_data: ExtractedData[];
+  extracted_data: ExtractedWasteData[];
 }

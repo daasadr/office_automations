@@ -4,12 +4,14 @@
  */
 export function validateResponseStructure(parsedResult: Record<string, unknown>): void {
   if (
-    !parsedResult.present ||
-    !parsedResult.missing ||
-    !Array.isArray(parsedResult.present) ||
-    !Array.isArray(parsedResult.missing)
+    !parsedResult.present_fields ||
+    !parsedResult.missing_fields ||
+    !Array.isArray(parsedResult.present_fields) ||
+    !Array.isArray(parsedResult.missing_fields)
   ) {
-    throw new Error("Invalid response structure from Gemini. Expected present and missing arrays.");
+    throw new Error(
+      "Invalid response structure from Gemini. Expected present_fields and missing_fields arrays."
+    );
   }
 }
 

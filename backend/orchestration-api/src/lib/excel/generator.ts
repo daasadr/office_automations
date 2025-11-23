@@ -121,7 +121,8 @@ function createWorksheetForItem(
   item: ExtractedData,
   index: number
 ): { worksheet: any; sheetName: string } {
-  const kodOdpadu = item["kód odpadu"] || `Záznam_${index + 1}`;
+  // Get waste code from new English schema
+  const kodOdpadu = (item as any)["waste_code"] || `Záznam_${index + 1}`;
   const worksheetData: any[] = [];
 
   // Add basic information (non-array, non-object fields)
@@ -136,7 +137,7 @@ function createWorksheetForItem(
     addObjectToWorksheet(basicInfo, worksheetData, "INFORMACE O ODPADU", "", new Set());
   }
 
-  // Add nested objects (like původce, odběratel)
+  // Add nested objects (like originator, recipient, independent_establishment)
   Object.entries(item).forEach(([key, value]) => {
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       addObjectToWorksheet(
@@ -188,8 +189,8 @@ function createSummarySheet(validationResult: ValidationResult): any {
       Info: "Žádná data nebyla nalezena v dokumentu",
       "Celkem záznamů": validationResult.extracted_data.length,
       Důvěryhodnost: `${validationResult.confidence.toFixed(1)}%`,
-      "Nalezené informace": validationResult.present.join(", "),
-      "Chybějící informace": validationResult.missing.join(", "),
+      "Nalezené informace": validationResult.present_fields.join(", "),
+      "Chybějící informace": validationResult.missing_fields.join(", "),
     },
   ];
 

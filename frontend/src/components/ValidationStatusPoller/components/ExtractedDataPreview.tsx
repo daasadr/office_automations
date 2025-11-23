@@ -15,7 +15,7 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
       <div className="space-y-4">
         {extractedData.map((data, index) => (
           <div
-            key={`waste-${data["kód odpadu"]}-${data.odběratel?.IČO}-${index}`}
+            key={`waste-${data.waste_code}-${data.recipient?.company_id}-${index}`}
             className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900"
           >
             {/* Waste Info */}
@@ -24,28 +24,28 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
                 <Package className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    {data["název/druh odpadu"] || "Název odpadu nenalezen"}
+                    {data.waste_name || "Název odpadu nenalezen"}
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">Kód odpadu:</span>
                       <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                        {data["kód odpadu"] || "-"}
+                        {data.waste_code || "-"}
                       </span>
                     </div>
-                    {data["kategorie odpadu"] && (
+                    {data.waste_category && (
                       <div>
                         <span className="text-gray-600 dark:text-gray-400">Kategorie:</span>
                         <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                          {data["kategorie odpadu"]}
+                          {data.waste_category}
                         </span>
                       </div>
                     )}
-                    {data["kód způsobu nakládání"] && (
+                    {data.handling_code && (
                       <div>
                         <span className="text-gray-600 dark:text-gray-400">Kód nakládání:</span>
                         <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                          {data["kód způsobu nakládání"]}
+                          {data.handling_code}
                         </span>
                       </div>
                     )}
@@ -57,7 +57,7 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
             {/* Původce a Odběratel */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               {/* Původce */}
-              {data.původce && (
+              {data.originator && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2 mb-2">
                     <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -66,25 +66,27 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
                     </span>
                   </div>
                   <div className="text-sm space-y-1">
-                    {data.původce.název && (
+                    {data.originator.name && (
                       <div className="font-medium text-gray-900 dark:text-white">
-                        {data.původce.název}
+                        {data.originator.name}
                       </div>
                     )}
-                    {data.původce.IČO && (
+                    {data.originator.company_id && (
                       <div className="text-gray-600 dark:text-gray-400">
-                        IČO: {data.původce.IČO}
+                        IČO: {data.originator.company_id}
                       </div>
                     )}
-                    {data.původce.adresa && (
-                      <div className="text-gray-600 dark:text-gray-400">{data.původce.adresa}</div>
+                    {data.originator.address && (
+                      <div className="text-gray-600 dark:text-gray-400">
+                        {data.originator.address}
+                      </div>
                     )}
                   </div>
                 </div>
               )}
 
               {/* Odběratel */}
-              {data.odběratel && (
+              {data.recipient && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -93,19 +95,19 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
                     </span>
                   </div>
                   <div className="text-sm space-y-1">
-                    {data.odběratel.název && (
+                    {data.recipient.name && (
                       <div className="font-medium text-gray-900 dark:text-white">
-                        {data.odběratel.název}
+                        {data.recipient.name}
                       </div>
                     )}
-                    {data.odběratel.IČO && (
+                    {data.recipient.company_id && (
                       <div className="text-gray-600 dark:text-gray-400">
-                        IČO: {data.odběratel.IČO}
+                        IČO: {data.recipient.company_id}
                       </div>
                     )}
-                    {data.odběratel.adresa && (
+                    {data.recipient.address && (
                       <div className="text-gray-600 dark:text-gray-400">
-                        {data.odběratel.adresa}
+                        {data.recipient.address}
                       </div>
                     )}
                   </div>
@@ -113,12 +115,12 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
               )}
             </div>
 
-            {/* Tabulka Preview */}
-            {data.tabulka && data.tabulka.length > 0 && (
+            {/* Records Preview */}
+            {data.records && data.records.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Záznamy ({data.tabulka.length})
+                    Záznamy ({data.records.length})
                   </span>
                 </div>
                 <div className="overflow-x-auto">
@@ -140,39 +142,34 @@ export function ExtractedDataPreview({ extractedData }: ExtractedDataPreviewProp
                       </tr>
                     </thead>
                     <tbody>
-                      {data.tabulka.map((record, recordIndex: number) => {
-                        // Handle both old typo "vznikého" and correct "vzniklého"
-                        const mnozstviVzniklého =
-                          record["množství vzniklého odpadu"] || record["množství vznikého odpadu"];
-                        const mnozstviPředaného = record["množství předaného odpadu"];
-
+                      {data.records.map((record, recordIndex: number) => {
                         // Format quantity values - handle both numbers and strings
-                        const formatQuantity = (value: string | number | undefined | null) => {
+                        const formatQuantity = (value: number | undefined | null) => {
                           if (value == null) return "-";
                           // If it's a number, format with 2 decimal places
                           if (typeof value === "number") {
                             return value.toFixed(2);
                           }
-                          // If it's a string, return as is (might have units)
+                          // If it's a string, return as is (shouldn't happen with new schema)
                           return String(value);
                         };
 
                         return (
                           <tr
-                            key={`record-${record["pořadové číslo"]}-${record["datum vzniku"]}-${recordIndex}`}
+                            key={`record-${record.serial_number}-${record.date}-${recordIndex}`}
                             className="border-b border-gray-100 dark:border-gray-800 last:border-0"
                           >
                             <td className="py-2 px-3 text-gray-900 dark:text-white">
-                              {record["pořadové číslo"] || "-"}
+                              {record.serial_number || "-"}
                             </td>
                             <td className="py-2 px-3 text-gray-900 dark:text-white">
-                              {record["datum vzniku"] || "-"}
+                              {record.date || "-"}
                             </td>
                             <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
-                              {formatQuantity(mnozstviVzniklého)}
+                              {formatQuantity(record.waste_amount_generated)}
                             </td>
                             <td className="py-2 px-3 text-right text-gray-900 dark:text-white">
-                              {formatQuantity(mnozstviPředaného)}
+                              {formatQuantity(record.waste_amount_transferred)}
                             </td>
                           </tr>
                         );

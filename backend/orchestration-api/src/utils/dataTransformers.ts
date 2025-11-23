@@ -32,10 +32,10 @@ export function isValidationResult(value: unknown): value is ValidationResult {
   const obj = value as Record<string, unknown>;
 
   return (
-    Array.isArray(obj.present) &&
-    obj.present.every((item) => typeof item === "string") &&
-    Array.isArray(obj.missing) &&
-    obj.missing.every((item) => typeof item === "string") &&
+    Array.isArray(obj.present_fields) &&
+    obj.present_fields.every((item) => typeof item === "string") &&
+    Array.isArray(obj.missing_fields) &&
+    obj.missing_fields.every((item) => typeof item === "string") &&
     typeof obj.confidence === "number" &&
     Array.isArray(obj.extracted_data)
   );
@@ -263,41 +263,32 @@ export function formatExtractedRecordsDetail(
       return {};
     }
 
-    const kodOdpadu =
-      getStringValue(extractedItem, "kód odpadu") || getStringValue(extractedItem, "kod_odpadu");
-    const odberatel = extractedItem.odběratel;
-    const odberatelAlt = getRecordValue(extractedItem, "odberatel");
+    // Get waste code from new English schema
+    const kodOdpadu = getStringValue(extractedItem, "waste_code");
+
+    // Get recipient from new English schema
+    const recipient = (extractedItem as any).recipient;
 
     let odberatelIco = "";
-    if (odberatel && typeof odberatel === "object" && "IČO" in odberatel) {
-      odberatelIco = String(odberatel.IČO);
-    } else if (odberatelAlt) {
-      odberatelIco = getStringValue(odberatelAlt, "ico") || getStringValue(odberatelAlt, "IČO");
+    if (recipient && typeof recipient === "object" && "company_id" in recipient) {
+      odberatelIco = String(recipient.company_id);
     }
 
     const sheetName = `${kodOdpadu} ${odberatelIco}`.trim();
 
-    // Get table data from various possible field names
-    const tabulkaValue = extractedItem.tabulka;
-    const tabulka =
-      (Array.isArray(tabulkaValue) ? tabulkaValue : null) ||
-      getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_evidence") ||
-      getArrayValue<Record<string, unknown>>(extractedItem, "tabulka_pohybu") ||
-      [];
+    // Get table data from new English schema
+    const records = (extractedItem as any).records;
+    const tabulka = Array.isArray(records) ? records : [];
 
     let odberatelNazev = "";
-    if (odberatel && typeof odberatel === "object" && "název" in odberatel) {
-      odberatelNazev = String(odberatel.název);
-    } else if (odberatelAlt) {
-      odberatelNazev = getStringValue(odberatelAlt, "nazev");
+    if (recipient && typeof recipient === "object" && "name" in recipient) {
+      odberatelNazev = String(recipient.name);
     }
 
     return {
       sheetName,
       kodOdpadu,
-      nazevOdpadu:
-        getStringValue(extractedItem, "název/druh odpadu") ||
-        getStringValue(extractedItem, "nazev_druhu_odpadu"),
+      nazevOdpadu: getStringValue(extractedItem, "waste_name"),
       odberatel: {
         ico: odberatelIco,
         nazev: odberatelNazev,
@@ -308,18 +299,10 @@ export function formatExtractedRecordsDetail(
         }
 
         return {
-          poradoveCislo:
-            getNumberValue(record, "pořadové číslo") || getNumberValue(record, "poradove_cislo"),
-          datumVzniku:
-            getStringValue(record, "datum vzniku") ||
-            getStringValue(record, "datum_vzniku") ||
-            getStringValue(record, "datum"),
-          mnozstviVznikleho:
-            getStringValue(record, "množství vzniklého odpadu") ||
-            getStringValue(record, "mnozstvi_vznikleho_odpadu"),
-          mnozstviPredaneho:
-            getStringValue(record, "množství předaného odpadu") ||
-            getStringValue(record, "mnozstvi_predaneho_odpadu"),
+          poradoveCislo: getNumberValue(record, "serial_number"),
+          datumVzniku: getStringValue(record, "date"),
+          mnozstviVznikleho: getStringValue(record, "waste_amount_generated"),
+          mnozstviPredaneho: getStringValue(record, "waste_amount_transferred"),
         };
       }),
     };

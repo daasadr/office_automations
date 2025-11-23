@@ -1,15 +1,19 @@
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 interface ValidationResultsProps {
-  present: string[];
-  missing: string[];
+  present_fields: string[];
+  missing_fields: string[];
   confidence: number;
 }
 
-export function ValidationResults({ present, missing, confidence }: ValidationResultsProps) {
+export function ValidationResults({
+  present_fields,
+  missing_fields,
+  confidence,
+}: ValidationResultsProps) {
   // Defensive checks - ensure arrays are valid
-  const safePresent = Array.isArray(present) ? present : [];
-  const safeMissing = Array.isArray(missing) ? missing : [];
+  const safePresent = Array.isArray(present_fields) ? present_fields : [];
+  const safeMissing = Array.isArray(missing_fields) ? missing_fields : [];
   const safeConfidence =
     typeof confidence === "number" && !Number.isNaN(confidence) ? confidence : 0;
 

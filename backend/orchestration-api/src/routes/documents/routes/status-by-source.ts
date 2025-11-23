@@ -84,8 +84,8 @@ router.get(
       directusSourceDocumentId: sourceDocument.id,
       validationResult: validationResult
         ? {
-            present: validationResult.present,
-            missing: validationResult.missing,
+            present_fields: validationResult.present_fields,
+            missing_fields: validationResult.missing_fields,
             confidence: validationResult.confidence,
             extracted_data: validationResult.extracted_data,
             provider: validationResult.provider,

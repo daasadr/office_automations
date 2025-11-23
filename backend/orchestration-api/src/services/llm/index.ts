@@ -82,13 +82,17 @@ export async function validatePdfContentWithGemini(
 
     // Calculate confidence based on how many fields were found
     const confidence = calculateConfidence(
-      parsedResult.present as unknown[],
+      parsedResult.present_fields as unknown[],
       REQUIRED_FIELDS.length
     );
 
     return {
-      present: Array.isArray(parsedResult.present) ? (parsedResult.present as string[]) : [],
-      missing: Array.isArray(parsedResult.missing) ? (parsedResult.missing as string[]) : [],
+      present_fields: Array.isArray(parsedResult.present_fields)
+        ? (parsedResult.present_fields as string[])
+        : [],
+      missing_fields: Array.isArray(parsedResult.missing_fields)
+        ? (parsedResult.missing_fields as string[])
+        : [],
       confidence,
       extracted_data: Array.isArray(parsedResult.extracted_data)
         ? (parsedResult.extracted_data as ExtractedData[])

@@ -43,9 +43,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
             <h2 id="status-title" class="text-xl font-semibold mb-2"></h2>
             <p id="status-description" class="text-sm text-muted-foreground mb-4"></p>
             <div id="install-button-container"></div>
-            <div id="debug-info" class="mt-4 p-3 rounded bg-muted/50 text-xs text-muted-foreground hidden">
-              <div class="font-mono space-y-1"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -326,30 +323,66 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     deferredPrompt = null;
   }
 
+  // Debug logging
+  console.log('[PWA Install] Initializing...');
+  console.log('[PWA Install] User Agent:', navigator.userAgent);
+  console.log('[PWA Install] Display Mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+  console.log('[PWA Install] Service Worker support:', 'serviceWorker' in navigator);
+  
+  // Check for service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      console.log('[PWA Install] Service Worker registrations:', registrations.length);
+      registrations.forEach((registration, index) => {
+        console.log(`[PWA Install] SW ${index}:`, registration.scope, registration.active?.state);
+      });
+    });
+  }
+
   // Initialize
   if (isAppInstalled()) {
+    console.log('[PWA Install] App is already installed');
     updateUI('installed');
   } else if (isBrowserSupported()) {
+    console.log('[PWA Install] Browser supports installation, waiting for prompt...');
     updateUI('waiting');
   } else {
+    console.log('[PWA Install] Browser does not support installation');
     updateUI('not-supported');
   }
 
   // Listen for the beforeinstallprompt event
   window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('[PWA Install] beforeinstallprompt event fired!');
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
     
     if (!isAppInstalled()) {
+      console.log('[PWA Install] Showing install button');
       updateUI('installable');
     }
   });
 
   // Listen for successful installation
   window.addEventListener('appinstalled', () => {
-    console.log('PWA was installed');
+    console.log('[PWA Install] App was successfully installed');
     deferredPrompt = null;
     updateUI('installed');
+  });
+
+  // Also log when the page is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[PWA Install] DOM ready, checking manifest...');
+    
+    // Try to fetch and log the manifest
+    fetch('/manifest.webmanifest')
+      .then(r => r.json())
+      .then(manifest => {
+        console.log('[PWA Install] Manifest loaded:', manifest);
+      })
+      .catch(err => {
+        console.error('[PWA Install] Failed to load manifest:', err);
+      });
   });
 </script>
 

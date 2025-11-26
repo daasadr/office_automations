@@ -1,0 +1,38 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import NotificationsSettings from "@/components/NotificationsSettings.tsx";
+---
+
+<BaseLayout 
+  title="Nastavení notifikací" 
+  description="Spravujte nastavení notifikací prohlížeče"
+>
+  <div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="mb-6">
+      <a 
+        href="/gFF1cnio0udVeqRarLTy/settings" 
+        class="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2"
+      >
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          width="16" 
+          height="16" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+        >
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        Zpět na nastavení
+      </a>
+    </div>
+    
+    <h1 class="text-3xl font-bold mb-6">Nastavení notifikací</h1>
+    
+    <NotificationsSettings client:load />
+  </div>
+</BaseLayout>
+

@@ -1,0 +1,355 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout 
+  title="Nainstalovat aplikaci" 
+  description="Přidejte si aplikaci na plochu"
+>
+  <div class="max-w-2xl mx-auto py-8 px-4">
+    <div class="mb-6">
+      <a 
+        href="/gFF1cnio0udVeqRarLTy/settings"
+        class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          width="16" 
+          height="16" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          class="mr-2"
+        >
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        Zpět na nastavení
+      </a>
+      <h1 class="text-3xl font-bold">Přidat na plochu</h1>
+      <p class="text-muted-foreground mt-2">
+        Nainstalujte si aplikaci pro rychlejší přístup a lepší uživatelský zážitek
+      </p>
+    </div>
+
+    <div class="space-y-6">
+      <!-- Install Status Card -->
+      <div id="install-card" class="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="flex items-start gap-4">
+          <div id="status-icon" class="flex-shrink-0 mt-1"></div>
+          <div class="flex-1">
+            <h2 id="status-title" class="text-xl font-semibold mb-2"></h2>
+            <p id="status-description" class="text-sm text-muted-foreground mb-4"></p>
+            <div id="install-button-container"></div>
+            <div id="debug-info" class="mt-4 p-3 rounded bg-muted/50 text-xs text-muted-foreground hidden">
+              <div class="font-mono space-y-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits Section -->
+      <div class="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+        <h3 class="text-lg font-semibold mb-4">Výhody instalace aplikace</h3>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+              class="text-green-500 flex-shrink-0 mt-0.5"
+            >
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <div>
+              <strong>Rychlý přístup</strong>
+              <p class="text-sm text-muted-foreground">Spusťte aplikaci přímo z plochy nebo nabídky start</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+              class="text-green-500 flex-shrink-0 mt-0.5"
+            >
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <div>
+              <strong>Lepší výkon</strong>
+              <p class="text-sm text-muted-foreground">Rychlejší načítání a lepší uživatelský zážitek</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+              class="text-green-500 flex-shrink-0 mt-0.5"
+            >
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <div>
+              <strong>Funguje jako samostatná aplikace</strong>
+              <p class="text-sm text-muted-foreground">Běží ve vlastním okně bez panelu prohlížeče</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+              class="text-green-500 flex-shrink-0 mt-0.5"
+            >
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <div>
+              <strong>Push notifikace</strong>
+              <p class="text-sm text-muted-foreground">Dostávejte oznámení o dokončení zpracování</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Manual Installation Instructions -->
+      <div id="manual-instructions" class="p-6 rounded-lg border bg-card text-card-foreground shadow-sm hidden">
+        <h3 class="text-lg font-semibold mb-4">Manuální instalace</h3>
+        <div class="space-y-4 text-sm">
+          <div>
+            <strong class="block mb-2">Chrome, Edge, Opera:</strong>
+            <ol class="list-decimal list-inside space-y-1 text-muted-foreground ml-4">
+              <li>Klikněte na ikonu <strong>⋮</strong> (tři tečky) v pravém horním rohu</li>
+              <li>Vyberte <strong>"Nainstalovat aplikaci Odpady"</strong> nebo <strong>"Přidat na plochu"</strong></li>
+              <li>Potvrďte instalaci</li>
+            </ol>
+          </div>
+          <div>
+            <strong class="block mb-2">Safari (iOS):</strong>
+            <ol class="list-decimal list-inside space-y-1 text-muted-foreground ml-4">
+              <li>Klikněte na ikonu <strong>sdílení</strong> (čtverec se šipkou)</li>
+              <li>Posuňte se dolů a vyberte <strong>"Přidat na plochu"</strong></li>
+              <li>Potvrďte přidání</li>
+            </ol>
+          </div>
+          <div>
+            <strong class="block mb-2">Safari (macOS):</strong>
+            <ol class="list-decimal list-inside space-y-1 text-muted-foreground ml-4">
+              <li>Klikněte na <strong>Soubor</strong> v menu</li>
+              <li>Vyberte <strong>"Přidat na Dock"</strong></li>
+            </ol>
+          </div>
+          <div>
+            <strong class="block mb-2">Firefox:</strong>
+            <ol class="list-decimal list-inside space-y-1 text-muted-foreground ml-4">
+              <li>Klikněte na ikonu <strong>⋮</strong> (tři tečky)</li>
+              <li>Vyberte <strong>"Nainstalovat"</strong> nebo <strong>"Přidat na plochu"</strong></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Icon SVGs
+  const successIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500">
+      <path d="M20 6 9 17l-5-5"/>
+    </svg>
+  `;
+  
+  const infoIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 16v-4"/>
+      <path d="M12 8h.01"/>
+    </svg>
+  `;
+  
+  const downloadIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" x2="12" y1="15" y2="3"/>
+    </svg>
+  `;
+
+  const warningIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+      <path d="M12 9v4"/>
+      <path d="M12 17h.01"/>
+    </svg>
+  `;
+
+  interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  }
+
+  let deferredPrompt: BeforeInstallPromptEvent | null = null;
+
+  // Check if app is already installed
+  function isAppInstalled(): boolean {
+    // Check if running in standalone mode (installed PWA)
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           (window.navigator as any).standalone === true;
+  }
+
+  // Check if browser supports installation
+  function isBrowserSupported(): boolean {
+    // Check for beforeinstallprompt event support or iOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    return 'onbeforeinstallprompt' in window || (isIOS && isSafari);
+  }
+
+  function updateUI(state: 'installed' | 'installable' | 'not-supported' | 'waiting') {
+    const statusIcon = document.getElementById('status-icon');
+    const statusTitle = document.getElementById('status-title');
+    const statusDescription = document.getElementById('status-description');
+    const buttonContainer = document.getElementById('install-button-container');
+    const manualInstructions = document.getElementById('manual-instructions');
+
+    if (!statusIcon || !statusTitle || !statusDescription || !buttonContainer || !manualInstructions) return;
+
+    switch (state) {
+      case 'installed':
+        statusIcon.innerHTML = successIcon;
+        statusTitle.textContent = 'Aplikace je nainstalována';
+        statusDescription.textContent = 'Aplikace je již nainstalována na tomto zařízení. Můžete ji spustit z plochy nebo nabídky start.';
+        buttonContainer.innerHTML = '';
+        manualInstructions.classList.add('hidden');
+        break;
+
+      case 'installable':
+        statusIcon.innerHTML = downloadIcon;
+        statusTitle.textContent = 'Aplikace je připravena k instalaci';
+        statusDescription.textContent = 'Klikněte na tlačítko níže pro instalaci aplikace na toto zařízení.';
+        buttonContainer.innerHTML = `
+          <button 
+            id="install-button"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+              class="mr-2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" x2="12" y1="15" y2="3"/>
+            </svg>
+            Nainstalovat aplikaci
+          </button>
+        `;
+        manualInstructions.classList.add('hidden');
+        
+        // Add click handler
+        const installButton = document.getElementById('install-button');
+        if (installButton) {
+          installButton.addEventListener('click', handleInstallClick);
+        }
+        break;
+
+      case 'waiting':
+        statusIcon.innerHTML = infoIcon;
+        statusTitle.textContent = 'Čekání na možnost instalace';
+        statusDescription.textContent = 'Váš prohlížeč podporuje instalaci aplikací. Tlačítko pro instalaci se zobrazí, až bude aplikace připravena.';
+        buttonContainer.innerHTML = '';
+        manualInstructions.classList.remove('hidden');
+        break;
+
+      case 'not-supported':
+        statusIcon.innerHTML = warningIcon;
+        statusTitle.textContent = 'Instalace není podporována';
+        statusDescription.textContent = 'Váš prohlížeč nebo zařízení bohužel nepodporuje instalaci webových aplikací. Můžete stále používat aplikaci v prohlížeči.';
+        buttonContainer.innerHTML = '';
+        manualInstructions.classList.remove('hidden');
+        break;
+    }
+  }
+
+  async function handleInstallClick() {
+    if (!deferredPrompt) {
+      return;
+    }
+
+    // Show the install prompt
+    await deferredPrompt.prompt();
+
+    // Wait for the user's response
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      updateUI('installed');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+
+    // Clear the deferred prompt
+    deferredPrompt = null;
+  }
+
+  // Initialize
+  if (isAppInstalled()) {
+    updateUI('installed');
+  } else if (isBrowserSupported()) {
+    updateUI('waiting');
+  } else {
+    updateUI('not-supported');
+  }
+
+  // Listen for the beforeinstallprompt event
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e as BeforeInstallPromptEvent;
+    
+    if (!isAppInstalled()) {
+      updateUI('installable');
+    }
+  });
+
+  // Listen for successful installation
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    deferredPrompt = null;
+    updateUI('installed');
+  });
+</script>
+

@@ -6,6 +6,22 @@ interface ValidationResultsProps {
   confidence: number;
 }
 
+// Map technical field names to human-readable Czech labels
+const fieldNameMap: Record<string, string> = {
+  waste_code: "Kód odpadu",
+  waste_name: "Název odpadu",
+  waste_category: "Kategorie odpadu",
+  handling_code: "Kód nakládání",
+  originator: "Původce",
+  recipient: "Příjemce",
+  records: "Záznamy",
+  // Add more mappings as needed
+};
+
+function translateFieldName(fieldName: string): string {
+  return fieldNameMap[fieldName] || fieldName;
+}
+
 export function ValidationResults({
   present_fields,
   missing_fields,
@@ -45,7 +61,7 @@ export function ValidationResults({
               safePresent.map((item, index) => (
                 <li key={`present-${index}-${item}`} className="flex items-start gap-2 text-sm">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>{item}</span>
+                  <span>{translateFieldName(item)}</span>
                 </li>
               ))
             ) : (
@@ -65,7 +81,7 @@ export function ValidationResults({
               safeMissing.map((item, index) => (
                 <li key={`missing-${index}-${item}`} className="flex items-start gap-2 text-sm">
                   <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>{item}</span>
+                  <span>{translateFieldName(item)}</span>
                 </li>
               ))
             ) : (

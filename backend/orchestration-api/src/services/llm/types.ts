@@ -13,8 +13,8 @@ export interface GeminiConfig {
  * Result of PDF validation by LLM
  */
 export interface ValidationResult {
-  present: string[];
-  missing: string[];
+  present_fields: string[];
+  missing_fields: string[];
   confidence: number;
   extracted_data: ExtractedData[];
   provider: "gemini";

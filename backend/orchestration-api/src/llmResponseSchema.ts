@@ -82,3 +82,8 @@ export interface LLMResponseSchema {
    */
   extracted_data: ExtractedWasteData[];
 }
+
+/**
+ * Legacy type alias for backward compatibility
+ */
+export type ExtractedData = ExtractedWasteData;

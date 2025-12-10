@@ -24,6 +24,10 @@
     "paths": {
       "@orchestration-api/config": ["./src/config"],
       "@orchestration-api/config/*": ["./src/config/*"],
+      "@orchestration-api/lib/directus": ["./src/lib/directus"],
+      "@orchestration-api/lib/directus/*": ["./src/lib/directus/*"],
+      "@orchestration-api/lib/minio": ["./src/lib/minio"],
+      "@orchestration-api/lib/minio/*": ["./src/lib/minio/*"],
       "@orchestration-api/lib/*": ["./src/lib/*"],
       "@orchestration-api/middleware/*": ["./src/middleware/*"],
       "@orchestration-api/routes/*": ["./src/routes/*"],

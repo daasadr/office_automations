@@ -20,6 +20,7 @@ import {
 import { erpSyncQueue } from "@orchestration-api/queues";
 import { workflowService } from "@orchestration-api/services/WorkflowService";
 import { validatePdfContentWithGemini } from "@orchestration-api/services/llm";
+import { downloadFile } from "@orchestration-api/lib/minio";
 import { logger } from "@orchestration-api/utils/logger";
 import { config } from "@orchestration-api/config";
 
@@ -28,18 +29,36 @@ import { initializeSentry } from "@orchestration-api/lib/sentry";
 initializeSentry();
 
 /**
- * Fetches page content from MinIO (placeholder)
- * In production, implement actual MinIO download
+ * Fetches page content from MinIO
  */
 async function getPageContent(workflowId: string, pageFileKey: string): Promise<ArrayBuffer> {
   logger.debug("[LlmWorker] Fetching page content", { workflowId, pageFileKey });
 
-  // TODO: Implement actual MinIO download
-  // 1. Use @aws-sdk/client-s3 to download from MinIO
-  // 2. Return the file as ArrayBuffer
+  try {
+    // Download the page PDF from MinIO
+    const buffer = await downloadFile(pageFileKey);
 
-  // For now, return empty buffer - replace with actual implementation
-  return new ArrayBuffer(0);
+    // Convert Buffer to ArrayBuffer for Gemini API
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
+
+    logger.debug("[LlmWorker] Page content fetched", {
+      workflowId,
+      pageFileKey,
+      size: arrayBuffer.byteLength,
+    });
+
+    return arrayBuffer;
+  } catch (error) {
+    logger.error("[LlmWorker] Failed to fetch page content", {
+      workflowId,
+      pageFileKey,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 }
 
 /**

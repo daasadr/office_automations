@@ -19,46 +19,13 @@ import {
 } from "@orchestration-api/queues/types";
 import { pageLlmQueue } from "@orchestration-api/queues";
 import { workflowService } from "@orchestration-api/services/WorkflowService";
+import { pdfSplitService } from "@orchestration-api/services/PdfSplitService";
 import { logger } from "@orchestration-api/utils/logger";
 import { config } from "@orchestration-api/config";
 
 // Initialize Sentry for error tracking
 import { initializeSentry } from "@orchestration-api/lib/sentry";
 initializeSentry();
-
-/**
- * PDF splitting logic (placeholder - implement with actual PDF library)
- * In production, this would use pdf-lib, pdfjs-dist, or similar
- */
-async function splitPdfIntoPages(params: {
-  workflowId: string;
-  fileKey: string;
-}): Promise<Array<{ pageNumber: number; fileKey: string; mimeType: string }>> {
-  const { workflowId, fileKey } = params;
-
-  logger.info("[PdfWorker] Splitting PDF into pages", { workflowId, fileKey });
-
-  // TODO: Implement actual PDF splitting logic
-  // 1. Download PDF from MinIO using fileKey
-  // 2. Parse PDF and extract pages
-  // 3. Upload each page to MinIO
-  // 4. Return array of page info
-
-  // For now, return a placeholder - this simulates a 3-page document
-  // In production, replace with actual PDF splitting code
-  const mockPages = [
-    { pageNumber: 1, fileKey: `${fileKey}/page-1.pdf`, mimeType: "application/pdf" },
-    { pageNumber: 2, fileKey: `${fileKey}/page-2.pdf`, mimeType: "application/pdf" },
-    { pageNumber: 3, fileKey: `${fileKey}/page-3.pdf`, mimeType: "application/pdf" },
-  ];
-
-  logger.info("[PdfWorker] PDF split complete", {
-    workflowId,
-    totalPages: mockPages.length,
-  });
-
-  return mockPages;
-}
 
 /**
  * PDF Workflow Worker
@@ -80,8 +47,13 @@ const worker = new Worker<PdfWorkflowJobData>(
       // 1. Update workflow state to 'splitting'
       await workflowService.updateWorkflowState(workflowId, "splitting");
 
-      // 2. Split PDF into pages
-      const pages = await splitPdfIntoPages({ workflowId, fileKey });
+      // 2. Split PDF into pages using the actual PDF split service
+      const splitResult = await pdfSplitService.splitPdfIntoPages({
+        workflowId,
+        fileKey,
+      });
+
+      const pages = splitResult.pages;
 
       // 3. Create a document record for this PDF
       const document = await workflowService.createDocument({
@@ -149,15 +121,18 @@ const worker = new Worker<PdfWorkflowJobData>(
       logger.info("[PdfWorker] PDF workflow started successfully", {
         jobId: job.id,
         workflowId,
-        totalPages: pages.length,
-        processingTimeMs: processingTime,
+        totalPages: splitResult.totalPages,
+        extractedPages: pages.length,
+        splitProcessingTimeMs: splitResult.processingTimeMs,
+        totalProcessingTimeMs: processingTime,
       });
 
       return {
         success: true,
         workflowId,
         documentId: document.id,
-        totalPages: pages.length,
+        totalPages: splitResult.totalPages,
+        extractedPages: pages.length,
         processingTimeMs: processingTime,
       };
     } catch (error) {

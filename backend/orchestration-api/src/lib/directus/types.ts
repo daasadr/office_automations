@@ -20,6 +20,157 @@ export interface SourceDocument {
 }
 
 /**
+ * Workflows Collection
+ * Main workflow instances for document processing and queue management
+ */
+export interface Workflow {
+  id?: string;
+  state?:
+    | "queued"
+    | "splitting"
+    | "processing"
+    | "aggregating"
+    | "erp_sync"
+    | "completed"
+    | "failed"
+    | "cancelled";
+  type?: "pdf_processing" | "email_ingest" | "erp_sync_only";
+  source?: "upload" | "email" | "api" | "manual";
+  priority?: number;
+  tenant?: string; // UUID reference to companies (optional, for multi-tenant)
+  input_file_key?: string; // MinIO key
+  input_file_name?: string;
+  input_file_mime?: string;
+  input_email_message_id?: string; // For email-triggered workflows
+  input_email_from?: string;
+  input_email_subject?: string;
+  total_steps?: number;
+  completed_steps?: number;
+  started_at?: string;
+  finished_at?: string;
+  error_summary?: {
+    code?: string;
+    message?: string;
+    last_step_id?: string;
+  };
+  metadata?: Record<string, unknown>;
+  bullmq_job_id?: string; // BullMQ job ID for cross-debugging
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
+ * Workflow Steps Collection
+ * Individual steps within workflows for tracking progress
+ */
+export interface WorkflowStep {
+  id?: string;
+  workflow?: string; // UUID reference to workflows
+  kind?: "split_pdf" | "page_llm" | "aggregate" | "erp_save" | "email_parse";
+  key?: string; // Identifies the item: page ID, page number, etc.
+  queue?: string; // e.g., 'pdf-workflow', 'page-llm', 'erp-sync'
+  state?: "queued" | "running" | "succeeded" | "failed" | "skipped";
+  attempts?: number;
+  max_attempts?: number;
+  job_id?: string; // BullMQ jobId for this step
+  page_number?: number; // Useful for PDF processing
+  started_at?: string;
+  finished_at?: string;
+  error_detail?: {
+    code?: string;
+    message?: string;
+    stack?: string;
+    externalCode?: string;
+  };
+  metadata?: Record<string, unknown>;
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
+ * Workflow Step Runs Collection
+ * History of retry attempts for workflow steps
+ */
+export interface WorkflowStepRun {
+  id?: string;
+  step?: string; // UUID reference to workflow_steps
+  attempt?: number;
+  state?: "running" | "succeeded" | "failed";
+  started_at?: string;
+  finished_at?: string;
+  error_detail?: {
+    code?: string;
+    message?: string;
+    stack?: string;
+    externalCode?: string;
+  };
+  metadata?: Record<string, unknown>; // LLM latency, ERP response, etc.
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
+ * ERP Outbox Collection
+ * Reliable outbox pattern for ERP/IFS integration
+ */
+export interface ErpOutbox {
+  id?: string;
+  workflow?: string; // UUID reference to workflows (optional)
+  step?: string; // UUID reference to workflow_steps (optional)
+  operation?: "create_invoice" | "update_vendor" | "link_document";
+  payload?: Record<string, unknown>; // Data to send to IFS
+  state?: "pending" | "in_progress" | "sent" | "failed";
+  attempts?: number;
+  last_error?: {
+    code?: string;
+    message?: string;
+    externalCode?: string;
+    stack?: string;
+  };
+  erp_object_type?: string; // e.g., 'PurchaseOrder', 'Invoice'
+  erp_object_id?: string; // IFS object ID returned on success
+  scheduled_at?: string;
+  sent_at?: string;
+  metadata?: Record<string, unknown>;
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
+ * Documents Collection
+ * Logical documents processed through workflows
+ */
+export interface Document {
+  id?: string;
+  company?: string; // UUID reference to companies (optional)
+  workflow?: string; // UUID reference to workflows (primary workflow that created this doc)
+  file_key?: string; // MinIO key
+  file_name?: string;
+  mime_type?: string;
+  source?: "upload" | "email" | "api" | "manual";
+  metadata?: Record<string, unknown>;
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
+ * Document Pages Collection
+ * Individual pages from processed documents with LLM results
+ */
+export interface DocumentPage {
+  id?: string;
+  document?: string; // UUID reference to documents
+  workflow_step?: string; // UUID reference to workflow_steps (the page_llm step)
+  page_number?: number; // 1-based
+  file_key?: string; // MinIO key of extracted page
+  text?: string; // Extracted OCR/text
+  llm_result?: Record<string, unknown>; // Summaries, extractions, classification
+  metadata?: Record<string, unknown>;
+  date_created?: string;
+  date_updated?: string;
+}
+
+/**
  * Responses Collection
  * LLM responses for source documents
  */
@@ -136,4 +287,10 @@ export interface DirectusSchema {
   foundation_documents: FoundationDocument[];
   document_versions: DocumentVersion[];
   directus_files: DirectusFile[];
+  workflows: Workflow[];
+  workflow_steps: WorkflowStep[];
+  workflow_step_runs: WorkflowStepRun[];
+  erp_outbox: ErpOutbox[];
+  documents: Document[];
+  document_pages: DocumentPage[];
 }

@@ -142,6 +142,174 @@
       "schema": {
         "name": "source_documents"
       }
+    },
+    {
+      "collection": "workflows",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "workflows",
+        "color": null,
+        "display_template": "{{type}} - {{state}} - {{input_file_name}}",
+        "group": null,
+        "hidden": false,
+        "icon": "account_tree",
+        "item_duplication_fields": null,
+        "note": "Main workflow instances for document processing and queue management",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "date_created",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "workflows"
+      }
+    },
+    {
+      "collection": "workflow_steps",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "workflow_steps",
+        "color": null,
+        "display_template": "{{kind}} - {{state}} ({{key}})",
+        "group": null,
+        "hidden": false,
+        "icon": "linear_scale",
+        "item_duplication_fields": null,
+        "note": "Individual steps within workflows for tracking progress",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "date_created",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "workflow_steps"
+      }
+    },
+    {
+      "collection": "workflow_step_runs",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "workflow_step_runs",
+        "color": null,
+        "display_template": "Attempt {{attempt}} - {{state}}",
+        "group": null,
+        "hidden": false,
+        "icon": "replay",
+        "item_duplication_fields": null,
+        "note": "History of retry attempts for workflow steps",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "started_at",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "workflow_step_runs"
+      }
+    },
+    {
+      "collection": "erp_outbox",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "erp_outbox",
+        "color": null,
+        "display_template": "{{operation}} - {{state}}",
+        "group": null,
+        "hidden": false,
+        "icon": "send",
+        "item_duplication_fields": null,
+        "note": "Reliable outbox pattern for ERP/IFS integration",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "date_created",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "erp_outbox"
+      }
+    },
+    {
+      "collection": "documents",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "documents",
+        "color": null,
+        "display_template": "{{file_name}}",
+        "group": null,
+        "hidden": false,
+        "icon": "description",
+        "item_duplication_fields": null,
+        "note": "Logical documents processed through workflows",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "date_created",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "documents"
+      }
+    },
+    {
+      "collection": "document_pages",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": true,
+        "archive_field": null,
+        "archive_value": null,
+        "collapse": "open",
+        "collection": "document_pages",
+        "color": null,
+        "display_template": "Page {{page_number}}",
+        "group": null,
+        "hidden": false,
+        "icon": "insert_page_break",
+        "item_duplication_fields": null,
+        "note": "Individual pages from processed documents with LLM results",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "page_number",
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "document_pages"
+      }
     }
   ],
   "fields": [

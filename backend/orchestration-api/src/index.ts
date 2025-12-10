@@ -11,6 +11,7 @@ import { config } from "./config";
 import { logger } from "./utils/logger";
 import { healthRouter } from "./routes/health";
 import { documentRouter } from "./routes/documents";
+import { workflowRouter } from "./routes/workflows";
 import { errorHandler } from "./middleware/errorHandler";
 import { swaggerSpec } from "./lib/swagger";
 
@@ -50,6 +51,7 @@ app.get("/openapi.json", (_req, res) => {
 // Routes
 app.use("/health", healthRouter);
 app.use("/documents", documentRouter);
+app.use("/workflows", workflowRouter);
 
 // Sentry error handler must be registered before other error handlers
 Sentry.setupExpressErrorHandler(app);

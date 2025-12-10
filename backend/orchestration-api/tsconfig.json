@@ -23,10 +23,14 @@
     "baseUrl": ".",
     "paths": {
       "@orchestration-api/config": ["./src/config"],
+      "@orchestration-api/config/*": ["./src/config/*"],
       "@orchestration-api/lib/*": ["./src/lib/*"],
       "@orchestration-api/middleware/*": ["./src/middleware/*"],
       "@orchestration-api/routes/*": ["./src/routes/*"],
       "@orchestration-api/services/*": ["./src/services/*"],
+      "@orchestration-api/queues": ["./src/queues"],
+      "@orchestration-api/queues/*": ["./src/queues/*"],
+      "@orchestration-api/workers/*": ["./src/workers/*"],
       "@orchestration-api/utils/*": ["./src/utils/*"],
       "@orchestration-api/llmResponseSchema": ["./src/llmResponseSchema"]
     }

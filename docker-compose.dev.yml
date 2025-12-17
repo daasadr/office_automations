@@ -114,6 +114,190 @@ services:
     labels:
       - "traefik.enable=false"
   
+  # PDF Workflow Worker - Handles PDF splitting and orchestration
+  worker-pdf:
+    build:
+      context: ./backend/orchestration-api
+      dockerfile: Dockerfile
+      target: development
+    container_name: worker-pdf
+    command: npm run dev:worker:pdf
+    env_file:
+      - ./backend/.env
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # MinIO connection (for Directus file storage)
+      MINIO_ENDPOINT: minio
+      MINIO_API_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: false
+      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
+      
+      # Worker settings
+      NODE_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    networks:
+      - backend-internal
+    volumes:
+      # Mount source code for hot-reloading
+      - ./backend/orchestration-api/src:/app/src
+      - ./backend/orchestration-api/tsconfig.json:/app/tsconfig.json
+      # Preserve node_modules from container
+      - orchestration_node_modules:/app/node_modules
+    depends_on:
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Page LLM Worker - Handles individual page processing with LLM
+  worker-llm:
+    build:
+      context: ./backend/orchestration-api
+      dockerfile: Dockerfile
+      target: development
+    container_name: worker-llm
+    command: npm run dev:worker:llm
+    env_file:
+      - ./backend/.env
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # MinIO connection (for Directus file storage)
+      MINIO_ENDPOINT: minio
+      MINIO_API_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: false
+      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
+      
+      # LLM Configuration
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      
+      # Worker settings
+      NODE_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    networks:
+      - backend-internal
+    volumes:
+      # Mount source code for hot-reloading
+      - ./backend/orchestration-api/src:/app/src
+      - ./backend/orchestration-api/tsconfig.json:/app/tsconfig.json
+      # Preserve node_modules from container
+      - orchestration_node_modules:/app/node_modules
+    depends_on:
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ERP Sync Worker - Handles ERP/IFS integration (future use)
+  worker-erp:
+    build:
+      context: ./backend/orchestration-api
+      dockerfile: Dockerfile
+      target: development
+    container_name: worker-erp
+    command: npm run dev:worker:erp
+    env_file:
+      - ./backend/.env
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # Worker settings
+      NODE_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    networks:
+      - backend-internal
+    volumes:
+      # Mount source code for hot-reloading
+      - ./backend/orchestration-api/src:/app/src
+      - ./backend/orchestration-api/tsconfig.json:/app/tsconfig.json
+      # Preserve node_modules from container
+      - orchestration_node_modules:/app/node_modules
+    depends_on:
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - erp  # Only start when explicitly enabled
+
   # Frontend - Development Configuration with Hot Reload
   frontend:
     build:

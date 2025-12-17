@@ -1,17 +1,21 @@
+name: office-automation_
+
+# BullMQ Workers for PDF Processing Workflows
+# These workers process jobs from the queue system
+
 services:
-  # Unified worker that handles all activity types
-  unified-worker:
+  # PDF Workflow Worker
+  # Handles PDF splitting and orchestration
+  worker-pdf:
     build:
-      context: ../../workers
+      context: ../../orchestration-api
       dockerfile: Dockerfile
-    container_name: unified-worker
+      target: ${NODE_ENV:-production}
+    container_name: worker-pdf
+    command: npm run start:worker:pdf
     env_file:
       - ../../.env
     environment:
-      # Temporal connection
-      TEMPORAL_ADDRESS: temporal:7233
-      TEMPORAL_NAMESPACE: default
-      
       # Database connection
       DB_HOST: postgres
       DB_PORT: 5432
@@ -19,50 +23,195 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       
-      # Storage connection
-      S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      S3_SECRET_KEY: ${MINIO_SECRET_KEY}
-      S3_BUCKET: ${MINIO_BUCKET}
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
       
-      # LLM settings
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
       
-      
-      # OCR settings
-      # TESSERACT_LANG: ${TESSERACT_LANG:-ces+eng}
-      
-      # External validation APIs (optional)
-      # VALIDATION_API_KEY: ${VALIDATION_API_KEY}
-      
-      # Notification settings (optional)
-      # SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
-      # EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
-      # EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
-      # EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
-      # EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
-      # EMAIL_FROM: ${EMAIL_FROM}
-      
-      # Integration settings (optional)
-      SFTP_ENABLED: ${SFTP_ENABLED:-false}
-      API_INTEGRATIONS_ENABLED: ${API_INTEGRATIONS_ENABLED:-false}
+      # MinIO connection (for Directus file storage)
+      MINIO_ENDPOINT: minio
+      MINIO_API_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: false
+      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
       
       # Worker settings
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Sentry (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENABLED: ${SENTRY_ENABLED:-false}
+    networks:
+      - backend-internal
     depends_on:
-      temporal:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
     restart: unless-stopped
-    deploy:
-      replicas: ${UNIFIED_WORKER_REPLICAS:-1}
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "pdfWorkflowWorker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    labels:
+      - "com.office-automation.service=worker"
+      - "com.office-automation.worker=pdf"
 
+  # Page LLM Worker
+  # Handles individual page processing with LLM
+  worker-llm:
+    build:
+      context: ../../orchestration-api
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-production}
+    container_name: worker-llm
+    command: npm run start:worker:llm
+    env_file:
+      - ../../.env
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # MinIO connection (for Directus file storage)
+      MINIO_ENDPOINT: minio
+      MINIO_API_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: false
+      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
+      
+      # LLM Configuration
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      
+      # Worker settings
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Sentry (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENABLED: ${SENTRY_ENABLED:-false}
+    networks:
+      - backend-internal
+    depends_on:
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "pageLlmWorker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.office-automation.service=worker"
+      - "com.office-automation.worker=llm"
 
+  # ERP Sync Worker
+  # Handles ERP/IFS integration (future use)
+  worker-erp:
+    build:
+      context: ../../orchestration-api
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-production}
+    container_name: worker-erp
+    command: npm run start:worker:erp
+    env_file:
+      - ../../.env
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis/KeyDB connection
+      REDIS_HOST: keydb
+      KEYDB_HOST: keydb
+      REDIS_PORT: 6379
+      KEYDB_PORT: 6379
+      REDIS_PASSWORD: ${KEYDB_PASSWORD}
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}
+      
+      # Directus connection
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
+      DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
+      
+      # Worker settings
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Sentry (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENABLED: ${SENTRY_ENABLED:-false}
+    networks:
+      - backend-internal
+    depends_on:
+      directus:
+        condition: service_started
+      keydb:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "erpSyncWorker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.office-automation.service=worker"
+      - "com.office-automation.worker=erp"
+    profiles:
+      - erp  # Only start when explicitly enabled with --profile erp
+
+networks:
+  backend-internal:
+    external: true

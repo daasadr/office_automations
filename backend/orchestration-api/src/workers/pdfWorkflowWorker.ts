@@ -50,7 +50,7 @@ const worker = new Worker<PdfWorkflowJobData>(
       // 2. Split PDF into pages using the actual PDF split service
       const splitResult = await pdfSplitService.splitPdfIntoPages({
         workflowId,
-        fileKey,
+        fileId,
       });
 
       const pages = splitResult.pages;
@@ -58,20 +58,20 @@ const worker = new Worker<PdfWorkflowJobData>(
       // 3. Create a document record for this PDF
       const document = await workflowService.createDocument({
         workflowId,
-        fileKey,
+        fileKey: fileId, // Store Directus file ID
         fileName: fileName || "unknown.pdf",
         mimeType: "application/pdf",
         source: "upload",
         metadata: {
           totalPages: pages.length,
-          originalFileKey: fileKey,
+          originalFileId: fileId,
         },
       });
 
       // 4. Create workflow steps for each page
       const steps = await workflowService.createPageSteps(
         workflowId,
-        pages.map((p) => ({ pageNumber: p.pageNumber, fileKey: p.fileKey })),
+        pages.map((p) => ({ pageNumber: p.pageNumber, fileKey: p.fileId })),
         QUEUE_NAMES.PAGE_LLM
       );
 
@@ -88,7 +88,7 @@ const worker = new Worker<PdfWorkflowJobData>(
           documentId: document.id!,
           workflowStepId: step.id,
           pageNumber: page.pageNumber,
-          fileKey: page.fileKey,
+          fileKey: page.fileId, // Store Directus file ID
           metadata: { mimeType: page.mimeType },
         });
 
@@ -98,7 +98,7 @@ const worker = new Worker<PdfWorkflowJobData>(
           stepId: step.id!,
           pageId: docPage.id!,
           pageNumber: page.pageNumber,
-          pageFileKey: page.fileKey,
+          pageFileId: page.fileId, // Use Directus file ID
           totalPages: pages.length,
         };
 

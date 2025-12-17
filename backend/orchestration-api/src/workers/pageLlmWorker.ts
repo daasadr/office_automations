@@ -20,7 +20,7 @@ import {
 import { erpSyncQueue } from "@orchestration-api/queues";
 import { workflowService } from "@orchestration-api/services/WorkflowService";
 import { validatePdfContentWithGemini } from "@orchestration-api/services/llm";
-import { downloadFile } from "@orchestration-api/lib/minio";
+import { directusDocumentService } from "@orchestration-api/lib/directus";
 import { logger } from "@orchestration-api/utils/logger";
 import { config } from "@orchestration-api/config";
 
@@ -29,14 +29,18 @@ import { initializeSentry } from "@orchestration-api/lib/sentry";
 initializeSentry();
 
 /**
- * Fetches page content from MinIO
+ * Fetches page content from Directus (which manages MinIO)
  */
-async function getPageContent(workflowId: string, pageFileKey: string): Promise<ArrayBuffer> {
-  logger.debug("[LlmWorker] Fetching page content", { workflowId, pageFileKey });
+async function getPageContent(workflowId: string, pageFileId: string): Promise<ArrayBuffer> {
+  logger.debug("[LlmWorker] Fetching page content from Directus", { workflowId, pageFileId });
 
   try {
-    // Download the page PDF from MinIO
-    const buffer = await downloadFile(pageFileKey);
+    // Download the page PDF from Directus
+    const buffer = await directusDocumentService.downloadFile(pageFileId);
+
+    if (!buffer) {
+      throw new Error(`Failed to download file ${pageFileId} from Directus`);
+    }
 
     // Convert Buffer to ArrayBuffer for Gemini API
     const arrayBuffer = buffer.buffer.slice(
@@ -46,7 +50,7 @@ async function getPageContent(workflowId: string, pageFileKey: string): Promise<
 
     logger.debug("[LlmWorker] Page content fetched", {
       workflowId,
-      pageFileKey,
+      pageFileId,
       size: arrayBuffer.byteLength,
     });
 
@@ -54,7 +58,7 @@ async function getPageContent(workflowId: string, pageFileKey: string): Promise<
   } catch (error) {
     logger.error("[LlmWorker] Failed to fetch page content", {
       workflowId,
-      pageFileKey,
+      pageFileId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
@@ -120,7 +124,7 @@ async function handleWorkflowCompletion(workflowId: string): Promise<void> {
 const worker = new Worker<PageLlmJobData>(
   QUEUE_NAMES.PAGE_LLM,
   async (job) => {
-    const { workflowId, stepId, pageId, pageNumber, pageFileKey, totalPages } = job.data;
+    const { workflowId, stepId, pageId, pageNumber, pageFileId, totalPages } = job.data;
     const startTime = Date.now();
 
     logger.info("[LlmWorker] Processing page", {
@@ -145,8 +149,8 @@ const worker = new Worker<PageLlmJobData>(
       // 1. Update step state to 'running'
       await workflowService.updateStepState(stepId, "running");
 
-      // 2. Fetch page content from MinIO
-      const pageContent = await getPageContent(workflowId, pageFileKey);
+      // 2. Fetch page content from Directus
+      const pageContent = await getPageContent(workflowId, pageFileId);
 
       // 3. Run LLM analysis
       let llmResult: Record<string, unknown>;

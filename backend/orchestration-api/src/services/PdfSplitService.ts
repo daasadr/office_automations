@@ -1,11 +1,12 @@
 /**
  * PDF Split Service
  * Handles splitting PDFs into individual pages
+ * Uses Directus for file management (which internally uses MinIO)
  */
 
 import { PDFDocument } from "pdf-lib";
 import { v4 as uuidv4 } from "uuid";
-import { downloadFile, uploadFile } from "@orchestration-api/lib/minio";
+import { directusDocumentService } from "@orchestration-api/lib/directus";
 import { logger } from "@orchestration-api/utils/logger";
 
 /**
@@ -13,7 +14,7 @@ import { logger } from "@orchestration-api/utils/logger";
  */
 export interface ExtractedPage {
   pageNumber: number;
-  fileKey: string;
+  fileId: string; // Directus file ID
   mimeType: string;
   size: number;
 }
@@ -25,7 +26,7 @@ export interface PdfSplitResult {
   pages: ExtractedPage[];
   totalPages: number;
   processingTimeMs: number;
-  originalFileKey: string;
+  originalFileId: string; // Directus file ID
 }
 
 /**
@@ -40,26 +41,28 @@ export class PdfSplitService {
    */
   async splitPdfIntoPages(params: {
     workflowId: string;
-    fileKey: string;
-    bucket?: string;
+    fileId: string; // Directus file ID
   }): Promise<PdfSplitResult> {
-    const { workflowId, fileKey, bucket } = params;
+    const { workflowId, fileId } = params;
     const startTime = Date.now();
 
     logger.info("[PdfSplitService] Starting PDF split", {
       workflowId,
-      fileKey,
-      bucket,
+      fileId,
     });
 
     try {
-      // 1. Download the original PDF from MinIO
-      logger.debug("[PdfSplitService] Downloading PDF from MinIO", { fileKey });
-      const pdfBuffer = await downloadFile(fileKey, bucket);
+      // 1. Download the original PDF from Directus
+      logger.debug("[PdfSplitService] Downloading PDF from Directus", { fileId });
+      const pdfBuffer = await directusDocumentService.downloadFile(fileId);
+
+      if (!pdfBuffer) {
+        throw new Error(`Failed to download file ${fileId} from Directus`);
+      }
 
       logger.info("[PdfSplitService] PDF downloaded", {
         size: pdfBuffer.length,
-        fileKey,
+        fileId,
       });
 
       // 2. Load the PDF document
@@ -69,7 +72,7 @@ export class PdfSplitService {
 
       logger.info("[PdfSplitService] PDF loaded", {
         totalPages,
-        fileKey,
+        fileId,
       });
 
       // 3. Extract and save each page
@@ -96,39 +99,38 @@ export class PdfSplitService {
           const pageBytes = await singlePageDoc.save();
           const pageBuffer = Buffer.from(pageBytes);
 
-          // Generate a unique file key for this page
-          // Format: workflows/{workflowId}/pages/page-{pageNumber}-{uuid}.pdf
-          const pageFileKey = `workflows/${workflowId}/pages/page-${pageNumber}-${uuidv4()}.pdf`;
+          // Generate a unique filename for this page
+          const pageFilename = `workflow-${workflowId}-page-${pageNumber}-${uuidv4()}.pdf`;
 
-          // Upload the page to MinIO
-          logger.debug("[PdfSplitService] Uploading page to MinIO", {
+          // Upload the page to Directus (which stores it in MinIO)
+          logger.debug("[PdfSplitService] Uploading page to Directus", {
             pageNumber,
-            pageFileKey,
+            pageFilename,
             size: pageBuffer.length,
           });
 
-          const uploadResult = await uploadFile(pageFileKey, pageBuffer, {
-            bucket,
-            contentType: "application/pdf",
-            metadata: {
-              workflowId,
-              originalFileKey: fileKey,
-              pageNumber: pageNumber.toString(),
-              totalPages: totalPages.toString(),
-            },
+          const uploadedFile = await directusDocumentService.uploadFile({
+            filename: pageFilename,
+            buffer: pageBuffer,
+            mimetype: "application/pdf",
+            title: `Page ${pageNumber} - Workflow ${workflowId}`,
           });
+
+          if (!uploadedFile || !uploadedFile.id) {
+            throw new Error(`Failed to upload page ${pageNumber} to Directus`);
+          }
 
           extractedPages.push({
             pageNumber,
-            fileKey: pageFileKey,
+            fileId: uploadedFile.id,
             mimeType: "application/pdf",
-            size: uploadResult.size,
+            size: pageBuffer.length,
           });
 
           logger.debug("[PdfSplitService] Page uploaded successfully", {
             pageNumber,
-            pageFileKey,
-            size: uploadResult.size,
+            fileId: uploadedFile.id,
+            size: pageBuffer.length,
           });
         } catch (pageError) {
           const errorMessage = pageError instanceof Error ? pageError.message : String(pageError);
@@ -136,7 +138,7 @@ export class PdfSplitService {
           logger.error("[PdfSplitService] Failed to extract page", {
             pageNumber,
             workflowId,
-            fileKey,
+            fileId,
             error: errorMessage,
           });
 
@@ -160,7 +162,7 @@ export class PdfSplitService {
         pages: extractedPages,
         totalPages,
         processingTimeMs: processingTime,
-        originalFileKey: fileKey,
+        originalFileId: fileId,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -168,7 +170,7 @@ export class PdfSplitService {
 
       logger.error("[PdfSplitService] PDF split failed", {
         workflowId,
-        fileKey,
+        fileId,
         error: errorMessage,
         stack: errorStack,
       });
@@ -198,18 +200,20 @@ export class PdfSplitService {
   /**
    * Gets the number of pages in a PDF without fully processing it
    *
-   * @param fileKey - MinIO key of the PDF file
-   * @param bucket - MinIO bucket (optional)
+   * @param fileId - Directus file ID
    * @returns Number of pages in the PDF
    */
-  async getPdfPageCount(fileKey: string, bucket?: string): Promise<number> {
+  async getPdfPageCount(fileId: string): Promise<number> {
     try {
-      const pdfBuffer = await downloadFile(fileKey, bucket);
+      const pdfBuffer = await directusDocumentService.downloadFile(fileId);
+      if (!pdfBuffer) {
+        throw new Error(`Failed to download file ${fileId}`);
+      }
       const pdfDoc = await PDFDocument.load(pdfBuffer);
       return pdfDoc.getPageCount();
     } catch (error) {
       logger.error("[PdfSplitService] Failed to get page count", {
-        fileKey,
+        fileId,
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;

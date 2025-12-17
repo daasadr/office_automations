@@ -7,6 +7,9 @@ include:
   - ./docker/minio/minio.yml
   - ./docker/keydb/keydb.yml
   - ./docker/mailhog/mailhog.yml
+  
+  # BullMQ Workers
+  - ./docker/workers/workers.yml
+  
   # Unused services for current simple workflow:
   # - ./docker/temporal/temporal.yml
-  # - ./docker/workers/workers.yml

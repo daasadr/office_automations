@@ -61,11 +61,11 @@ const router = Router();
  *     CreateWorkflowRequest:
  *       type: object
  *       required:
- *         - fileKey
+ *         - fileId
  *       properties:
- *         fileKey:
+ *         fileId:
  *           type: string
- *           description: MinIO key of the uploaded file
+ *           description: Directus file ID of the uploaded file
  *         fileName:
  *           type: string
  *           description: Original filename
@@ -120,17 +120,17 @@ const router = Router();
  */
 router.post("/pdf", async (req, res, next) => {
   try {
-    const { fileKey, fileName, mimeType, source, priority, tenantId } = req.body;
+    const { fileId, fileName, mimeType, source, priority, tenantId } = req.body;
 
     // Validate required fields
-    if (!fileKey) {
+    if (!fileId) {
       return res.status(400).json({
-        error: "fileKey is required",
+        error: "fileId is required",
       });
     }
 
     logger.info("[WorkflowRoutes] Creating PDF workflow", {
-      fileKey,
+      fileId,
       fileName,
       source,
     });
@@ -139,7 +139,7 @@ router.post("/pdf", async (req, res, next) => {
     const workflow = await workflowService.createWorkflow({
       type: "pdf_processing",
       source: source || "upload",
-      inputFileKey: fileKey,
+      inputFileKey: fileId, // Store Directus file ID
       inputFileName: fileName || "unknown.pdf",
       inputFileMime: mimeType || "application/pdf",
       tenantId,
@@ -151,7 +151,7 @@ router.post("/pdf", async (req, res, next) => {
       JOB_NAMES.PDF_WORKFLOW.START,
       {
         workflowId: workflow.id!,
-        fileKey,
+        fileId,
         fileName,
         mimeType,
         priority,
@@ -428,7 +428,7 @@ router.post("/:id/retry", async (req, res, next) => {
       JOB_NAMES.PDF_WORKFLOW.START,
       {
         workflowId: id,
-        fileKey: workflow.input_file_key!,
+        fileId: workflow.input_file_key!, // This stores the Directus file ID
         fileName: workflow.input_file_name,
         mimeType: workflow.input_file_mime,
       },

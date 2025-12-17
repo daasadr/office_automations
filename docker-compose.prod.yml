@@ -24,12 +24,14 @@ include:
   - ./backend/docker/orchestration/orchestration.yml
   - ./backend/docker/mailhog/mailhog.yml
   
+  # BullMQ Workers
+  - ./backend/docker/workers/workers.yml
+  
   # Frontend
   - ./frontend/docker/frontend.yml
   
   # Future services (commented out)
   # - ./backend/docker/temporal/temporal.yml
-  # - ./backend/docker/workers/workers.yml
   # - ./backend/docker/email-collector/email-collector.yml
 
 networks:

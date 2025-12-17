@@ -63,8 +63,8 @@ export type ErpOperation = "create_invoice" | "update_vendor" | "link_document";
 export interface PdfWorkflowJobData {
   /** UUID of the workflow record in Directus */
   workflowId: string;
-  /** MinIO key of the uploaded PDF file */
-  fileKey: string;
+  /** Directus file ID of the uploaded PDF */
+  fileId: string;
   /** Original filename for display/logging */
   fileName?: string;
   /** MIME type of the file */
@@ -88,8 +88,8 @@ export interface PageLlmJobData {
   pageId: string;
   /** Page number (1-based) */
   pageNumber: number;
-  /** MinIO key of the extracted page (PDF or image) */
-  pageFileKey: string;
+  /** Directus file ID of the extracted page (PDF) */
+  pageFileId: string;
   /** Total pages in the document (for progress tracking) */
   totalPages?: number;
 }

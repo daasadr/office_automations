@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { FileSpreadsheet, ArrowRight, FileCheck, Download } from "lucide-react";
+import { FileSpreadsheet, Package, ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn, withBasePath } from "@/lib/utils";
 ---
@@ -17,9 +17,25 @@ import { cn, withBasePath } from "@/lib/utils";
     }
   }
 
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   .animate-fade-in {
     opacity: 0;
     animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    opacity: 0;
+    animation: scaleIn 0.6s ease-out forwards;
   }
 
   .title {
@@ -30,87 +46,118 @@ import { cn, withBasePath } from "@/lib/utils";
     animation-delay: 0.4s;
   }
 
-  .step-1 {
+  .card-1 {
     animation-delay: 0.6s;
   }
 
-  .step-2 {
+  .card-2 {
     animation-delay: 0.8s;
   }
 
-  .step-3 {
-    animation-delay: 1s;
+  .module-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
   }
 
-  .cta-button {
-    animation-delay: 1.2s;
+  .module-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  .module-card:hover .icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  .icon-wrapper {
+    transition: all 0.3s ease;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .animate-fade-in {
+    .animate-fade-in,
+    .animate-scale-in {
       animation: none;
       opacity: 1;
+    }
+    
+    .module-card:hover {
+      transform: none;
+    }
+    
+    .module-card:hover .icon-wrapper {
+      transform: none;
     }
   }
 </style>
 
-<BaseLayout title="Zpracování dokumentů průběžné evidence odpadů do Excelu" currentStep="welcome">
+<BaseLayout title="Automatizace kancelářských procesů" currentStep="welcome">
   <div class="container mx-auto px-4 py-16">
-    <div class="max-w-3xl mx-auto text-center space-y-8">
-      <h1 class="animate-fade-in title text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary via-orange-500 to-amber-500 bg-clip-text text-transparent">
-        Zpracování PDF dokumentů průběžné evidence odpadů do Excelu
-      </h1>
-      <p class="animate-fade-in description text-xl text-muted-foreground">
-        Kontroluje nahraný soubor, zda obsahuje potřebné údaje <br />a převede PDF do Excel souboru. 
-        <br />
-        <br />
-        Nahrajte soubory a aplikace se postará o zbytek.
-      </p>
-
-      <div class="grid md:grid-cols-3 gap-8 mt-16">
-        <div class="animate-fade-in step-1 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-          <div class="p-3 rounded-full bg-primary/10 text-primary">
-            <FileSpreadsheet className="w-8 h-8" />
-          </div>
-          <h3 class="text-lg font-semibold">1. Nahrání souboru</h3>
-          <p class="text-sm text-muted-foreground text-center">
-            Nahrajte svůj PDF soubor
-          </p>
-        </div>
-
-        <div class="animate-fade-in step-2 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-          <div class="p-3 rounded-full bg-primary/10 text-primary">
-            <FileCheck className="w-8 h-8" />
-          </div>
-          <h3 class="text-lg font-semibold">2. Zpracování</h3>
-          <p class="text-sm text-muted-foreground text-center">
-            Systém kontroluje nahraný soubor, zda obsahuje potřebné údaje a vygeneruje Excel soubor.
-          </p>
-        </div>
-
-        <div class="animate-fade-in step-3 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-          <div class="p-3 rounded-full bg-primary/10 text-primary">
-            <Download className="w-8 h-8" />
-          </div>
-          <h3 class="text-lg font-semibold">3. Stažení</h3>
-          <p class="text-sm text-muted-foreground text-center">
-            Získejte zpracovaný soubor připravený ke stažení během chvilky.
-          </p>
-        </div>
+    <div class="max-w-5xl mx-auto">
+      <!-- Header Section -->
+      <div class="text-center space-y-6 mb-16">
+        <h1 class="animate-fade-in title text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-primary via-orange-500 to-amber-500 bg-clip-text text-transparent">
+          Automatizace kancelářských procesů
+        </h1>
+        <p class="animate-fade-in description text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+          Vyberte si modul pro zpracování vašich dokumentů
+        </p>
       </div>
 
-      <div class="mt-16">
-        <a
-          href={withBasePath("/upload")}
-          class={cn(
-            buttonVariants({ size: "lg" }),
-            "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-          )}
+      <!-- Module Cards -->
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Kvalita Module Card -->
+        <a 
+          href={withBasePath("/kvalita")}
+          class="animate-scale-in card-1 module-card block"
         >
-          Začít
-          <ArrowRight className="w-5 h-5" />
+          <div class="h-full flex flex-col p-8 rounded-2xl border-2 bg-card text-card-foreground shadow-lg">
+            <div class="icon-wrapper mb-6 p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 text-blue-600 dark:from-blue-400/10 dark:to-blue-500/10 dark:text-blue-400 w-fit">
+              <FileSpreadsheet className="w-12 h-12" />
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-3">Kvalita</h2>
+            
+            <p class="text-muted-foreground mb-6 flex-grow">
+              Zpracování PDF dokumentů průběžné evidence odpadů do Excelu. Kontrola a konverze dokumentů s automatickým zpracováním.
+            </p>
+            
+            <div class="flex items-center text-primary font-semibold">
+              Otevřít modul
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </div>
+          </div>
         </a>
+
+        <!-- Logistika Module Card -->
+        <a 
+          href={withBasePath("/logistika")}
+          class="animate-scale-in card-2 module-card block"
+        >
+          <div class="h-full flex flex-col p-8 rounded-2xl border-2 bg-card text-card-foreground shadow-lg">
+            <div class="icon-wrapper mb-6 p-4 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-600/10 text-orange-600 dark:from-orange-400/10 dark:to-amber-500/10 dark:text-orange-400 w-fit">
+              <Package className="w-12 h-12" />
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-3">Logistika</h2>
+            
+            <p class="text-muted-foreground mb-6 flex-grow">
+              Automatizace logistických procesů a správa dokumentace. Zpracování a organizace logistických dat.
+            </p>
+            
+            <div class="flex items-center text-primary font-semibold">
+              Otevřít modul
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Optional: Info Section -->
+      <div class="mt-16 text-center">
+        <p class="text-sm text-muted-foreground">
+          Potřebujete pomoc? Kontaktujte <a href="mailto:support@example.com" class="text-primary hover:underline">technickou podporu</a>
+        </p>
       </div>
     </div>
   </div>
 </BaseLayout>
+

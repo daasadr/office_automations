@@ -1,0 +1,117 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Package, ArrowRight, Upload, FileCheck, Download } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn, withBasePath } from "@/lib/utils";
+---
+
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .title {
+    animation-delay: 0.2s;
+  }
+
+  .description {
+    animation-delay: 0.4s;
+  }
+
+  .step-1 {
+    animation-delay: 0.6s;
+  }
+
+  .step-2 {
+    animation-delay: 0.8s;
+  }
+
+  .step-3 {
+    animation-delay: 1s;
+  }
+
+  .cta-button {
+    animation-delay: 1.2s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in {
+      animation: none;
+      opacity: 1;
+    }
+  }
+</style>
+
+<BaseLayout title="Logistika - Automatizace procesů" currentStep="welcome">
+  <div class="container mx-auto px-4 py-16">
+    <div class="max-w-3xl mx-auto text-center space-y-8">
+      <h1 class="animate-fade-in title text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 bg-clip-text text-transparent">
+        Logistika - Automatizace procesů
+      </h1>
+      <p class="animate-fade-in description text-xl text-muted-foreground">
+        Zpracování a automatizace logistických dokumentů.
+        <br />
+        <br />
+        Nahrajte soubory a aplikace se postará o zbytek.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-8 mt-16">
+        <div class="animate-fade-in step-1 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
+            <Upload className="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-semibold">1. Nahrání souboru</h3>
+          <p class="text-sm text-muted-foreground text-center">
+            Nahrajte svůj dokument
+          </p>
+        </div>
+
+        <div class="animate-fade-in step-2 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
+            <FileCheck className="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-semibold">2. Zpracování</h3>
+          <p class="text-sm text-muted-foreground text-center">
+            Systém automaticky zpracuje vaše dokumenty
+          </p>
+        </div>
+
+        <div class="animate-fade-in step-3 flex flex-col items-center space-y-4 p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
+            <Download className="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-semibold">3. Stažení</h3>
+          <p class="text-sm text-muted-foreground text-center">
+            Získejte zpracovaný soubor připravený ke stažení
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-16">
+        <a
+          href={withBasePath("/logistika/upload")}
+          class={cn(
+            buttonVariants({ size: "lg" }),
+            "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+          )}
+        >
+          Začít
+          <ArrowRight className="w-5 h-5" />
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+

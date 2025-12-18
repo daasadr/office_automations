@@ -19,7 +19,7 @@ import {
 } from "@orchestration-api/queues/types";
 import { erpSyncQueue } from "@orchestration-api/queues";
 import { workflowService } from "@orchestration-api/services/WorkflowService";
-import { validatePdfContentWithGemini } from "@orchestration-api/services/llm";
+import { validatePdfContentWithGemini, RateLimitError } from "@orchestration-api/services/llm";
 import { directusDocumentService } from "@orchestration-api/lib/directus";
 import { logger } from "@orchestration-api/utils/logger";
 import { config } from "@orchestration-api/config";
@@ -179,9 +179,21 @@ const worker = new Worker<PageLlmJobData>(
         // Handle LLM-specific errors
         const errorMessage = llmError instanceof Error ? llmError.message : String(llmError);
 
-        // Check if it's a rate limit error (should retry)
+        // Check if it's a rate limit error (should retry with proper backoff)
+        if (llmError instanceof RateLimitError) {
+          logger.warn("[LlmWorker] Rate limited by rate limiter, will retry", {
+            workflowId,
+            pageNumber,
+            retryAfterMs: llmError.retryAfterMs,
+            remaining: llmError.remaining,
+            service: llmError.serviceName,
+          });
+          throw llmError; // Let BullMQ handle retry with backoff
+        }
+
+        // Check if it's a Gemini API rate limit error (should retry)
         if (errorMessage.includes("rate") || errorMessage.includes("429")) {
-          logger.warn("[LlmWorker] Rate limited, will retry", {
+          logger.warn("[LlmWorker] Rate limited by Gemini API, will retry", {
             workflowId,
             pageNumber,
             error: errorMessage,

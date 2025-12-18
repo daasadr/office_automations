@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logger } from "@orchestration-api/utils/logger";
 import type { ExtractedData } from "@orchestration-api/services/types";
 import { REQUIRED_FIELDS } from "@orchestration-api/services/llm/constants";
@@ -13,41 +12,55 @@ import {
   calculateConfidence,
   validateResponseStructure,
 } from "@orchestration-api/services/llm/utils/validation";
+import {
+  RateLimitedGeminiClient,
+  createRateLimitedGeminiClient,
+} from "@orchestration-api/services/llm/RateLimitedGeminiClient";
+import type { GeminiModel } from "@orchestration-api/lib/rateLimit";
+import { config } from "@orchestration-api/config";
 
-// Initialize Gemini configuration
+// Initialize Gemini configuration from centralized config
 const geminiConfig: GeminiConfig = {
-  apiKey: process.env.GEMINI_API_KEY,
-  model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-  isConfigured: Boolean(process.env.GEMINI_API_KEY),
+  apiKey: config.gemini.apiKey,
+  model: config.gemini.model,
+  isConfigured: Boolean(config.gemini.apiKey),
 };
 
 if (!geminiConfig.isConfigured) {
   logger.warn("Missing GEMINI_API_KEY environment variable");
 }
 
-const gemini = geminiConfig.isConfigured ? new GoogleGenerativeAI(geminiConfig.apiKey!) : null;
+// Rate-limited Gemini client singleton
+const rateLimitedGeminiClient: RateLimitedGeminiClient | null = geminiConfig.isConfigured
+  ? createRateLimitedGeminiClient(geminiConfig.apiKey, geminiConfig.model as GeminiModel, {
+      maxRetries: config.gemini.rateLimit.maxRetries,
+      throwOnRateLimit: true,
+      customRateLimit:
+        config.gemini.rateLimit.maxRequestsPerMinute > 0
+          ? config.gemini.rateLimit.maxRequestsPerMinute
+          : undefined,
+    })
+  : null;
 
 /**
- * Validates PDF content using Gemini API
+ * Validates PDF content using Gemini API with rate limiting
  * @param pdfBuffer - The PDF file as an ArrayBuffer
  * @returns Validation results with present/missing fields and extracted data
  * @throws {Error} If Gemini API is not configured or validation fails
+ * @throws {RateLimitError} If rate limit is exceeded and retries are exhausted
  */
 export async function validatePdfContentWithGemini(
   pdfBuffer: ArrayBuffer
 ): Promise<ValidationResult> {
   try {
     // Verify Gemini API key is available
-    if (!geminiConfig.isConfigured || !gemini) {
+    if (!geminiConfig.isConfigured || !rateLimitedGeminiClient) {
       throw new Error(
         "Gemini API key is not configured. Please set GEMINI_API_KEY environment variable."
       );
     }
 
     logger.info(`Sending PDF request to Gemini using model: ${geminiConfig.model}`);
-
-    // Get the model
-    const model = gemini.getGenerativeModel({ model: geminiConfig.model });
 
     // Convert ArrayBuffer to Uint8Array for Gemini
     const pdfData = new Uint8Array(pdfBuffer);
@@ -65,10 +78,9 @@ export async function validatePdfContentWithGemini(
       },
     ];
 
-    // Generate content
-    const result = await model.generateContent(parts);
-    const response = await result.response;
-    const responseContent = response.text();
+    // Generate content with rate limiting
+    const result = await rateLimitedGeminiClient.generateContent(parts);
+    const responseContent = result.response.text();
 
     logger.info("Received response from Gemini");
 
@@ -133,6 +145,51 @@ export async function validateDocumentContent(
   throw new Error("Invalid input type for document validation. Only PDF ArrayBuffer is supported.");
 }
 
+/**
+ * Get the current rate limit status for Gemini
+ * Useful for monitoring and debugging rate limiting behavior
+ */
+export async function getGeminiRateLimitStatus() {
+  if (!rateLimitedGeminiClient) {
+    return {
+      configured: false,
+      model: geminiConfig.model,
+      status: null,
+    };
+  }
+
+  const status = await rateLimitedGeminiClient.getRateLimitStatus();
+  const config = rateLimitedGeminiClient.getRateLimitConfig();
+
+  return {
+    configured: true,
+    model: geminiConfig.model,
+    status: {
+      ...status,
+      maxRequests: config.maxRequests,
+      window: config.window,
+    },
+  };
+}
+
+/**
+ * Reset the Gemini rate limit counter
+ * Use with caution - primarily for testing/debugging
+ */
+export async function resetGeminiRateLimit(): Promise<void> {
+  if (rateLimitedGeminiClient) {
+    await rateLimitedGeminiClient.resetRateLimit();
+  }
+}
+
 // Re-export types for convenience
 export type { ValidationResult, ValidationOptions, GeminiConfig } from "./types";
 export { REQUIRED_FIELDS } from "./constants";
+
+// Re-export rate limiting utilities
+export { RateLimitedGeminiClient, createRateLimitedGeminiClient } from "./RateLimitedGeminiClient";
+export {
+  RateLimitError,
+  type RateLimitResult,
+  type GeminiModel,
+} from "@orchestration-api/lib/rateLimit";

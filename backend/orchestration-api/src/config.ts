@@ -36,6 +36,10 @@ interface EnvironmentConfig {
   gemini: {
     apiKey?: string;
     model: string;
+    rateLimit: {
+      maxRequestsPerMinute: number;
+      maxRetries: number;
+    };
   };
   jobCleanup: {
     maxAgeHours: number;
@@ -126,6 +130,11 @@ function createConfig(): EnvironmentConfig {
     gemini: {
       apiKey: process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      rateLimit: {
+        // 0 = use default model-specific limit
+        maxRequestsPerMinute: parseInt(process.env.GEMINI_RATE_LIMIT_RPM || "0", 10),
+        maxRetries: parseInt(process.env.GEMINI_RATE_LIMIT_MAX_RETRIES || "3", 10),
+      },
     },
     jobCleanup: {
       maxAgeHours: parseInt(process.env.JOB_CLEANUP_MAX_AGE_HOURS || "24", 10),
@@ -188,6 +197,7 @@ if (config.nodeEnv === "development") {
     minioConfigured: Boolean(config.minio.accessKey && config.minio.secretKey),
     geminiConfigured: Boolean(config.gemini.apiKey),
     geminiModel: config.gemini.model,
+    geminiRateLimit: config.gemini.rateLimit,
     jobCleanup: config.jobCleanup,
     sentryConfigured: Boolean(config.sentry.dsn),
     sentryEnabled: config.sentry.enabled,

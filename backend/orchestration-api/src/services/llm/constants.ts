@@ -1,14 +1,12 @@
 /**
- * Required fields for waste document validation
+ * LLM Constants
+ *
+ * This file re-exports field constants from the prompts module for backwards compatibility.
+ * For new code, prefer importing directly from the prompts module.
  */
-export const REQUIRED_FIELDS = [
-  "Druh odpadu (katalogové číslo podle vyhlášky č. 8/2021 Sb.)",
-  "Kategorie odpadu (O – ostatní, N – nebezpečný)",
-  "Množství odpadu (v tunách nebo kg)",
-  "Způsob nakládání (přeprava, předání, využití, odstranění)",
-  "Datum vzniku nebo převzetí/předání odpadu",
-  "Identifikace příjemce/předávající osoby (IČO, název, adresa)",
-  "Přepravce odpadu (pokud je jiný než předávající nebo příjemce)",
-  "Doklady spojené s odpadem (převodní listy, vážní lístky, smlouvy)",
-  "Identifikační čísla zařízení (IČZ), kam byl odpad předán (pokud známé)",
-] as const;
+export { WASTE_REQUIRED_FIELDS, LOGISTICS_REQUIRED_FIELDS } from "./prompts";
+
+/**
+ * @deprecated Use WASTE_REQUIRED_FIELDS or import from prompts module directly
+ */
+export { WASTE_REQUIRED_FIELDS as REQUIRED_FIELDS } from "./prompts";

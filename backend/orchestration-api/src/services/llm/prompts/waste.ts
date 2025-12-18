@@ -1,10 +1,29 @@
-import { REQUIRED_FIELDS } from "@orchestration-api/services/llm/constants";
+import type { PromptConfig, PromptBuilder } from "./types";
 
 /**
- * Creates the prompt for Gemini PDF analysis
+ * Required fields for waste document validation
  */
-export function createAnalysisPrompt(): string {
-  return `Zkontroluj prosím tento PDF dokument průběžné evidence odpadů a urči, které z následujících informací obsahuje a které chybí.
+export const WASTE_REQUIRED_FIELDS = [
+  "Druh odpadu (katalogové číslo podle vyhlášky č. 8/2021 Sb.)",
+  "Kategorie odpadu (O – ostatní, N – nebezpečný)",
+  "Množství odpadu (v tunách nebo kg)",
+  "Způsob nakládání (přeprava, předání, využití, odstranění)",
+  "Datum vzniku nebo převzetí/předání odpadu",
+  "Identifikace příjemce/předávající osoby (IČO, název, adresa)",
+  "Přepravce odpadu (pokud je jiný než předávající nebo příjemce)",
+  "Doklady spojené s odpadem (převodní listy, vážní lístky, smlouvy)",
+  "Identifikační čísla zařízení (IČZ), kam byl odpad předán (pokud známé)",
+] as const;
+
+/**
+ * Waste document analysis prompt configuration
+ */
+const wastePromptConfig: PromptConfig = {
+  id: "waste",
+  name: "Waste Document Analysis",
+  description: "Analyzes waste handling documents (průběžná evidence odpadů)",
+  requiredFields: WASTE_REQUIRED_FIELDS,
+  template: `Zkontroluj prosím tento PDF dokument průběžné evidence odpadů a urči, které z následujících informací obsahuje a které chybí.
 
 DŮLEŽITÉ: Analyzuj všechny stránky v dokumentu - informace se mohou nacházet na jakékoli stránce. Dokument může obsahovat tabulky s mnoha řádky dat.
 
@@ -102,5 +121,40 @@ DŮLEŽITÉ:
 - Množství musí být číslo (float), ne string
 
 Kontrolované typy informací:
-${REQUIRED_FIELDS.map((field, index) => `${index + 1}. ${field}`).join("\n")}`;
+{{REQUIRED_FIELDS}}`,
+};
+
+/**
+ * Waste prompt builder
+ */
+export class WastePromptBuilder implements PromptBuilder {
+  private config: PromptConfig;
+
+  constructor() {
+    this.config = wastePromptConfig;
+  }
+
+  getConfig(): PromptConfig {
+    return this.config;
+  }
+
+  getRequiredFields(): readonly string[] {
+    return this.config.requiredFields;
+  }
+
+  buildPrompt(): string {
+    const fieldsText = this.config.requiredFields
+      .map((field, index) => `${index + 1}. ${field}`)
+      .join("\n");
+
+    return this.config.template.replace("{{REQUIRED_FIELDS}}", fieldsText);
+  }
 }
+
+/**
+ * Create a waste prompt builder instance
+ */
+export function createWastePromptBuilder(): WastePromptBuilder {
+  return new WastePromptBuilder();
+}
+

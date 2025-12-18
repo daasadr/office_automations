@@ -1,13 +1,13 @@
 import { logger } from "@orchestration-api/utils/logger";
 import type { ExtractedData } from "@orchestration-api/services/types";
-import { REQUIRED_FIELDS } from "@orchestration-api/services/llm/constants";
 import type {
   GeminiConfig,
   ValidationResult,
   ValidationOptions,
+  PromptType,
 } from "@orchestration-api/services/llm/types";
 import { parseJsonResponse } from "@orchestration-api/services/llm/utils/jsonParser";
-import { createAnalysisPrompt } from "@orchestration-api/services/llm/utils/prompt";
+import { getPromptBuilder, getRequiredFields } from "@orchestration-api/services/llm/prompts";
 import {
   calculateConfidence,
   validateResponseStructure,
@@ -43,14 +43,21 @@ const rateLimitedGeminiClient: RateLimitedGeminiClient | null = geminiConfig.isC
   : null;
 
 /**
+ * Default prompt type if not specified
+ */
+const DEFAULT_PROMPT_TYPE: PromptType = "waste";
+
+/**
  * Validates PDF content using Gemini API with rate limiting
  * @param pdfBuffer - The PDF file as an ArrayBuffer
+ * @param promptType - The type of prompt to use for validation (defaults to "waste")
  * @returns Validation results with present/missing fields and extracted data
  * @throws {Error} If Gemini API is not configured or validation fails
  * @throws {RateLimitError} If rate limit is exceeded and retries are exhausted
  */
 export async function validatePdfContentWithGemini(
-  pdfBuffer: ArrayBuffer
+  pdfBuffer: ArrayBuffer,
+  promptType: PromptType = DEFAULT_PROMPT_TYPE
 ): Promise<ValidationResult> {
   try {
     // Verify Gemini API key is available
@@ -60,12 +67,17 @@ export async function validatePdfContentWithGemini(
       );
     }
 
-    logger.info(`Sending PDF request to Gemini using model: ${geminiConfig.model}`);
+    logger.info(
+      `Sending PDF request to Gemini using model: ${geminiConfig.model}, prompt type: ${promptType}`
+    );
 
     // Convert ArrayBuffer to Uint8Array for Gemini
     const pdfData = new Uint8Array(pdfBuffer);
 
-    const prompt = createAnalysisPrompt();
+    // Get the appropriate prompt builder and build the prompt
+    const promptBuilder = getPromptBuilder(promptType);
+    const prompt = promptBuilder.buildPrompt();
+    const requiredFields = promptBuilder.getRequiredFields();
 
     // Create the content parts
     const parts = [
@@ -95,7 +107,7 @@ export async function validatePdfContentWithGemini(
     // Calculate confidence based on how many fields were found
     const confidence = calculateConfidence(
       parsedResult.present_fields as unknown[],
-      REQUIRED_FIELDS.length
+      requiredFields.length
     );
 
     return {
@@ -110,6 +122,7 @@ export async function validatePdfContentWithGemini(
         ? (parsedResult.extracted_data as ExtractedData[])
         : [],
       provider: "gemini",
+      promptType,
     };
   } catch (error) {
     logger.error("Error validating PDF with Gemini:", error);
@@ -123,7 +136,7 @@ export async function validatePdfContentWithGemini(
 /**
  * Validates document content using the specified LLM provider
  * @param input - The document as an ArrayBuffer (PDF)
- * @param options - Validation options including provider selection
+ * @param options - Validation options including provider selection and prompt type
  * @returns Validation results
  * @throws {Error} If input type is invalid or validation fails
  */
@@ -131,12 +144,12 @@ export async function validateDocumentContent(
   input: ArrayBuffer,
   options: ValidationOptions = {}
 ): Promise<ValidationResult> {
-  const { provider = "gemini" } = options;
+  const { provider = "gemini", promptType = DEFAULT_PROMPT_TYPE } = options;
 
   // Only support ArrayBuffer (PDF) input with Gemini
   if (input instanceof ArrayBuffer) {
     if (provider === "gemini") {
-      return validatePdfContentWithGemini(input);
+      return validatePdfContentWithGemini(input, promptType);
     } else {
       throw new Error("Only Gemini provider is supported for PDF validation.");
     }
@@ -183,8 +196,18 @@ export async function resetGeminiRateLimit(): Promise<void> {
 }
 
 // Re-export types for convenience
-export type { ValidationResult, ValidationOptions, GeminiConfig } from "./types";
-export { REQUIRED_FIELDS } from "./constants";
+export type { ValidationResult, ValidationOptions, GeminiConfig, PromptType } from "./types";
+export { REQUIRED_FIELDS, WASTE_REQUIRED_FIELDS, LOGISTICS_REQUIRED_FIELDS } from "./constants";
+
+// Re-export prompt utilities
+export {
+  getPromptBuilder,
+  getPrompt,
+  getRequiredFields,
+  getPromptConfig,
+  getAvailablePromptTypes,
+  isValidPromptType,
+} from "./prompts";
 
 // Re-export rate limiting utilities
 export { RateLimitedGeminiClient, createRateLimitedGeminiClient } from "./RateLimitedGeminiClient";

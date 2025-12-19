@@ -36,14 +36,6 @@ services:
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
       DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
       
-      # MinIO connection (for Directus file storage)
-      MINIO_ENDPOINT: minio
-      MINIO_API_PORT: 9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_USE_SSL: false
-      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
-      
       # Worker settings
       NODE_ENV: ${NODE_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -105,14 +97,6 @@ services:
       DIRECTUS_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_API_TOKEN}
       DIRECTUS_API_TOKEN: ${DIRECTUS_API_TOKEN}
-      
-      # MinIO connection (for Directus file storage)
-      MINIO_ENDPOINT: minio
-      MINIO_API_PORT: 9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_USE_SSL: false
-      MINIO_BUCKET: ${MINIO_DEFAULT_BUCKET:-documents}
       
       # LLM Configuration
       GEMINI_API_KEY: ${GEMINI_API_KEY}

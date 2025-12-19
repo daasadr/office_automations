@@ -1,6 +1,6 @@
 import type {
-  ExtractedRecordDetail,
   DuplicateRecord,
+  ExtractedRecordDetail,
 } from "@/components/FoundationDocumentProcessor/types";
 import { cn } from "@/lib/utils";
 

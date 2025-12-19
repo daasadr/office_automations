@@ -3,13 +3,13 @@
  * Shows a friendly banner when notifications are supported but not enabled
  */
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   getNotificationPermission,
-  requestNotificationPermissionWithFeedback,
   type NotificationPermissionState,
+  requestNotificationPermissionWithFeedback,
 } from "@/lib/notifications";
 
 export function NotificationPermissionBanner() {

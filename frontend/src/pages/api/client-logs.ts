@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { withLogging, createSuccessResponse, createErrorResponse } from "@/lib/middleware";
-import { generateRequestId, createRequestLogger } from "@/lib/logger";
 import type { ClientLogData } from "@/lib/client-logger";
+import { createRequestLogger, generateRequestId } from "@/lib/logger";
+import { createErrorResponse, createSuccessResponse, withLogging } from "@/lib/middleware";
 
 const clientLogsHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

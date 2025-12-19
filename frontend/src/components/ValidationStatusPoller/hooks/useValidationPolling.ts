@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLogger } from "@/lib/client-logger";
-import type { ValidationData } from "../types";
-import { withBasePath } from "@/lib/utils";
 import { notifyProcessingComplete } from "@/lib/notifications";
+import { withBasePath } from "@/lib/utils";
+import type { ValidationData } from "../types";
 
 interface UseValidationPollingProps {
   documentId?: string;

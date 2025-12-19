@@ -1,5 +1,5 @@
-import { useRef } from "react";
 import { CheckCircle, Upload } from "lucide-react";
+import { useRef } from "react";
 import { formatFileSize } from "@/components/UploadForm/actions/fileValidation";
 import { cn } from "@/lib/utils";
 

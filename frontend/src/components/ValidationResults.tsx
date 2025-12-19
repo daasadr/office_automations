@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 interface ValidationResultsProps {
   present_fields: string[];

@@ -1,4 +1,4 @@
-import { FileText, Building2, Calendar, Banknote } from "lucide-react";
+import { Banknote, Building2, Calendar, FileText } from "lucide-react";
 import type { InvoiceHeader } from "../types";
 
 interface InvoiceHeaderCardProps {

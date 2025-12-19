@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, AlertTriangle, Clock, Layers } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Layers, XCircle } from "lucide-react";
 import type { LogisticsDocumentData } from "../types";
 
 interface SummaryCardProps {

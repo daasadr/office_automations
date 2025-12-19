@@ -1,9 +1,9 @@
-import { CloudUpload, ArrowRight, Table2, AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CloudUpload, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ValidationResults } from "@/components/ValidationResults";
-import { ExtractedDataPreview } from "./ExtractedDataPreview";
-import type { ValidationData } from "../types";
 import { withBasePath } from "@/lib/utils";
+import type { ValidationData } from "../types";
+import { ExtractedDataPreview } from "./ExtractedDataPreview";
 
 interface ResultsStateProps {
   validationData: ValidationData;

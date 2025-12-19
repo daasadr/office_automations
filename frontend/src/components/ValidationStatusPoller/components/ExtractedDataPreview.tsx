@@ -1,4 +1,4 @@
-import { Package, Building2, User } from "lucide-react";
+import { Building2, Package, User } from "lucide-react";
 import type { ExtractedDataRecord } from "../types";
 
 interface ExtractedDataPreviewProps {

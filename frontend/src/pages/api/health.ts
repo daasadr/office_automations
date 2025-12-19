@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { withLogging, createLoggedResponse, loggedFetch } from "@/lib/middleware";
 import { generateRequestId, logPerformance } from "@/lib/logger";
+import { createLoggedResponse, loggedFetch, withLogging } from "@/lib/middleware";
 import { ORCHESTRATION_API_URL } from "@/server-constants";
 
 interface ServiceStatus {

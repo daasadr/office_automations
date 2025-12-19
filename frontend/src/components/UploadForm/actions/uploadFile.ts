@@ -1,4 +1,4 @@
-import type { UploadResult, UploadError } from "@/components/UploadForm/types";
+import type { UploadError, UploadResult } from "@/components/UploadForm/types";
 import type { useLogger } from "@/lib/client-logger";
 import { withBasePath } from "@/lib/utils";
 

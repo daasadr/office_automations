@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { withLogging, createErrorResponse, loggedFetch, RequestTimer } from "@/lib/middleware";
 import { generateRequestId } from "@/lib/logger";
-import { ORCHESTRATION_API_URL, CONTENT_TYPE_JSON } from "@/server-constants";
+import { createErrorResponse, loggedFetch, RequestTimer, withLogging } from "@/lib/middleware";
+import { CONTENT_TYPE_JSON, ORCHESTRATION_API_URL } from "@/server-constants";
 
 const generateExcelHandler: APIRoute = async ({ request }) => {
   const requestId = generateRequestId();

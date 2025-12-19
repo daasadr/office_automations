@@ -1,4 +1,4 @@
-import { Loader2 as UploadSpinner, Upload } from "lucide-react";
+import { Upload, Loader2 as UploadSpinner } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SubmitButtonProps {

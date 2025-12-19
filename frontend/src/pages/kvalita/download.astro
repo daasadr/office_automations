@@ -1,10 +1,10 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
+import { CloudUpload, FileText } from "lucide-react";
 import { FoundationDocumentProcessor } from "@/components/FoundationDocumentProcessor/index";
-import { FileText, CloudUpload } from "lucide-react";
-import { ORCHESTRATION_API_URL } from "@/server-constants";
 import { buttonVariants } from "@/components/ui/button";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 import { cn, withBasePath } from "@/lib/utils";
+import { ORCHESTRATION_API_URL } from "@/server-constants";
 
 interface ValidationResult {
   present_fields?: string[];
@@ -24,7 +24,7 @@ if (!documentId && !jobId) {
 
 // Get validation result from backend API
 let validationData: ValidationResult | null = null;
-let sourceDocumentId: string | undefined = undefined;
+let sourceDocumentId: string | undefined;
 
 try {
   // Prefer document UUID (persists after restart) over job ID (in-memory)

@@ -1,17 +1,17 @@
 import type { APIRoute } from "astro";
+import { generateRequestId, logSecurityEvent, logUploadProgress } from "@/lib/logger";
 import {
-  withLogging,
   createErrorResponse,
   createSuccessResponse,
   loggedFetch,
   RequestTimer,
+  withLogging,
 } from "@/lib/middleware";
-import { generateRequestId, logUploadProgress, logSecurityEvent } from "@/lib/logger";
 import {
-  ORCHESTRATION_API_URL,
   CONTENT_TYPE_PDF,
-  MAX_FILE_SIZE,
   HTTP_STATUS,
+  MAX_FILE_SIZE,
+  ORCHESTRATION_API_URL,
 } from "@/server-constants";
 
 const validatePdfHandler: APIRoute = async ({ request }) => {

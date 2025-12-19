@@ -1,4 +1,4 @@
-import { Check, X, Loader2 as ApprovalSpinner } from "lucide-react";
+import { Loader2 as ApprovalSpinner, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ApprovalActionsProps {

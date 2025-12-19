@@ -1,5 +1,5 @@
-import type { ValidationData } from "../types";
 import { generateUrl } from "@/lib/utils";
+import type { ValidationData } from "../types";
 
 interface UseDownloadUrlProps {
   validationData: ValidationData | null;

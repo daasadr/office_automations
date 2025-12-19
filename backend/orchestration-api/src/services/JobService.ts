@@ -17,8 +17,13 @@ export interface JobData {
   directusSourceDocumentId?: string;
   directusResponseId?: string;
   directusGeneratedDocumentId?: string;
+  // Logistics-specific properties
+  logisticsDocumentId?: string;
+  isDuplicate?: boolean;
+  duplicateOf?: string;
+  wasChunked?: boolean;
+  chunkCount?: number;
 }
-
 // Configuration for job cleanup
 interface JobCleanupConfig {
   maxAgeHours: number;

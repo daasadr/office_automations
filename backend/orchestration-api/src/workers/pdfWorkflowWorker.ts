@@ -33,13 +33,13 @@ initializeSentry();
 const worker = new Worker<PdfWorkflowJobData>(
   QUEUE_NAMES.PDF_WORKFLOW,
   async (job) => {
-    const { workflowId, fileKey, fileName } = job.data;
+    const { workflowId, fileId, fileName } = job.data;
     const startTime = Date.now();
 
     logger.info("[PdfWorker] Starting PDF workflow", {
       jobId: job.id,
       workflowId,
-      fileKey,
+      fileId,
       fileName,
     });
 

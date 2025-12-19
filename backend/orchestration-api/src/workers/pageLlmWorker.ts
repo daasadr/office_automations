@@ -43,10 +43,11 @@ async function getPageContent(workflowId: string, pageFileId: string): Promise<A
     }
 
     // Convert Buffer to ArrayBuffer for Gemini API
+    // Ensure we get a proper ArrayBuffer, not SharedArrayBuffer
     const arrayBuffer = buffer.buffer.slice(
       buffer.byteOffset,
       buffer.byteOffset + buffer.byteLength
-    );
+    ) as ArrayBuffer;
 
     logger.debug("[LlmWorker] Page content fetched", {
       workflowId,

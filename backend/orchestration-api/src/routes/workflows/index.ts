@@ -7,6 +7,7 @@ import { Router } from "express";
 import { pdfWorkflowQueue, JOB_NAMES, QUEUE_NAMES } from "@orchestration-api/queues";
 import { workflowService } from "@orchestration-api/services/WorkflowService";
 import { logger } from "@orchestration-api/utils/logger";
+import type { WorkflowState, WorkflowType } from "@orchestration-api/queues/types";
 
 const router = Router();
 
@@ -307,8 +308,8 @@ router.get("/", async (req, res, next) => {
     const { state, type, limit } = req.query;
 
     const workflows = await workflowService.getRecentWorkflows({
-      state: state as string | undefined,
-      type: type as string | undefined,
+      state: state as WorkflowState | undefined,
+      type: type as WorkflowType | undefined,
       limit: limit ? parseInt(limit as string, 10) : 50,
     });
 

@@ -438,7 +438,7 @@ export class DirectusDocumentService {
 
       // Create generated document record
       const generatedDocument: Partial<GeneratedDocument> = {
-        response: options.responseId,
+        response_id: options.responseId,
         file: uploadedFile.id,
         document_type: options.documentType || "excel",
         mime_type: options.file.mimetype,
@@ -689,7 +689,7 @@ export class DirectusDocumentService {
       const documents = await client.request(
         readItems("generated_documents", {
           filter: {
-            response: { _eq: responseId },
+            response_id: { _eq: responseId },
           },
           sort: ["-created_at"],
         })

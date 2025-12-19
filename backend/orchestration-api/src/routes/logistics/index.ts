@@ -115,14 +115,46 @@ router.post(
             isDuplicate: true,
             duplicateOf: result.duplicateOf,
           });
-          jobService.completeJob(jobId, result.result || {}, "gemini");
+          // Create a minimal ValidationResult from LogisticsDocument
+          const logisticsDoc = result.result;
+          if (logisticsDoc) {
+            jobService.completeJob(
+              jobId,
+              {
+                present_fields: logisticsDoc.present_fields || [],
+                missing_fields: logisticsDoc.missing_fields || [],
+                confidence: logisticsDoc.confidence || 0,
+                extracted_data: [],
+                provider: "gemini",
+              },
+              "gemini"
+            );
+          } else {
+            jobService.updateJob(jobId, { status: "completed" });
+          }
         } else {
           jobService.updateJob(jobId, {
             logisticsDocumentId: result.logisticsDocumentId,
             wasChunked: result.wasChunked,
             chunkCount: result.chunkCount,
           });
-          jobService.completeJob(jobId, result.result || {}, "gemini");
+          // Create a minimal ValidationResult from LogisticsDocument
+          const logisticsDoc = result.result;
+          if (logisticsDoc) {
+            jobService.completeJob(
+              jobId,
+              {
+                present_fields: logisticsDoc.present_fields || [],
+                missing_fields: logisticsDoc.missing_fields || [],
+                confidence: logisticsDoc.confidence || 0,
+                extracted_data: [],
+                provider: "gemini",
+              },
+              "gemini"
+            );
+          } else {
+            jobService.updateJob(jobId, { status: "completed" });
+          }
         }
 
         logger.info("[Logistics] Processing completed", {
@@ -355,7 +387,23 @@ router.post(
           wasChunked: result.wasChunked,
           chunkCount: result.chunkCount,
         });
-        jobService.completeJob(jobId, result.result || {}, "gemini");
+        // Create a minimal ValidationResult from LogisticsDocument
+        const logisticsDoc = result.result;
+        if (logisticsDoc) {
+          jobService.completeJob(
+            jobId,
+            {
+              present_fields: logisticsDoc.present_fields || [],
+              missing_fields: logisticsDoc.missing_fields || [],
+              confidence: logisticsDoc.confidence || 0,
+              extracted_data: [],
+              provider: "gemini",
+            },
+            "gemini"
+          );
+        } else {
+          jobService.updateJob(jobId, { status: "completed" });
+        }
 
         logger.info("[Logistics] Reprocessing completed", {
           jobId,

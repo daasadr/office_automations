@@ -196,6 +196,6 @@ services:
     profiles:
       - erp  # Only start when explicitly enabled with --profile erp
 
-networks:
-  backend-internal:
-    external: true
+# networks:
+#   backend-internal:
+#     external: true

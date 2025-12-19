@@ -110,6 +110,18 @@ export async function validatePdfContentWithGemini(
       requiredFields.length
     );
 
+    // For logistics prompt, return the full parsed result as it has a different structure
+    // (invoice_header, transport_line_items, unclaimed_documents instead of extracted_data)
+    if (promptType === "logistics") {
+      return {
+        ...parsedResult,
+        confidence: parsedResult.confidence ?? confidence,
+        provider: "gemini",
+        promptType,
+      } as ValidationResult;
+    }
+
+    // For other prompts (waste, etc.), use the standard extracted_data structure
     return {
       present_fields: Array.isArray(parsedResult.present_fields)
         ? (parsedResult.present_fields as string[])

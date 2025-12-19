@@ -6,3 +6,4 @@
 - foundational documents view
 - adjust in app navigation
 - limit IP to Czech
+- Authentik

@@ -12,6 +12,7 @@ import { logger } from "./utils/logger";
 import { healthRouter } from "./routes/health";
 import { documentRouter } from "./routes/documents";
 import { workflowRouter } from "./routes/workflows";
+import { logisticsRouter } from "./routes/logistics";
 import { errorHandler } from "./middleware/errorHandler";
 import { swaggerSpec } from "./lib/swagger";
 
@@ -26,9 +27,9 @@ app.use(
   })
 );
 
-// Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// Body parsing middleware (50mb for logistics large PDFs)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Logging middleware
 app.use((req, _res, next) => {
@@ -52,6 +53,7 @@ app.get("/openapi.json", (_req, res) => {
 app.use("/health", healthRouter);
 app.use("/documents", documentRouter);
 app.use("/workflows", workflowRouter);
+app.use("/logistics", logisticsRouter);
 
 // Sentry error handler must be registered before other error handlers
 Sentry.setupExpressErrorHandler(app);

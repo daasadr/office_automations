@@ -42,25 +42,28 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'minimal-ui',
         orientation: 'any',
+        start_url: basePath ? `${basePath}/` : '/',
+        scope: basePath ? `${basePath}/` : '/',
+        id: basePath ? `${basePath}/` : '/',
         icons: [
           {
-            src: 'pwa-64x64.png',
+            src: basePath ? `${basePath}/pwa-64x64.png` : '/pwa-64x64.png',
             sizes: '64x64',
             type: 'image/png'
           },
           {
-            src: 'pwa-192x192.png',
+            src: basePath ? `${basePath}/pwa-192x192.png` : '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: basePath ? `${basePath}/pwa-512x512.png` : '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'maskable-icon-512x512.png',
+            src: basePath ? `${basePath}/maskable-icon-512x512.png` : '/maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -68,12 +71,13 @@ export default defineConfig({
         ]
       },
       workbox: {
-        navigateFallback: '/',
+        navigateFallback: basePath ? `${basePath}/` : '/',
         globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}']
       },
       devOptions: {
-        enabled: false,
-        navigateFallbackAllowlist: [/^\//]
+        enabled: true,
+        navigateFallbackAllowlist: [/^\//],
+        suppressWarnings: true
       },
       experimental: {
         directoryAndTrailingSlashHandler: true

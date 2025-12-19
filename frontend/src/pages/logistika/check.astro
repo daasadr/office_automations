@@ -1,0 +1,32 @@
+---
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { LogisticsStatusPoller } from "@/components/LogisticsStatusPoller/index";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { withBasePath } from "@/lib/utils";
+
+// Get job ID from query parameters
+const jobId = Astro.url.searchParams.get("job") ?? undefined;
+
+// If no job ID, redirect to upload page
+if (!jobId) {
+  return Astro.redirect(withBasePath("/logistika/upload"), 302);
+}
+---
+
+<BaseLayout title="Zpracování logistického dokumentu" currentStep="check">
+  <div class="container mx-auto py-8">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold tracking-tight mb-4">Zpracování dokumentu</h1>
+      <p class="text-lg text-muted-foreground">
+        Analyzujeme fakturu a přiřazujeme přepravní dokumenty
+      </p>
+    </div>
+    
+    <LogisticsStatusPoller 
+      client:load
+      jobId={jobId}
+    />
+  </div>
+</BaseLayout>
+

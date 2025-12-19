@@ -1,7 +1,7 @@
-import { FileText, RefreshCw, ChevronLeft } from "lucide-react";
+import { ChevronLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ProcessingSteps } from "./ProcessingSteps";
 import { withBasePath } from "@/lib/utils";
+import { ProcessingSteps } from "./ProcessingSteps";
 
 export function LoadingState() {
   return (
@@ -37,7 +37,7 @@ export function LoadingState() {
 
           {/* Info text */}
           <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-            <p>Toto může trvat 10-90 sekund v závislosti na velikosti dokumentu.</p>
+            <p>Toto může trvat 30-90 sekund v závislosti na velikosti dokumentu.</p>
             <p className="text-xs">Stránka se automaticky aktualizuje každé 2 sekundy.</p>
           </div>
         </div>

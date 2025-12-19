@@ -1,8 +1,10 @@
 ---
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { ArrowRight, FileSpreadsheet, Package } from "lucide-react";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { FileSpreadsheet, Package, ArrowRight } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { cn, withBasePath } from "@/lib/utils";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { withBasePath } from "@/lib/utils";
 ---
 
 <style>
@@ -140,7 +142,7 @@ import { cn, withBasePath } from "@/lib/utils";
             <h2 class="text-2xl font-bold mb-3">Logistika</h2>
             
             <p class="text-muted-foreground mb-6 flex-grow">
-              Automatizace logistických procesů a správa dokumentace. Zpracování a organizace logistických dat.
+              Kontrola faktur a automatické párování s přepravními dokumenty. Analýza až 100stránkových PDF s detekcí duplicit.
             </p>
             
             <div class="flex items-center text-primary font-semibold">

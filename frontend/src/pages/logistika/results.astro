@@ -1,0 +1,36 @@
+---
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { LogisticsResults } from "@/components/LogisticsResults/index";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { withBasePath } from "@/lib/utils";
+
+// Get document ID from query parameters
+const documentId = Astro.url.searchParams.get("doc") ?? undefined;
+
+// If no document ID, redirect to upload page
+if (!documentId) {
+  return Astro.redirect(withBasePath("/logistika/upload"), 302);
+}
+---
+
+<BaseLayout title="Výsledky logistické analýzy" currentStep="download">
+  <div class="container mx-auto py-8">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+        Výsledky analýzy
+      </h1>
+      <p class="text-lg text-muted-foreground">
+        Přehled párování faktury s přepravními dokumenty
+      </p>
+    </div>
+    
+    <div class="max-w-5xl mx-auto">
+      <LogisticsResults 
+        client:load
+        documentId={documentId}
+      />
+    </div>
+  </div>
+</BaseLayout>
+

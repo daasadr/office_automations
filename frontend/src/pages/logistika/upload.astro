@@ -1,0 +1,27 @@
+---
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { LogisticsUploadForm } from "@/components/LogisticsUploadForm/index";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Nahrání logistického dokumentu" currentStep="upload">
+  <div class="container mx-auto py-8">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold tracking-tight mb-4">Nahrání logistického dokumentu</h1>
+      <p class="text-lg text-muted-foreground">
+        Nahrajte PDF soubor s fakturou a přepravními dokumenty.
+      </p>
+      <p class="text-sm text-muted-foreground mt-2">
+        Systém podporuje velké soubory (až 100 stran) a automaticky detekuje duplicitní dokumenty.
+      </p>
+    </div>
+    
+    <div class="w-full max-w-2xl mx-auto space-y-6">
+      <div id="logistics-upload">
+        <LogisticsUploadForm client:load />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+

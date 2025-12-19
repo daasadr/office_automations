@@ -1,7 +1,11 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import { Package, ArrowRight, Upload, FileCheck, Download } from "lucide-react";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import { ArrowRight, Download, FileCheck, Package, Upload } from "lucide-react";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
 import { buttonVariants } from "@/components/ui/button";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
+import BaseLayout from "@/layouts/BaseLayout.astro";
+// biome-ignore lint/correctness/noUnusedImports: Used in template below
 import { cn, withBasePath } from "@/lib/utils";
 ---
 
@@ -61,10 +65,10 @@ import { cn, withBasePath } from "@/lib/utils";
         Logistika - Automatizace procesů
       </h1>
       <p class="animate-fade-in description text-xl text-muted-foreground">
-        Zpracování a automatizace logistických dokumentů.
+        Automatická kontrola faktur a přiřazení přepravních dokumentů.
         <br />
         <br />
-        Nahrajte soubory a aplikace se postará o zbytek.
+        Nahrajte PDF s fakturou a podklady - systém je automaticky spáruje.
       </p>
 
       <div class="grid md:grid-cols-3 gap-8 mt-16">
@@ -72,9 +76,9 @@ import { cn, withBasePath } from "@/lib/utils";
           <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
             <Upload className="w-8 h-8" />
           </div>
-          <h3 class="text-lg font-semibold">1. Nahrání souboru</h3>
+          <h3 class="text-lg font-semibold">1. Nahrání PDF</h3>
           <p class="text-sm text-muted-foreground text-center">
-            Nahrajte svůj dokument
+            Nahrajte PDF s fakturou a přepravními dokumenty (až 50MB)
           </p>
         </div>
 
@@ -82,9 +86,9 @@ import { cn, withBasePath } from "@/lib/utils";
           <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
             <FileCheck className="w-8 h-8" />
           </div>
-          <h3 class="text-lg font-semibold">2. Zpracování</h3>
+          <h3 class="text-lg font-semibold">2. Analýza a párování</h3>
           <p class="text-sm text-muted-foreground text-center">
-            Systém automaticky zpracuje vaše dokumenty
+            AI analyzuje fakturu a přiřadí jednotlivé doklady k položkám
           </p>
         </div>
 
@@ -92,9 +96,9 @@ import { cn, withBasePath } from "@/lib/utils";
           <div class="p-3 rounded-full bg-orange-500/10 text-orange-600">
             <Download className="w-8 h-8" />
           </div>
-          <h3 class="text-lg font-semibold">3. Stažení</h3>
+          <h3 class="text-lg font-semibold">3. Přehled výsledků</h3>
           <p class="text-sm text-muted-foreground text-center">
-            Získejte zpracovaný soubor připravený ke stažení
+            Zobrazte si výsledky párování s přehledem spárovaných a chybějících dokumentů
           </p>
         </div>
       </div>
@@ -104,7 +108,7 @@ import { cn, withBasePath } from "@/lib/utils";
           href={withBasePath("/logistika/upload")}
           class={cn(
             buttonVariants({ size: "lg" }),
-            "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            "animate-fade-in cta-button text-lg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 border-0"
           )}
         >
           Začít

@@ -38,7 +38,8 @@ interface CreateSourceDocumentOptions {
  * Response Creation Options
  */
 interface CreateResponseOptions {
-  sourceDocumentId: string;
+  sourceDocumentId?: string;
+  logisticsDocumentId?: string;
   prompt?: string;
   responseText?: string;
   responseJson?: Record<string, unknown>;
@@ -283,6 +284,7 @@ export class DirectusDocumentService {
     logger.info("[Directus] Attempting to create response record", {
       operation: "createResponse",
       sourceDocumentId: options.sourceDocumentId,
+      logisticsDocumentId: options.logisticsDocumentId,
       modelName: options.modelName,
       status: options.status || "completed",
       hasPrompt: !!options.prompt,
@@ -297,6 +299,7 @@ export class DirectusDocumentService {
 
       const response: Partial<Response> = {
         source_document: options.sourceDocumentId,
+        logistics_document: options.logisticsDocumentId,
         prompt: options.prompt,
         response_text: options.responseText,
         response_json: options.responseJson,
@@ -320,17 +323,41 @@ export class DirectusDocumentService {
 
       return created as Response;
     } catch (error) {
-      // ERROR LOG
-      logger.error("[Directus] Response creation failed", {
+      // ERROR LOG - detailed error extraction
+      const errorDetails: Record<string, unknown> = {
         operation: "createResponse",
         sourceDocumentId: options.sourceDocumentId,
         modelName: options.modelName,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw new Error(
-        `Response creation failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      };
+
+      if (error instanceof Error) {
+        errorDetails.errorMessage = error.message;
+        errorDetails.errorName = error.name;
+        errorDetails.errorStack = error.stack;
+      } else if (typeof error === "object" && error !== null) {
+        // Handle Directus SDK errors which may be plain objects
+        errorDetails.errorJson = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        errorDetails.errorKeys = Object.keys(error);
+        // Try to extract common error properties
+        const errObj = error as Record<string, unknown>;
+        if (errObj.errors) errorDetails.directusErrors = errObj.errors;
+        if (errObj.response) errorDetails.response = errObj.response;
+        if (errObj.message) errorDetails.message = errObj.message;
+        if (errObj.status) errorDetails.status = errObj.status;
+        if (errObj.code) errorDetails.code = errObj.code;
+      } else {
+        errorDetails.errorRaw = String(error);
+      }
+
+      logger.error("[Directus] Response creation failed", errorDetails);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" && error !== null
+            ? JSON.stringify(error)
+            : "Unknown error";
+      throw new Error(`Response creation failed: ${errorMessage}`);
     }
   }
 
@@ -411,7 +438,7 @@ export class DirectusDocumentService {
 
       // Create generated document record
       const generatedDocument: Partial<GeneratedDocument> = {
-        response_id: options.responseId,
+        response: options.responseId,
         file: uploadedFile.id,
         document_type: options.documentType || "excel",
         mime_type: options.file.mimetype,
@@ -662,7 +689,7 @@ export class DirectusDocumentService {
       const documents = await client.request(
         readItems("generated_documents", {
           filter: {
-            response_id: { _eq: responseId },
+            response: { _eq: responseId },
           },
           sort: ["-created_at"],
         })

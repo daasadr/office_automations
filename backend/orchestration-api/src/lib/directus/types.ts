@@ -177,6 +177,7 @@ export interface DocumentPage {
 export interface Response {
   id?: string;
   source_document?: string; // UUID reference to source_documents
+  logistics_document?: string; // UUID reference to logistics_documents
   prompt?: string;
   response_text?: string;
   response_json?: Record<string, unknown>;
@@ -251,6 +252,78 @@ export interface DocumentVersion {
 }
 
 /**
+ * Logistics Document Collection
+ * Stores processed logistics invoice documents with matching results
+ */
+export interface LogisticsDocument {
+  id?: string;
+  source_document?: string; // UUID reference to source_documents
+  response?: string; // UUID reference to responses collection
+  file?: string; // UUID reference to directus_files (original PDF)
+  title: string;
+  hash_sha256?: string; // For duplicate detection
+  processing_status?: "uploaded" | "processing" | "completed" | "failed";
+  token_count?: number; // Estimated tokens for the document
+  was_chunked?: boolean; // Whether the document was split for processing
+  chunk_count?: number; // Number of chunks if split
+  invoice_header?: {
+    invoice_number?: string;
+    dates?: {
+      issue_date?: string;
+      tax_date?: string;
+      due_date?: string;
+    };
+    supplier?: {
+      name?: string;
+      vat_id?: string;
+    };
+    customer?: {
+      name?: string;
+      vat_id?: string;
+    };
+    totals?: {
+      net_amount?: number;
+      vat_amount?: number;
+      total_amount_due?: number;
+      currency?: string;
+    };
+  };
+  transport_line_items?: Array<{
+    line_id?: number;
+    description?: string;
+    invoice_amount?: number;
+    vat_rate?: string;
+    match_status?: "Matched" | "Unmatched";
+    match_reason?: string;
+    associated_documents?: Array<{
+      document_type?: string;
+      document_number?: string;
+      source_page_index?: number;
+      recipient_name?: string;
+      destination_address?: string;
+      reference_numbers?: {
+        order_number?: string;
+        delivery_number?: string;
+      };
+      contains_handwriting?: boolean;
+    }>;
+  }>;
+  unclaimed_documents?: Array<{
+    source_page_index?: number;
+    document_type?: string;
+    content_summary?: string;
+    reason_for_unclaimed?: string;
+  }>;
+  confidence?: number;
+  present_fields?: string[];
+  missing_fields?: string[];
+  error_message?: string;
+  processing_time_ms?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Directus File Upload Response
  */
 export interface DirectusFile {
@@ -293,4 +366,5 @@ export interface DirectusSchema {
   erp_outbox: ErpOutbox[];
   documents: Document[];
   document_pages: DocumentPage[];
+  logistics_documents: LogisticsDocument[];
 }

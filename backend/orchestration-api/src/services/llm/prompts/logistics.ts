@@ -35,7 +35,13 @@ Processing Logic
 2. Analyze Supporting Documents (Pages 3-End):
    - Scan each subsequent page to identify individual documents (Dodací list/Delivery Note, CMR, ALONŽ/Transport Log, Weighing Slips).
    - Extract key data points from these documents: Recipient Name, Delivery Destination, Order Numbers (Objednávka), Delivery Note Numbers (Č. dodávky), and Dates.
-   - Handwriting Detection: specific check if the document contains handwritten text (common in ALONŽ/CMR forms) and flag it.
+   - Order Number Extraction (CRITICAL): Pay special attention to "Dodací list" (Delivery Note) documents from Spur supplier ("Dodavatel"). The "order_number_ours" field typically appears on these delivery notes and usually begins with the letters S, H, or T. This is a critical field that must be extracted accurately.
+   - Order Number Category: Based on the first letter of "order_number_ours", set "order_number_category" as follows:
+     * S → "EPE pásy"
+     * H → "Hardex"
+     * T → "Tubex"
+     * If the order number doesn't start with S, H, or T, set category to "Unknown" or leave empty.
+   - Handwriting Detection: Determine if the document is PRIMARILY handwritten (e.g., forms like ALONŽ/CMR with handwritten fields filled in). Set "is_handwritten" to true ONLY for documents that are primarily handwritten forms, NOT for printed invoices or delivery notes that merely contain some handwritten annotations or signatures. The document should have a significant portion of its key data fields filled in by hand.
 
 3. Perform Matching (The Core Task):
    - For each Invoice Line Item found in Step 1, search the Supporting Documents from Step 2.
@@ -43,8 +49,8 @@ Processing Logic
    - Association: Nest the details of the found documents under the corresponding Invoice Line Item.
 
 4. Handling Exceptions:
-   - If no document matches an invoice line item, you must set match_status to "Unmatched" and provide a reason (e.g., "No document found with destination 'Chemnitz'").
-   - If a document exists but cannot be confidently linked to a specific line item, list it in a separate unclaimed_documents array at the end of the JSON.
+   - If no document matches an invoice line item, you must set match_status to "Unmatched" and provide a reason IN CZECH (e.g., "Nebyl nalezen dokument s destinací 'Chemnitz'").
+   - If a document exists but cannot be confidently linked to a specific line item, list it in a separate unclaimed_documents array at the end of the JSON with reason_for_unclaimed IN CZECH.
 
 JSON Output Structure
 
@@ -80,19 +86,21 @@ Use the following JSON schema strictly:
       "invoice_amount": "Number",
       "vat_rate": "String",
       "match_status": "String ('Matched' or 'Unmatched')",
-      "match_reason": "String (e.g., 'Matched based on destination Partizánske found in Delivery Note 52640')",
+      "match_reason": "String in CZECH (e.g., 'Spárováno na základě destinace Partizánske nalezené v Dodacím listu 52640')",
       "associated_documents": [
         {
-          "document_type": "String (e.g., 'Delivery Note', 'CMR', 'Transport Log')",
+          "document_type": "String in CZECH (e.g., 'Dodací list', 'CMR', 'Přepravní deník', 'ALONŽ')",
           "document_number": "String (e.g., Delivery Note No., or 'N/A')",
           "source_page_index": "Integer (Page number in PDF)",
           "recipient_name": "String",
           "destination_address": "String",
           "reference_numbers": {
-            "order_number": "String",
+            "order_number_customer": "String",
+            "order_number_ours": "String (CRITICAL: Usually found on 'Dodací list' from Spur supplier, typically starts with S, H, or T)",
+            "order_number_category": "String (Derived from first letter of order_number_ours: 'EPE pásy' for S, 'Hardex' for H, 'Tubex' for T, or 'Unknown' if none match)",
             "delivery_number": "String"
           },
-          "contains_handwriting": "Boolean (true if handwritten text/signatures are detected)"
+          "is_handwritten": "Boolean (true ONLY if the document is primarily a handwritten form with handwritten fields, NOT for printed documents with occasional handwritten annotations)"
         }
       ]
     }
@@ -102,7 +110,7 @@ Use the following JSON schema strictly:
       "source_page_index": "Integer",
       "document_type": "String",
       "content_summary": "String",
-      "reason_for_unclaimed": "String (e.g., 'Destination Prague not found in invoice list')"
+      "reason_for_unclaimed": "String in CZECH (e.g., 'Destinace Praha nebyla nalezena v seznamu faktury')"
     }
   ],
   "present_fields": ["List of field types that were found in the document"],
@@ -112,7 +120,7 @@ Use the following JSON schema strictly:
 
 Constraint Checklist & Confidence Score:
 - Is the output valid JSON?
-- Did you flag handwritten documents?
+- Did you correctly identify primarily handwritten documents (forms with handwritten fields) vs printed documents with annotations?
 - Did you explain the match/no-match reason for every line item?
 
 IMPORTANT:
@@ -120,6 +128,7 @@ IMPORTANT:
 - All keys must use snake_case
 - Numbers should be actual numbers, not strings (except where specified)
 - Dates should be in DD.MM.YYYY format
+- ALL user-facing text fields (document_type, match_reason, reason_for_unclaimed) MUST be in CZECH language
 - Include present_fields, missing_fields, and confidence in the response
 
 Kontrolované typy informací:

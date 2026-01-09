@@ -32,9 +32,11 @@ entryPoints:
           - main: "dejtoai.cz"
             sans:
               - "*.dejtoai.cz"
-          - main: "dev-dejtoai.local"
-            sans:
-              - "*.dev-dejtoai.local"
+          # Note: .local domains cannot use Let's Encrypt
+          # For local development, use self-signed certificates or disable sniStrict
+          # - main: "dev-dejtoai.local"
+          #   sans:
+          #     - "*.dev-dejtoai.local"
 
 # Certificate Resolvers
 certificatesResolvers:

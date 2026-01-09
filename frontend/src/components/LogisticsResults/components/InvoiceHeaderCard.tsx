@@ -28,7 +28,9 @@ export function InvoiceHeaderCard({ header }: InvoiceHeaderCardProps) {
         <div className="flex items-center gap-3 text-white">
           <FileText className="w-6 h-6" />
           <div>
-            <h3 className="text-lg font-semibold">Faktura č. {header.invoice_number || "N/A"}</h3>
+            <h3 className="text-lg font-semibold">
+              Faktura č. {header.invoice_number || "Neuvedeno"}
+            </h3>
             {header.dates?.issue_date && (
               <p className="text-orange-100 text-sm">Datum vystavení: {header.dates.issue_date}</p>
             )}

@@ -1,42 +1,90 @@
 import type { MiddlewareHandler } from "astro";
+import { getSession, isSessionValid } from "./lib/session";
 
 /**
- * Middleware to enforce base path access control
- *
- * When PUBLIC_BASE_PATH is set, this middleware ensures that:
- * 1. Only requests under the base path are allowed
- * 2. Requests to the root or other paths return 404
- * 3. The base path itself (without trailing slash) redirects to base path with slash
+ * Routes that require authentication
+ */
+const PROTECTED_ROUTES = [
+  "/kvalita",
+  "/logistika",
+  "/settings",
+];
+
+/**
+ * Routes that are always public (no auth required)
+ */
+const PUBLIC_ROUTES = [
+  "/api/auth",
+  "/api/health",
+];
+
+/**
+ * Check if a path matches any pattern in the list
+ */
+function matchesRoute(pathname: string, routes: string[]): boolean {
+  return routes.some(route => pathname.startsWith(route));
+}
+
+/**
+ * Middleware for base path access control and authentication
  */
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const basePath = import.meta.env.PUBLIC_BASE_PATH || "";
-
-  // If no base path is set, allow all requests
-  if (!basePath) {
-    return next();
-  }
-
   const url = new URL(context.request.url);
-  const pathname = url.pathname;
+  let pathname = url.pathname;
 
-  // Normalize base path (ensure it doesn't end with /)
-  const normalizedBasePath = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+  // Base path handling
+  if (basePath) {
+    const normalizedBasePath = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
 
-  // If accessing exactly the base path without trailing slash, redirect to with trailing slash
-  if (pathname === normalizedBasePath) {
-    return context.redirect(`${normalizedBasePath}/`, 301);
+    // If accessing exactly the base path without trailing slash, redirect to with trailing slash
+    if (pathname === normalizedBasePath) {
+      return context.redirect(`${normalizedBasePath}/`, 301);
+    }
+
+    // Block requests that don't start with the base path
+    if (!pathname.startsWith(`${normalizedBasePath}/`)) {
+      return new Response(`<div><h1>404 - Page not found</h1></div>`, {
+        status: 404,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    }
+
+    // Remove base path for route matching
+    pathname = pathname.substring(normalizedBasePath.length);
   }
 
-  // Allow requests that start with the base path followed by /
-  if (pathname.startsWith(`${normalizedBasePath}/`)) {
+  // Skip auth for public routes
+  if (matchesRoute(pathname, PUBLIC_ROUTES)) {
     return next();
   }
 
-  // Block all other requests with custom 404 response
-  return new Response(`<div><h1>404 - Page not found</h1></div>`, {
-    status: 404,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-    },
-  });
+  // Check if route requires authentication
+  if (matchesRoute(pathname, PROTECTED_ROUTES)) {
+    try {
+      const session = await getSession(context.cookies);
+
+      // Check if session is valid
+      if (!isSessionValid(session)) {
+        // Store the original URL to redirect back after login
+        const returnUrl = encodeURIComponent(url.pathname + url.search);
+        const loginUrl = basePath ? `${basePath}/api/auth/login?return=${returnUrl}` : `/api/auth/login?return=${returnUrl}`;
+        return context.redirect(loginUrl, 302);
+      }
+
+      // User is authenticated, continue to the page
+      return next();
+    } catch (error) {
+      console.error("Authentication middleware error:", error);
+      // On error, redirect to login
+      const loginUrl = basePath ? `${basePath}/api/auth/login` : `/api/auth/login`;
+      return context.redirect(loginUrl, 302);
+    }
+  }
+
+  // All other routes are accessible without authentication
+  return next();
 };
+

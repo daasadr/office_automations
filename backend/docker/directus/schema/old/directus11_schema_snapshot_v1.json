@@ -4,34 +4,32 @@
   "vendor": "postgres",
   "collections": [
     {
+      "collection": "documents",
+      "meta": {
+        "icon": "insert_drive_file",
+        "display_template": "{{title}} - {{status}}",
+        "sort_field": "created_at"
+      },
+      "schema": { "name": "documents" }
+    },
+    {
       "collection": "document_versions",
       "meta": {
         "icon": "history_toggle_off",
         "display_template": "v{{version_number}} - {{change_type}}",
         "sort_field": "version_number"
       },
-      "schema": {
-        "name": "document_versions"
-      }
+      "schema": { "name": "document_versions" }
     },
     {
       "collection": "email_messages",
-      "meta": {
-        "icon": "mail",
-        "sort_field": "received_at"
-      },
-      "schema": {
-        "name": "email_messages"
-      }
+      "meta": { "icon": "mail", "sort_field": "received_at" },
+      "schema": { "name": "email_messages" }
     },
     {
       "collection": "email_attachments",
-      "meta": {
-        "icon": "attach_file"
-      },
-      "schema": {
-        "name": "email_attachments"
-      }
+      "meta": { "icon": "attach_file" },
+      "schema": { "name": "email_attachments" }
     },
     {
       "collection": "processing_jobs",
@@ -40,19 +38,12 @@
         "display_template": "{{job_id}} - {{status}}",
         "sort_field": "created_at"
       },
-      "schema": {
-        "name": "processing_jobs"
-      }
+      "schema": { "name": "processing_jobs" }
     },
     {
       "collection": "artifacts",
-      "meta": {
-        "icon": "perm_media",
-        "sort_field": "created_at"
-      },
-      "schema": {
-        "name": "artifacts"
-      }
+      "meta": { "icon": "perm_media", "sort_field": "created_at" },
+      "schema": { "name": "artifacts" }
     },
     {
       "collection": "extractions",
@@ -61,78 +52,42 @@
         "display_template": "{{document.title}}",
         "sort_field": "created_at"
       },
-      "schema": {
-        "name": "extractions"
-      }
+      "schema": { "name": "extractions" }
     },
     {
       "collection": "review_tasks",
-      "meta": {
-        "icon": "rule",
-        "sort_field": "created_at"
-      },
-      "schema": {
-        "name": "review_tasks"
-      }
+      "meta": { "icon": "rule", "sort_field": "created_at" },
+      "schema": { "name": "review_tasks" }
     },
     {
       "collection": "exports",
-      "meta": {
-        "icon": "file_download",
-        "sort_field": "created_at"
-      },
-      "schema": {
-        "name": "exports"
-      }
+      "meta": { "icon": "file_download", "sort_field": "created_at" },
+      "schema": { "name": "exports" }
     },
     {
       "collection": "deliveries",
-      "meta": {
-        "icon": "send",
-        "sort_field": "created_at"
-      },
-      "schema": {
-        "name": "deliveries"
-      }
+      "meta": { "icon": "send", "sort_field": "created_at" },
+      "schema": { "name": "deliveries" }
     },
     {
       "collection": "integration_targets",
-      "meta": {
-        "icon": "hub"
-      },
-      "schema": {
-        "name": "integration_targets"
-      }
+      "meta": { "icon": "hub" },
+      "schema": { "name": "integration_targets" }
     },
     {
       "collection": "schema_definitions",
-      "meta": {
-        "icon": "schema",
-        "display_template": "{{schema_key}} v{{version}}"
-      },
-      "schema": {
-        "name": "schema_definitions"
-      }
+      "meta": { "icon": "schema", "display_template": "{{schema_key}} v{{version}}" },
+      "schema": { "name": "schema_definitions" }
     },
     {
       "collection": "master_vendors",
-      "meta": {
-        "icon": "business",
-        "display_template": "{{name}}"
-      },
-      "schema": {
-        "name": "master_vendors"
-      }
+      "meta": { "icon": "business", "display_template": "{{name}}" },
+      "schema": { "name": "master_vendors" }
     },
     {
       "collection": "activity_log",
-      "meta": {
-        "icon": "history",
-        "sort_field": "created_at"
-      },
-      "schema": {
-        "name": "activity_log"
-      }
+      "meta": { "icon": "history", "sort_field": "created_at" },
+      "schema": { "name": "activity_log" }
     },
     {
       "collection": "logistics_documents",
@@ -141,12 +96,191 @@
         "display_template": "{{title}} - {{processing_status}}",
         "sort_field": "created_at"
       },
-      "schema": {
-        "name": "logistics_documents"
-      }
+      "schema": { "name": "logistics_documents" }
     }
   ],
   "fields": [
+    {
+      "collection": "documents",
+      "field": "id",
+      "type": "uuid",
+      "schema": {
+        "name": "id",
+        "data_type": "uuid",
+        "is_primary_key": true,
+        "is_nullable": false,
+        "has_auto_increment": false,
+        "default_value": "gen_random_uuid()"
+      },
+      "meta": { "hidden": true, "readonly": true }
+    },
+    {
+      "collection": "documents",
+      "field": "title",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 255 },
+      "meta": { "required": true, "interface": "input", "width": "full" }
+    },
+    {
+      "collection": "documents",
+      "field": "source",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "upload" },
+      "meta": {
+        "interface": "select-dropdown",
+        "options": {
+          "choices": [
+            { "text": "Upload", "value": "upload" },
+            { "text": "Email", "value": "email" },
+            { "text": "API", "value": "api" }
+          ]
+        },
+        "width": "half"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "file",
+      "type": "uuid",
+      "schema": { "data_type": "uuid", "is_nullable": true },
+      "meta": {
+        "interface": "file",
+        "special": ["file"],
+        "note": "FK to directus_files",
+        "width": "full"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "hash_sha256",
+      "type": "string",
+      "schema": {
+        "data_type": "varchar",
+        "max_length": 128,
+        "is_unique": true,
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input",
+        "readonly": true,
+        "width": "half",
+        "note": "SHA-256 hash for deduplication"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "mime_type",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 150, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "half" }
+    },
+    {
+      "collection": "documents",
+      "field": "bytes",
+      "type": "bigInteger",
+      "schema": { "data_type": "bigint", "is_nullable": true },
+      "meta": {
+        "interface": "input",
+        "readonly": true,
+        "width": "half",
+        "display": "formatted-value"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "doc_type",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 100, "is_nullable": true },
+      "meta": {
+        "interface": "input",
+        "width": "half",
+        "note": "Document type classifier (e.g., waste_management, invoice)"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "schema_name",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 100, "is_nullable": true },
+      "meta": {
+        "interface": "input",
+        "width": "half",
+        "note": "Links to document_schemas.schema_name"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "status",
+      "type": "string",
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "received" },
+      "meta": {
+        "interface": "select-dropdown",
+        "options": {
+          "choices": [
+            { "text": "Received", "value": "received" },
+            { "text": "Processing", "value": "processing" },
+            { "text": "Completed", "value": "completed" },
+            { "text": "Needs Review", "value": "needs_review" },
+            { "text": "Approved", "value": "approved" },
+            { "text": "Exported", "value": "exported" },
+            { "text": "Delivered", "value": "delivered" },
+            { "text": "Failed", "value": "failed" }
+          ]
+        },
+        "width": "half"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "priority",
+      "type": "integer",
+      "schema": { "data_type": "integer", "default_value": 0 },
+      "meta": { "interface": "input", "width": "half", "note": "Higher number = higher priority" }
+    },
+    {
+      "collection": "documents",
+      "field": "notes",
+      "type": "text",
+      "schema": { "data_type": "text", "is_nullable": true },
+      "meta": { "interface": "input-rich-text-md", "width": "full" }
+    },
+    {
+      "collection": "documents",
+      "field": "metadata_json",
+      "type": "json",
+      "schema": { "data_type": "jsonb", "is_nullable": true },
+      "meta": {
+        "interface": "input-code",
+        "options": { "language": "json" },
+        "width": "full",
+        "note": "Custom metadata and processing info"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "created_at",
+      "type": "timestamp",
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
+      "meta": {
+        "interface": "datetime",
+        "readonly": true,
+        "special": ["date-created"],
+        "width": "half"
+      }
+    },
+    {
+      "collection": "documents",
+      "field": "updated_at",
+      "type": "timestamp",
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
+      "meta": {
+        "interface": "datetime",
+        "readonly": true,
+        "special": ["date-updated"],
+        "width": "half"
+      }
+    },
+
     {
       "collection": "document_versions",
       "field": "id",
@@ -157,18 +291,13 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "document_versions",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
+      "schema": { "data_type": "uuid" },
       "meta": {
         "interface": "select-dropdown-m2o",
         "display": "related-values",
@@ -180,10 +309,7 @@
       "collection": "document_versions",
       "field": "version_number",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "default_value": 1
-      },
+      "schema": { "data_type": "integer", "default_value": 1 },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -195,10 +321,7 @@
       "collection": "document_versions",
       "field": "file",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "file",
         "special": ["file"],
@@ -210,46 +333,19 @@
       "collection": "document_versions",
       "field": "change_type",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 60
-      },
+      "schema": { "data_type": "varchar", "max_length": 60 },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Original Upload",
-              "value": "original"
-            },
-            {
-              "text": "Row Added",
-              "value": "row_added"
-            },
-            {
-              "text": "Data Updated",
-              "value": "data_updated"
-            },
-            {
-              "text": "Manual Edit",
-              "value": "manual_edit"
-            },
-            {
-              "text": "AI Augmentation",
-              "value": "ai_augmented"
-            },
-            {
-              "text": "Validation Fix",
-              "value": "validation_fix"
-            },
-            {
-              "text": "Export Generation",
-              "value": "export_generated"
-            },
-            {
-              "text": "Other",
-              "value": "other"
-            }
+            { "text": "Original Upload", "value": "original" },
+            { "text": "Row Added", "value": "row_added" },
+            { "text": "Data Updated", "value": "data_updated" },
+            { "text": "Manual Edit", "value": "manual_edit" },
+            { "text": "AI Augmentation", "value": "ai_augmented" },
+            { "text": "Validation Fix", "value": "validation_fix" },
+            { "text": "Export Generation", "value": "export_generated" },
+            { "text": "Other", "value": "other" }
           ]
         },
         "width": "half",
@@ -260,11 +356,7 @@
       "collection": "document_versions",
       "field": "process_name",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -275,10 +367,7 @@
       "collection": "document_versions",
       "field": "changes_description",
       "type": "text",
-      "schema": {
-        "data_type": "text",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "text", "is_nullable": true },
       "meta": {
         "interface": "input-rich-text-md",
         "width": "full",
@@ -289,15 +378,10 @@
       "collection": "document_versions",
       "field": "changes_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Structured data about specific changes (e.g., rows added, fields modified)"
       }
@@ -306,11 +390,7 @@
       "collection": "document_versions",
       "field": "augmented_by",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 100,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 100, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -321,35 +401,16 @@
       "collection": "document_versions",
       "field": "approval_status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "default_value": "pending"
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "pending" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Pending Review",
-              "value": "pending"
-            },
-            {
-              "text": "Approved",
-              "value": "approved"
-            },
-            {
-              "text": "Rejected",
-              "value": "rejected"
-            },
-            {
-              "text": "Auto-Approved",
-              "value": "auto_approved"
-            },
-            {
-              "text": "Not Required",
-              "value": "not_required"
-            }
+            { "text": "Pending Review", "value": "pending" },
+            { "text": "Approved", "value": "approved" },
+            { "text": "Rejected", "value": "rejected" },
+            { "text": "Auto-Approved", "value": "auto_approved" },
+            { "text": "Not Required", "value": "not_required" }
           ]
         },
         "width": "half"
@@ -359,10 +420,7 @@
       "collection": "document_versions",
       "field": "approved_by",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "select-dropdown-m2o",
         "display": "user",
@@ -374,25 +432,14 @@
       "collection": "document_versions",
       "field": "approved_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "datetime",
-        "readonly": true,
-        "width": "half"
-      }
+      "schema": { "data_type": "timestamp", "is_nullable": true },
+      "meta": { "interface": "datetime", "readonly": true, "width": "half" }
     },
     {
       "collection": "document_versions",
       "field": "hash_sha256",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 128,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 128, "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -404,10 +451,7 @@
       "collection": "document_versions",
       "field": "bytes",
       "type": "bigInteger",
-      "schema": {
-        "data_type": "bigint",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "bigint", "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -419,10 +463,7 @@
       "collection": "document_versions",
       "field": "is_current",
       "type": "boolean",
-      "schema": {
-        "data_type": "boolean",
-        "default_value": false
-      },
+      "schema": { "data_type": "boolean", "default_value": false },
       "meta": {
         "interface": "boolean",
         "width": "half",
@@ -433,15 +474,10 @@
       "collection": "document_versions",
       "field": "metadata_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Additional metadata about this version"
       }
@@ -450,11 +486,7 @@
       "collection": "document_versions",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -466,11 +498,7 @@
       "collection": "document_versions",
       "field": "updated_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -478,6 +506,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "email_messages",
       "field": "id",
@@ -488,20 +517,13 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "email_messages",
       "field": "message_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_unique": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 255, "is_unique": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -513,51 +535,28 @@
       "collection": "email_messages",
       "field": "from_address",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half",
-        "display": "formatted-value"
-      }
+      "schema": { "data_type": "varchar", "max_length": 255 },
+      "meta": { "interface": "input", "width": "half", "display": "formatted-value" }
     },
     {
       "collection": "email_messages",
       "field": "subject",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 500,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "width": "full"
-      }
+      "schema": { "data_type": "varchar", "max_length": 500, "is_nullable": true },
+      "meta": { "interface": "input", "width": "full" }
     },
     {
       "collection": "email_messages",
       "field": "received_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()"
-      },
-      "meta": {
-        "interface": "datetime",
-        "width": "half"
-      }
+      "schema": { "data_type": "timestamp", "default_value": "now()" },
+      "meta": { "interface": "datetime", "width": "half" }
     },
     {
       "collection": "email_messages",
       "field": "raw_mime_file",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "file",
         "special": ["file"],
@@ -569,24 +568,14 @@
       "collection": "email_messages",
       "field": "processed",
       "type": "boolean",
-      "schema": {
-        "data_type": "boolean",
-        "default_value": false
-      },
-      "meta": {
-        "interface": "boolean",
-        "width": "half"
-      }
+      "schema": { "data_type": "boolean", "default_value": false },
+      "meta": { "interface": "boolean", "width": "half" }
     },
     {
       "collection": "email_messages",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -594,6 +583,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "email_attachments",
       "field": "id",
@@ -604,61 +594,34 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "email_attachments",
       "field": "email_message",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "email_attachments",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "email_attachments",
       "field": "attachment_sha256",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 128,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "full"
-      }
+      "schema": { "data_type": "varchar", "max_length": 128, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "full" }
     },
     {
       "collection": "email_attachments",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -666,6 +629,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "processing_jobs",
       "field": "id",
@@ -676,20 +640,13 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "processing_jobs",
       "field": "job_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_unique": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 255, "is_unique": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -701,24 +658,14 @@
       "collection": "processing_jobs",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "half"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "half" }
     },
     {
       "collection": "processing_jobs",
       "field": "workflow_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 255, "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -730,43 +677,21 @@
       "collection": "processing_jobs",
       "field": "run_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "half",
-        "note": "Temporal run ID"
-      }
+      "schema": { "data_type": "varchar", "max_length": 255, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "half", "note": "Temporal run ID" }
     },
     {
       "collection": "processing_jobs",
       "field": "status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 40,
-        "default_value": "processing"
-      },
+      "schema": { "data_type": "varchar", "max_length": 40, "default_value": "processing" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Processing",
-              "value": "processing"
-            },
-            {
-              "text": "Completed",
-              "value": "completed"
-            },
-            {
-              "text": "Failed",
-              "value": "failed"
-            }
+            { "text": "Processing", "value": "processing" },
+            { "text": "Completed", "value": "completed" },
+            { "text": "Failed", "value": "failed" }
           ]
         },
         "width": "half"
@@ -776,11 +701,7 @@
       "collection": "processing_jobs",
       "field": "provider",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 40,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 40, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -791,30 +712,17 @@
       "collection": "processing_jobs",
       "field": "current_step",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 100,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "half"
-      }
+      "schema": { "data_type": "varchar", "max_length": 100, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "half" }
     },
     {
       "collection": "processing_jobs",
       "field": "timings_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "readonly": true,
         "width": "full"
       }
@@ -823,15 +731,10 @@
       "collection": "processing_jobs",
       "field": "costs_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "readonly": true,
         "width": "full",
         "note": "AI/processing costs breakdown"
@@ -841,15 +744,10 @@
       "collection": "processing_jobs",
       "field": "error_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "readonly": true,
         "width": "full"
       }
@@ -858,24 +756,14 @@
       "collection": "processing_jobs",
       "field": "attempt",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "default_value": 1
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half"
-      }
+      "schema": { "data_type": "integer", "default_value": 1 },
+      "meta": { "interface": "input", "width": "half" }
     },
     {
       "collection": "processing_jobs",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -887,11 +775,7 @@
       "collection": "processing_jobs",
       "field": "updated_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -899,6 +783,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "artifacts",
       "field": "id",
@@ -909,52 +794,28 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "artifacts",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "half"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "half" }
     },
     {
       "collection": "artifacts",
       "field": "kind",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 40
-      },
+      "schema": { "data_type": "varchar", "max_length": 40 },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "OCR Text",
-              "value": "ocr_text"
-            },
-            {
-              "text": "Parsed JSON",
-              "value": "parsed_json"
-            },
-            {
-              "text": "Page Image",
-              "value": "page_image"
-            },
-            {
-              "text": "Preview",
-              "value": "preview"
-            }
+            { "text": "OCR Text", "value": "ocr_text" },
+            { "text": "Parsed JSON", "value": "parsed_json" },
+            { "text": "Page Image", "value": "page_image" },
+            { "text": "Preview", "value": "preview" }
           ]
         },
         "width": "half"
@@ -964,10 +825,7 @@
       "collection": "artifacts",
       "field": "file",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "file",
         "special": ["file"],
@@ -979,25 +837,14 @@
       "collection": "artifacts",
       "field": "page_no",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half",
-        "note": "Page number if applicable"
-      }
+      "schema": { "data_type": "integer", "is_nullable": true },
+      "meta": { "interface": "input", "width": "half", "note": "Page number if applicable" }
     },
     {
       "collection": "artifacts",
       "field": "format",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -1008,42 +855,21 @@
       "collection": "artifacts",
       "field": "hash_sha256",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 128,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "full"
-      }
+      "schema": { "data_type": "varchar", "max_length": 128, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "full" }
     },
     {
       "collection": "artifacts",
       "field": "metadata_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
-        "width": "full"
-      }
+      "schema": { "data_type": "jsonb", "is_nullable": true },
+      "meta": { "interface": "input-code", "options": { "language": "json" }, "width": "full" }
     },
     {
       "collection": "artifacts",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -1051,6 +877,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "extractions",
       "field": "id",
@@ -1061,33 +888,20 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "extractions",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "extractions",
       "field": "schema_name",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 100,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 100, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -1098,14 +912,10 @@
       "collection": "extractions",
       "field": "extracted_data",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb"
-      },
+      "schema": { "data_type": "jsonb" },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Full extracted data payload"
       }
@@ -1114,15 +924,10 @@
       "collection": "extractions",
       "field": "validation_result",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Validation results (present/missing fields, confidence)"
       }
@@ -1131,25 +936,14 @@
       "collection": "extractions",
       "field": "confidence_score",
       "type": "float",
-      "schema": {
-        "data_type": "double precision",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half",
-        "note": "Overall confidence score (0-100)"
-      }
+      "schema": { "data_type": "double precision", "is_nullable": true },
+      "meta": { "interface": "input", "width": "half", "note": "Overall confidence score (0-100)" }
     },
     {
       "collection": "extractions",
       "field": "model_used",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -1160,11 +954,7 @@
       "collection": "extractions",
       "field": "provider",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 40,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 40, "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -1175,11 +965,7 @@
       "collection": "extractions",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -1187,6 +973,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "review_tasks",
       "field": "id",
@@ -1197,32 +984,20 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "review_tasks",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "review_tasks",
       "field": "assignee",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "select-dropdown-m2o",
         "display": "user",
@@ -1234,31 +1009,15 @@
       "collection": "review_tasks",
       "field": "status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "default_value": "open"
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "open" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Open",
-              "value": "open"
-            },
-            {
-              "text": "Approved",
-              "value": "approved"
-            },
-            {
-              "text": "Rejected",
-              "value": "rejected"
-            },
-            {
-              "text": "Auto Accepted",
-              "value": "auto_accepted"
-            }
+            { "text": "Open", "value": "open" },
+            { "text": "Approved", "value": "approved" },
+            { "text": "Rejected", "value": "rejected" },
+            { "text": "Auto Accepted", "value": "auto_accepted" }
           ]
         },
         "width": "half"
@@ -1268,15 +1027,10 @@
       "collection": "review_tasks",
       "field": "changes_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Suggested changes or modifications"
       }
@@ -1285,38 +1039,21 @@
       "collection": "review_tasks",
       "field": "comment",
       "type": "text",
-      "schema": {
-        "data_type": "text",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input-rich-text-md",
-        "width": "full"
-      }
+      "schema": { "data_type": "text", "is_nullable": true },
+      "meta": { "interface": "input-rich-text-md", "width": "full" }
     },
     {
       "collection": "review_tasks",
       "field": "reviewed_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "datetime",
-        "readonly": true,
-        "width": "half"
-      }
+      "schema": { "data_type": "timestamp", "is_nullable": true },
+      "meta": { "interface": "datetime", "readonly": true, "width": "half" }
     },
     {
       "collection": "review_tasks",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -1324,6 +1061,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "exports",
       "field": "id",
@@ -1334,52 +1072,28 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "exports",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "exports",
       "field": "format",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20
-      },
+      "schema": { "data_type": "varchar", "max_length": 20 },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Excel (XLSX)",
-              "value": "xlsx"
-            },
-            {
-              "text": "CSV",
-              "value": "csv"
-            },
-            {
-              "text": "JSON",
-              "value": "json"
-            },
-            {
-              "text": "PDF",
-              "value": "pdf"
-            }
+            { "text": "Excel (XLSX)", "value": "xlsx" },
+            { "text": "CSV", "value": "csv" },
+            { "text": "JSON", "value": "json" },
+            { "text": "PDF", "value": "pdf" }
           ]
         },
         "width": "half"
@@ -1389,25 +1103,14 @@
       "collection": "exports",
       "field": "filename",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half",
-        "note": "Original/generated filename"
-      }
+      "schema": { "data_type": "varchar", "max_length": 255, "is_nullable": true },
+      "meta": { "interface": "input", "width": "half", "note": "Original/generated filename" }
     },
     {
       "collection": "exports",
       "field": "file",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "file",
         "special": ["file"],
@@ -1419,42 +1122,21 @@
       "collection": "exports",
       "field": "hash_sha256",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 128,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "full"
-      }
+      "schema": { "data_type": "varchar", "max_length": 128, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "full" }
     },
     {
       "collection": "exports",
       "field": "status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "default_value": "generated"
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "generated" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Generated",
-              "value": "generated"
-            },
-            {
-              "text": "Delivered",
-              "value": "delivered"
-            },
-            {
-              "text": "Failed",
-              "value": "failed"
-            }
+            { "text": "Generated", "value": "generated" },
+            { "text": "Delivered", "value": "delivered" },
+            { "text": "Failed", "value": "failed" }
           ]
         },
         "width": "half"
@@ -1464,10 +1146,7 @@
       "collection": "exports",
       "field": "bytes",
       "type": "bigInteger",
-      "schema": {
-        "data_type": "bigint",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "bigint", "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -1479,11 +1158,7 @@
       "collection": "exports",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -1491,6 +1166,7 @@
         "width": "half"
       }
     },
+
     {
       "collection": "deliveries",
       "field": "id",
@@ -1501,62 +1177,34 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "deliveries",
       "field": "export",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "deliveries",
       "field": "target",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid"
-      },
-      "meta": {
-        "interface": "select-dropdown-m2o",
-        "display": "related-values",
-        "width": "full"
-      }
+      "schema": { "data_type": "uuid" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "width": "full" }
     },
     {
       "collection": "deliveries",
       "field": "status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "default_value": "pending"
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "pending" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Pending",
-              "value": "pending"
-            },
-            {
-              "text": "Success",
-              "value": "success"
-            },
-            {
-              "text": "Failed",
-              "value": "failed"
-            }
+            { "text": "Pending", "value": "pending" },
+            { "text": "Success", "value": "success" },
+            { "text": "Failed", "value": "failed" }
           ]
         },
         "width": "half"
@@ -1566,28 +1214,17 @@
       "collection": "deliveries",
       "field": "attempt",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "default_value": 1
-      },
-      "meta": {
-        "interface": "input",
-        "width": "half"
-      }
+      "schema": { "data_type": "integer", "default_value": 1 },
+      "meta": { "interface": "input", "width": "half" }
     },
     {
       "collection": "deliveries",
       "field": "request_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "readonly": true,
         "width": "full"
       }
@@ -1596,15 +1233,10 @@
       "collection": "deliveries",
       "field": "response_json",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "readonly": true,
         "width": "full"
       }
@@ -1613,54 +1245,28 @@
       "collection": "deliveries",
       "field": "external_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255,
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input",
-        "readonly": true,
-        "width": "half"
-      }
+      "schema": { "data_type": "varchar", "max_length": 255, "is_nullable": true },
+      "meta": { "interface": "input", "readonly": true, "width": "half" }
     },
     {
       "collection": "deliveries",
       "field": "error_message",
       "type": "text",
-      "schema": {
-        "data_type": "text",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "input-multiline",
-        "readonly": true,
-        "width": "full"
-      }
+      "schema": { "data_type": "text", "is_nullable": true },
+      "meta": { "interface": "input-multiline", "readonly": true, "width": "full" }
     },
     {
       "collection": "deliveries",
       "field": "sent_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "is_nullable": true
-      },
-      "meta": {
-        "interface": "datetime",
-        "readonly": true,
-        "width": "half"
-      }
+      "schema": { "data_type": "timestamp", "is_nullable": true },
+      "meta": { "interface": "datetime", "readonly": true, "width": "half" }
     },
     {
       "collection": "deliveries",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -1668,265 +1274,186 @@
         "width": "half"
       }
     },
+
     {
       "collection": "integration_targets",
       "field": "id",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_primary_key": true,
-        "is_nullable": false
-      },
+      "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "name",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120
-      },
+      "schema": { "data_type": "varchar", "max_length": 120 },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "kind",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20
-      },
+      "schema": { "data_type": "varchar", "max_length": 20 },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "base_url",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 500,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 500, "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "auth_kind",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20
-      },
+      "schema": { "data_type": "varchar", "max_length": 20 },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "auth_secrets",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
-      "meta": {
-        "special": ["encrypted"]
-      }
+      "schema": { "data_type": "jsonb", "is_nullable": true },
+      "meta": { "special": ["encrypted"] }
     },
     {
       "collection": "integration_targets",
       "field": "default_mapping_key",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "integration_targets",
       "field": "active",
       "type": "boolean",
-      "schema": {
-        "data_type": "boolean",
-        "default_value": true
-      },
+      "schema": { "data_type": "boolean", "default_value": true },
       "meta": {}
     },
+
     {
       "collection": "schema_definitions",
       "field": "id",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_primary_key": true,
-        "is_nullable": false
-      },
+      "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "schema_key",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 100
-      },
+      "schema": { "data_type": "varchar", "max_length": 100 },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "version",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20
-      },
+      "schema": { "data_type": "varchar", "max_length": 20 },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "json_schema",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb"
-      },
+      "schema": { "data_type": "jsonb" },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "csv_mapping",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "auto_accept_thresholds",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "schema_definitions",
       "field": "prompt_template",
       "type": "text",
-      "schema": {
-        "data_type": "text",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "text", "is_nullable": true },
       "meta": {}
     },
+
     {
       "collection": "master_vendors",
       "field": "id",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_primary_key": true,
-        "is_nullable": false
-      },
+      "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false },
       "meta": {}
     },
     {
       "collection": "master_vendors",
       "field": "name",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255
-      },
+      "schema": { "data_type": "varchar", "max_length": 255 },
       "meta": {}
     },
     {
       "collection": "master_vendors",
       "field": "vat_id",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120,
-        "is_unique": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 120, "is_unique": true },
       "meta": {}
     },
     {
       "collection": "master_vendors",
       "field": "iban",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 120,
-        "is_nullable": true
-      },
+      "schema": { "data_type": "varchar", "max_length": 120, "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "master_vendors",
       "field": "aliases",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {}
     },
+
     {
       "collection": "activity_log",
       "field": "id",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_primary_key": true,
-        "is_nullable": false
-      },
+      "schema": { "data_type": "uuid", "is_primary_key": true, "is_nullable": false },
       "meta": {}
     },
     {
       "collection": "activity_log",
       "field": "document",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "activity_log",
       "field": "kind",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 80
-      },
+      "schema": { "data_type": "varchar", "max_length": 80 },
       "meta": {}
     },
     {
       "collection": "activity_log",
       "field": "payload",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {}
     },
     {
       "collection": "activity_log",
       "field": "emitted_by",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 40
-      },
+      "schema": { "data_type": "varchar", "max_length": 40 },
       "meta": {}
     },
+
     {
       "collection": "logistics_documents",
       "field": "id",
@@ -1937,33 +1464,20 @@
         "is_nullable": false,
         "default_value": "gen_random_uuid()"
       },
-      "meta": {
-        "hidden": true,
-        "readonly": true
-      }
+      "meta": { "hidden": true, "readonly": true }
     },
     {
       "collection": "logistics_documents",
       "field": "title",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 255
-      },
-      "meta": {
-        "required": true,
-        "interface": "input",
-        "width": "full"
-      }
+      "schema": { "data_type": "varchar", "max_length": 255 },
+      "meta": { "required": true, "interface": "input", "width": "full" }
     },
     {
       "collection": "logistics_documents",
       "field": "file",
       "type": "uuid",
-      "schema": {
-        "data_type": "uuid",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "uuid", "is_nullable": true },
       "meta": {
         "interface": "file",
         "special": ["file"],
@@ -1992,31 +1506,15 @@
       "collection": "logistics_documents",
       "field": "processing_status",
       "type": "string",
-      "schema": {
-        "data_type": "varchar",
-        "max_length": 20,
-        "default_value": "uploaded"
-      },
+      "schema": { "data_type": "varchar", "max_length": 20, "default_value": "uploaded" },
       "meta": {
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            {
-              "text": "Uploaded",
-              "value": "uploaded"
-            },
-            {
-              "text": "Processing",
-              "value": "processing"
-            },
-            {
-              "text": "Completed",
-              "value": "completed"
-            },
-            {
-              "text": "Failed",
-              "value": "failed"
-            }
+            { "text": "Uploaded", "value": "uploaded" },
+            { "text": "Processing", "value": "processing" },
+            { "text": "Completed", "value": "completed" },
+            { "text": "Failed", "value": "failed" }
           ]
         },
         "width": "half"
@@ -2026,10 +1524,7 @@
       "collection": "logistics_documents",
       "field": "token_count",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "integer", "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -2041,10 +1536,7 @@
       "collection": "logistics_documents",
       "field": "was_chunked",
       "type": "boolean",
-      "schema": {
-        "data_type": "boolean",
-        "default_value": false
-      },
+      "schema": { "data_type": "boolean", "default_value": false },
       "meta": {
         "interface": "boolean",
         "width": "half",
@@ -2055,10 +1547,7 @@
       "collection": "logistics_documents",
       "field": "chunk_count",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "integer", "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -2070,15 +1559,10 @@
       "collection": "logistics_documents",
       "field": "invoice_header",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Invoice header information"
       }
@@ -2087,15 +1571,10 @@
       "collection": "logistics_documents",
       "field": "transport_line_items",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Transport line items with matched documents"
       }
@@ -2104,15 +1583,10 @@
       "collection": "logistics_documents",
       "field": "unclaimed_documents",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "full",
         "note": "Documents that couldn't be matched to line items"
       }
@@ -2121,10 +1595,7 @@
       "collection": "logistics_documents",
       "field": "confidence",
       "type": "float",
-      "schema": {
-        "data_type": "double precision",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "double precision", "is_nullable": true },
       "meta": {
         "interface": "input",
         "width": "half",
@@ -2135,15 +1606,10 @@
       "collection": "logistics_documents",
       "field": "present_fields",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "half",
         "note": "List of fields present in extraction"
       }
@@ -2152,15 +1618,10 @@
       "collection": "logistics_documents",
       "field": "missing_fields",
       "type": "json",
-      "schema": {
-        "data_type": "jsonb",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "jsonb", "is_nullable": true },
       "meta": {
         "interface": "input-code",
-        "options": {
-          "language": "json"
-        },
+        "options": { "language": "json" },
         "width": "half",
         "note": "List of expected but missing fields"
       }
@@ -2169,10 +1630,7 @@
       "collection": "logistics_documents",
       "field": "error_message",
       "type": "text",
-      "schema": {
-        "data_type": "text",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "text", "is_nullable": true },
       "meta": {
         "interface": "input-multiline",
         "readonly": true,
@@ -2184,10 +1642,7 @@
       "collection": "logistics_documents",
       "field": "processing_time_ms",
       "type": "integer",
-      "schema": {
-        "data_type": "integer",
-        "is_nullable": true
-      },
+      "schema": { "data_type": "integer", "is_nullable": true },
       "meta": {
         "interface": "input",
         "readonly": true,
@@ -2199,11 +1654,7 @@
       "collection": "logistics_documents",
       "field": "created_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -2215,11 +1666,7 @@
       "collection": "logistics_documents",
       "field": "updated_at",
       "type": "timestamp",
-      "schema": {
-        "data_type": "timestamp",
-        "default_value": "now()",
-        "is_nullable": false
-      },
+      "schema": { "data_type": "timestamp", "default_value": "now()", "is_nullable": false },
       "meta": {
         "interface": "datetime",
         "readonly": true,
@@ -2229,6 +1676,21 @@
     }
   ],
   "relations": [
+    {
+      "collection": "documents",
+      "field": "file",
+      "related_collection": "directus_files",
+      "schema": {
+        "constraint_name": "documents_file_fk",
+        "table": "documents",
+        "column": "file",
+        "foreign_key_table": "directus_files",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      },
+      "meta": {}
+    },
     {
       "collection": "document_versions",
       "field": "file",
@@ -2289,6 +1751,128 @@
       },
       "meta": {}
     },
+
+    {
+      "collection": "document_versions",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "document_versions_document_fk",
+        "table": "document_versions",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "email_attachments",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "email_attachments_document_fk",
+        "table": "email_attachments",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "processing_jobs",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "processing_jobs_document_fk",
+        "table": "processing_jobs",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "artifacts",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "artifacts_document_fk",
+        "table": "artifacts",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "extractions",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "extractions_document_fk",
+        "table": "extractions",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "review_tasks",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "review_tasks_document_fk",
+        "table": "review_tasks",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "exports",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "exports_document_fk",
+        "table": "exports",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {}
+    },
+    {
+      "collection": "activity_log",
+      "field": "document",
+      "related_collection": "documents",
+      "schema": {
+        "constraint_name": "activity_log_document_fk",
+        "table": "activity_log",
+        "column": "document",
+        "foreign_key_table": "documents",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      },
+      "meta": {}
+    },
+
     {
       "collection": "email_attachments",
       "field": "email_message",
@@ -2304,6 +1888,7 @@
       },
       "meta": {}
     },
+
     {
       "collection": "deliveries",
       "field": "export",
@@ -2334,6 +1919,7 @@
       },
       "meta": {}
     },
+
     {
       "collection": "document_versions",
       "field": "approved_by",

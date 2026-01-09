@@ -9,10 +9,14 @@ export interface AssociatedDocument {
   recipient_name?: string;
   destination_address?: string;
   reference_numbers?: {
-    order_number?: string;
+    order_number_customer?: string;
+    order_number_ours?: string;
+    order_number_category?: string;
     delivery_number?: string;
+    // Legacy field for backward compatibility
+    order_number?: string;
   };
-  contains_handwriting?: boolean;
+  is_handwritten?: boolean;
 }
 
 export interface TransportLineItem {

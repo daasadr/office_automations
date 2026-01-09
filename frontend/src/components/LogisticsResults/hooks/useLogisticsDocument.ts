@@ -21,7 +21,7 @@ export function useLogisticsDocument({
 
   useEffect(() => {
     if (!documentId) {
-      setError("No document ID provided");
+      setError("Nebylo zadáno ID dokumentu");
       setIsLoading(false);
       return;
     }

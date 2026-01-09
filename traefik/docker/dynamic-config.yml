@@ -65,7 +65,7 @@ tls:
       curvePreferences:
         - CurveP521
         - CurveP384
-      sniStrict: true
+      sniStrict: false  # Disabled for local development (.local domains can't use Let's Encrypt)
 
 # Self-signed certificates for local development
 # tls:

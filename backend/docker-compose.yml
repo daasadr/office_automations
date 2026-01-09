@@ -4,6 +4,7 @@ include:
   - ./docker/orchestration/orchestration.yml
   - ./docker/postgres/postgres.yml
   - ./docker/directus/directus.yml
+  - ./docker/authentik/authentik.yml
   - ./docker/minio/minio.yml
   - ./docker/keydb/keydb.yml
   - ./docker/mailhog/mailhog.yml

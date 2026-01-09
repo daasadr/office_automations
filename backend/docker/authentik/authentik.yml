@@ -1,0 +1,122 @@
+services:
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2024.12.1
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    env_file:
+      - ../../.env
+    environment:
+      AUTHENTIK_REDIS__HOST: keydb
+      AUTHENTIK_REDIS__PORT: 6379
+      AUTHENTIK_REDIS__PASSWORD: ${KEYDB_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__PORT: 5432
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL__PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
+      AUTHENTIK_LOG_LEVEL: ${AUTHENTIK_LOG_LEVEL:-info}
+      # Disable built-in bootstrapping (we'll configure via UI)
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-}
+    networks:
+      - traefik-public
+      - backend-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keydb:
+        condition: service_healthy
+    volumes:
+      - authentik-media:/media
+      - authentik-custom-templates:/templates
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      
+      # HTTP Router for subdomain (HTTP)
+      - "traefik.http.routers.authentik-http.rule=Host(`auth.${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.authentik-http.entrypoints=web"
+      - "traefik.http.routers.authentik-http.middlewares=security-headers@file"
+      
+      # HTTPS Router for subdomain
+      - "traefik.http.routers.authentik-https.rule=Host(`auth.${DOMAIN:-dev-dejtoai.local}`)"
+      - "traefik.http.routers.authentik-https.entrypoints=websecure"
+      - "traefik.http.routers.authentik-https.tls=true"
+      - "traefik.http.routers.authentik-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.authentik-https.middlewares=security-headers@file"
+      
+      # Service definition
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+      
+      # Health check
+      - "traefik.http.services.authentik.loadbalancer.healthcheck.path=/-/health/live/"
+      - "traefik.http.services.authentik.loadbalancer.healthcheck.interval=30s"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9000/-/health/live/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2024.12.1
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    env_file:
+      - ../../.env
+    environment:
+      AUTHENTIK_REDIS__HOST: keydb
+      AUTHENTIK_REDIS__PORT: 6379
+      AUTHENTIK_REDIS__PASSWORD: ${KEYDB_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__PORT: 5432
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL__PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
+      AUTHENTIK_LOG_LEVEL: ${AUTHENTIK_LOG_LEVEL:-info}
+    networks:
+      - backend-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keydb:
+        condition: service_healthy
+    volumes:
+      - authentik-media:/media
+      - authentik-custom-templates:/templates
+      - authentik-certs:/certs
+    user: root
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD-SHELL", "ak healthcheck || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  authentik-media:
+    name: authentik-media
+  authentik-custom-templates:
+    name: authentik-custom-templates
+  authentik-certs:
+    name: authentik-certs
+

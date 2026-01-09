@@ -42,7 +42,7 @@ export interface LogisticsResult {
         order_number?: string;
         delivery_number?: string;
       };
-      contains_handwriting?: boolean;
+      is_handwritten?: boolean;
     }>;
   }>;
   unclaimed_documents?: Array<{

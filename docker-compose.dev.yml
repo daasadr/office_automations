@@ -27,6 +27,7 @@ include:
   - ./backend/docker/keydb/keydb.yml
   - ./backend/docker/minio/minio.yml
   - ./backend/docker/directus/directus.yml
+  - ./backend/docker/authentik/authentik.yml
   
   # Development email testing
   - ./backend/docker/mailhog/mailhog.yml

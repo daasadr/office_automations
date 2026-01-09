@@ -99,6 +99,51 @@ Imports only roles, policies, access control, and permissions.
 
 ---
 
+### 5. PostgreSQL Database Backup
+
+**Script:** `backup-postgres.sh`
+
+Creates a complete SQL dump of the PostgreSQL database and saves it to the `sql_backups` directory.
+
+```bash
+./backend/scripts/backup-postgres.sh
+```
+
+**Features:**
+- Creates timestamped SQL dump files
+- Automatically compresses backups (creates .sql.gz files)
+- Loads database credentials from .env file
+- Shows backup file size and location
+- Provides restore instructions
+
+**What it backs up:**
+- Complete database schema
+- All data in all tables
+- Saved to: `backend/scripts/sql_backups/backup_<database>_<timestamp>.sql.gz`
+
+**Requirements:**
+- PostgreSQL container must be running
+- Database credentials in .env file (POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD)
+
+**Use when:**
+- Before making major schema changes
+- Regular database backups
+- Before deploying to production
+- Creating database snapshots
+
+**Restore from backup:**
+```bash
+# For compressed backups
+gunzip < backend/scripts/sql_backups/backup_directus_YYYYMMDD_HHMMSS.sql.gz | \
+  docker exec -i postgres psql -U directus -d directus
+
+# For uncompressed backups
+docker exec -i postgres psql -U directus -d directus < \
+  backend/scripts/sql_backups/backup_directus_YYYYMMDD_HHMMSS.sql
+```
+
+---
+
 ## File Structure
 
 ```
@@ -114,6 +159,8 @@ backend/
     ├── import-directus-schema.sh          # Import (interactive)
     ├── quick-import-schema.sh             # Import (automated)
     ├── import-directus-policies.sh        # Import policies only
+    ├── backup-postgres.sh                 # PostgreSQL database backup
+    ├── sql_backups/                       # Database backup storage
     └── README.md                          # This file
 ```
 
@@ -175,6 +222,25 @@ If you only changed permissions/policies:
 ```
 
 Then log out and back in to Directus to see changes.
+
+---
+
+### 5. Database Backup
+
+Before making major changes or deploying:
+
+```bash
+# Create a complete database backup
+./backend/scripts/backup-postgres.sh
+```
+
+This creates a compressed SQL dump in `backend/scripts/sql_backups/`.
+
+**Best practice:** Run this before:
+- Importing schema changes
+- Deploying to production
+- Making manual database changes
+- Running migrations
 
 ---
 

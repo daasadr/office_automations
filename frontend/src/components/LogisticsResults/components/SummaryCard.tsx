@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Clock, Layers, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Layers, ShoppingBag, Tag, XCircle } from "lucide-react";
 import type { LogisticsDocumentData } from "../types";
 
 interface SummaryCardProps {
@@ -14,6 +14,23 @@ export function SummaryCard({ data }: SummaryCardProps) {
   const unclaimedCount = data.unclaimed_documents?.length || 0;
 
   const matchPercentage = totalItems > 0 ? (matchedCount / totalItems) * 100 : 0;
+
+  // Calculate order number statistics
+  const orderNumbers =
+    data.transport_line_items?.flatMap(
+      (item) => item.associated_documents?.map((doc) => doc.reference_numbers).filter(Boolean) || []
+    ) || [];
+
+  const orderNumbersOurs = orderNumbers.filter((ref) => ref?.order_number_ours).length;
+  const orderNumberCategories = orderNumbers.reduce(
+    (acc, ref) => {
+      if (ref?.order_number_category && ref.order_number_category !== "Unknown") {
+        acc[ref.order_number_category] = (acc[ref.order_number_category] || 0) + 1;
+      }
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return (
     <div className="bg-card border rounded-lg p-6">
@@ -83,6 +100,37 @@ export function SummaryCard({ data }: SummaryCardProps) {
               className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all"
               style={{ width: `${matchPercentage}%` }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Order Number Statistics */}
+      {orderNumbersOurs > 0 && (
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex items-center gap-2 mb-3">
+            <ShoppingBag className="w-4 h-4 text-orange-500" />
+            <h4 className="text-sm font-semibold">Statistiky čísel objednávek</h4>
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm text-muted-foreground">
+              Celkem našich objednávek:{" "}
+              <span className="font-medium text-foreground">{orderNumbersOurs}</span>
+            </div>
+            {Object.keys(orderNumberCategories).length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(orderNumberCategories).map(([category, count]) => (
+                  <div
+                    key={category}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-xs"
+                  >
+                    <Tag className="w-3 h-3" />
+                    <span>
+                      {category}: {count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -5,6 +5,36 @@ interface UnclaimedDocumentsCardProps {
   documents?: UnclaimedDocument[];
 }
 
+// Translation map for document types (English -> Czech)
+const documentTypeTranslations: Record<string, string> = {
+  "Delivery Note": "Dodací list",
+  "Transport Log": "Přepravní deník",
+  CMR: "CMR",
+  ALONŽ: "ALONŽ",
+  "Weighing Slip": "Váhový lístek",
+};
+
+// Helper function to translate document type to Czech
+function translateDocumentType(type?: string): string {
+  if (!type) return "Neznámý dokument";
+  return documentTypeTranslations[type] || type;
+}
+
+// Helper function to translate reason patterns to Czech
+function translateReason(reason?: string): string {
+  if (!reason) return "";
+
+  // Common patterns to translate
+  let translated = reason
+    .replace(
+      /Destination (.+) not found in invoice list/g,
+      "Destinace $1 nebyla nalezena v seznamu faktury"
+    )
+    .replace(/No document found with destination/g, "Nebyl nalezen dokument s destinací");
+
+  return translated;
+}
+
 export function UnclaimedDocumentsCard({ documents }: UnclaimedDocumentsCardProps) {
   if (!documents || documents.length === 0) {
     return null;
@@ -33,7 +63,7 @@ export function UnclaimedDocumentsCard({ documents }: UnclaimedDocumentsCardProp
               <FileQuestion className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">{doc.document_type || "Neznámý dokument"}</span>
+                  <span className="font-medium">{translateDocumentType(doc.document_type)}</span>
                   {doc.source_page_index && (
                     <span className="text-xs bg-yellow-100 dark:bg-yellow-900 px-2 py-0.5 rounded">
                       Strana {doc.source_page_index}
@@ -47,7 +77,7 @@ export function UnclaimedDocumentsCard({ documents }: UnclaimedDocumentsCardProp
 
                 {doc.reason_for_unclaimed && (
                   <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 italic">
-                    Důvod: {doc.reason_for_unclaimed}
+                    Důvod: {translateReason(doc.reason_for_unclaimed)}
                   </p>
                 )}
               </div>

@@ -1,8 +1,48 @@
-import { CheckCircle, FileText, Hash, MapPin, PenTool, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  FileText,
+  Hash,
+  MapPin,
+  PenTool,
+  ShoppingBag,
+  Tag,
+  XCircle,
+} from "lucide-react";
 import type { TransportLineItem } from "../types";
 
 interface TransportLineItemCardProps {
   item: TransportLineItem;
+}
+
+// Translation map for document types (English -> Czech)
+const documentTypeTranslations: Record<string, string> = {
+  "Delivery Note": "Dodací list",
+  "Transport Log": "Přepravní deník",
+  CMR: "CMR",
+  ALONŽ: "ALONŽ",
+  "Weighing Slip": "Váhový lístek",
+};
+
+// Helper function to translate document type to Czech
+function translateDocumentType(type?: string): string {
+  if (!type) return "Dokument";
+  return documentTypeTranslations[type] || type;
+}
+
+// Helper function to translate match reason patterns to Czech
+function translateMatchReason(reason?: string): string {
+  if (!reason) return "";
+
+  // Common patterns to translate
+  let translated = reason
+    .replace(/Delivery Note/g, "Dodací list")
+    .replace(/Transport Log/g, "Přepravní deník")
+    .replace(/Matched based on destination/g, "Spárováno na základě destinace")
+    .replace(/found in/g, "nalezené v")
+    .replace(/No document found with destination/g, "Nebyl nalezen dokument s destinací")
+    .replace(/and/g, "a");
+
+  return translated;
 }
 
 export function TransportLineItemCard({ item }: TransportLineItemCardProps) {
@@ -66,7 +106,7 @@ export function TransportLineItemCard({ item }: TransportLineItemCardProps) {
       {/* Match reason */}
       {item.match_reason && (
         <div className="px-4 py-2 border-t bg-muted/30 text-sm text-muted-foreground">
-          {item.match_reason}
+          {translateMatchReason(item.match_reason)}
         </div>
       )}
 
@@ -85,7 +125,7 @@ export function TransportLineItemCard({ item }: TransportLineItemCardProps) {
                 <FileText className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium">{doc.document_type || "Dokument"}</span>
+                    <span className="font-medium">{translateDocumentType(doc.document_type)}</span>
                     {doc.document_number && (
                       <span className="text-sm text-muted-foreground">
                         č. {doc.document_number}
@@ -96,10 +136,10 @@ export function TransportLineItemCard({ item }: TransportLineItemCardProps) {
                         Strana {doc.source_page_index}
                       </span>
                     )}
-                    {doc.contains_handwriting && (
+                    {doc.is_handwritten && (
                       <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded">
                         <PenTool className="w-3 h-3" />
-                        Ručně psáno
+                        Ručně psaný formulář
                       </span>
                     )}
                   </div>
@@ -120,13 +160,40 @@ export function TransportLineItemCard({ item }: TransportLineItemCardProps) {
                   </div>
 
                   {doc.reference_numbers && (
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {doc.reference_numbers.order_number && (
-                        <span>Obj.: {doc.reference_numbers.order_number}</span>
+                    <div className="mt-2 space-y-1">
+                      {/* Order Number Ours - Prominent Display */}
+                      {(doc.reference_numbers.order_number_ours ||
+                        doc.reference_numbers.order_number_category) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {doc.reference_numbers.order_number_ours && (
+                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 text-sm font-medium">
+                              <ShoppingBag className="w-3 h-3" />
+                              <span>Naše obj.: {doc.reference_numbers.order_number_ours}</span>
+                            </div>
+                          )}
+                          {doc.reference_numbers.order_number_category &&
+                            doc.reference_numbers.order_number_category !== "Unknown" && (
+                              <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-sm">
+                                <Tag className="w-3 h-3" />
+                                <span>{doc.reference_numbers.order_number_category}</span>
+                              </div>
+                            )}
+                        </div>
                       )}
-                      {doc.reference_numbers.delivery_number && (
-                        <span className="ml-3">Dod.: {doc.reference_numbers.delivery_number}</span>
-                      )}
+                      {/* Other reference numbers */}
+                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
+                        {(doc.reference_numbers.order_number_customer ||
+                          doc.reference_numbers.order_number) && (
+                          <span>
+                            Obj. zákazníka:{" "}
+                            {doc.reference_numbers.order_number_customer ||
+                              doc.reference_numbers.order_number}
+                          </span>
+                        )}
+                        {doc.reference_numbers.delivery_number && (
+                          <span>Dod.: {doc.reference_numbers.delivery_number}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

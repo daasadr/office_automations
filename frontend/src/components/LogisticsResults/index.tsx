@@ -1,6 +1,7 @@
 import { Loader2, RefreshCw, Truck, XCircle } from "lucide-react";
 import { useState } from "react";
 import { withBasePath } from "@/lib/utils";
+import { CompactPairingOverview } from "./components/CompactPairingOverview";
 import { InvoiceHeaderCard } from "./components/InvoiceHeaderCard";
 import { SummaryCard } from "./components/SummaryCard";
 import { TransportLineItemCard } from "./components/TransportLineItemCard";
@@ -65,15 +66,19 @@ export function LogisticsResults({ documentId }: LogisticsResultsProps) {
 
   return (
     <div className="space-y-8">
-      {/* Summary */}
-      <SummaryCard data={document} />
-
       {/* Invoice Header */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Informace o faktuře</h2>
         <InvoiceHeaderCard header={document.invoice_header} />
       </section>
 
+      {/* Compact Pairing Overview */}
+      {document.transport_line_items && document.transport_line_items.length > 0 && (
+        <CompactPairingOverview items={document.transport_line_items} />
+      )}
+
+      {/* Summary */}
+      <SummaryCard data={document} />
       {/* Transport Line Items */}
       <section>
         <div className="flex items-center gap-2 mb-4">

@@ -1,4 +1,5 @@
-import { Issuer, Client, generators, type TokenSet, type UserinfoResponse } from "openid-client";
+import { Issuer, generators, type TokenSet, type UserinfoResponse } from "openid-client";
+import type { Client } from "openid-client";
 
 // Environment variables
 const AUTHENTIK_ISSUER_URL = import.meta.env.AUTHENTIK_ISSUER_URL;

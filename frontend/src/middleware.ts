@@ -4,25 +4,22 @@ import { getSession, isSessionValid } from "./lib/session";
 /**
  * Routes that require authentication
  */
-const PROTECTED_ROUTES = [
-  "/kvalita",
-  "/logistika",
-  "/settings",
+const PROTECTED_ROUTES: string[] = [
+  // "/kvalita",
+  // "/logistika",
+  // "/settings",
 ];
 
 /**
  * Routes that are always public (no auth required)
  */
-const PUBLIC_ROUTES = [
-  "/api/auth",
-  "/api/health",
-];
+const PUBLIC_ROUTES = ["/api/auth", "/api/health"];
 
 /**
  * Check if a path matches any pattern in the list
  */
 function matchesRoute(pathname: string, routes: string[]): boolean {
-  return routes.some(route => pathname.startsWith(route));
+  return routes.some((route) => pathname.startsWith(route));
 }
 
 /**
@@ -70,7 +67,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       if (!isSessionValid(session)) {
         // Store the original URL to redirect back after login
         const returnUrl = encodeURIComponent(url.pathname + url.search);
-        const loginUrl = basePath ? `${basePath}/api/auth/login?return=${returnUrl}` : `/api/auth/login?return=${returnUrl}`;
+        const loginUrl = basePath
+          ? `${basePath}/api/auth/login?return=${returnUrl}`
+          : `/api/auth/login?return=${returnUrl}`;
         return context.redirect(loginUrl, 302);
       }
 
@@ -87,4 +86,3 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // All other routes are accessible without authentication
   return next();
 };
-

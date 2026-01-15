@@ -1,6 +1,7 @@
 ---
 import UploadDocument from "@/components/FoundationDocumentsManager/UploadDocument";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { withBasePath } from "@/lib/utils";
 ---
 
 <BaseLayout 
@@ -10,7 +11,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   <div class="max-w-6xl mx-auto py-8 px-4">
     <div class="mb-6">
       <a 
-        href="/gFF1cnio0udVeqRarLTy/settings/foundation-documents"
+        href={withBasePath("/settings/foundation-documents")}
         class="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

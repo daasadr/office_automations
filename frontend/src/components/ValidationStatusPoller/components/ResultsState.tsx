@@ -129,7 +129,7 @@ export function ResultsState({ validationData, downloadUrl }: ResultsStateProps)
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full">
             <Button asChild variant="secondary" size="lg" className="min-w-48">
-              <a href={withBasePath("/upload")}>
+              <a href={withBasePath("/kvalita/upload")}>
                 <CloudUpload className="w-5 h-5" />
                 Nahrát jiný dokument
               </a>

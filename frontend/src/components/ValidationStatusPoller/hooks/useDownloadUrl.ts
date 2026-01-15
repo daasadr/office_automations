@@ -10,8 +10,8 @@ interface UseDownloadUrlProps {
 export function useDownloadUrl({ validationData, documentId, jobId }: UseDownloadUrlProps) {
   const sourceDocumentId = validationData?.directusSourceDocumentId || documentId;
   const downloadUrl = sourceDocumentId
-    ? generateUrl("/download", { doc: sourceDocumentId })
-    : generateUrl("/download", { job: jobId });
+    ? generateUrl("/kvalita/download", { doc: sourceDocumentId })
+    : generateUrl("/kvalita/download", { job: jobId });
 
   return downloadUrl;
 }

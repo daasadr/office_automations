@@ -9,7 +9,7 @@ const jobId = Astro.url.searchParams.get("job") ?? undefined;
 
 // If neither is present, redirect to upload page
 if (!documentId && !jobId) {
-  return Astro.redirect(withBasePath("/upload"), 302);
+  return Astro.redirect(withBasePath("/kvalita/upload"), 302);
 }
 ---
 

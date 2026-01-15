@@ -68,5 +68,5 @@ export function buildRedirectUrl(result: UploadResult): string {
   const redirectParam = result.directusSourceDocumentId
     ? `doc=${result.directusSourceDocumentId}`
     : `job=${result.jobId}`;
-  return withBasePath(`/check?${redirectParam}`);
+  return withBasePath(`/kvalita/check?${redirectParam}`);
 }

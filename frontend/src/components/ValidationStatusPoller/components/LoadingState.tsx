@@ -50,7 +50,7 @@ export function LoadingState() {
           variant="ghost"
           className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          <a href={withBasePath("/upload")}>
+          <a href={withBasePath("/kvalita/upload")}>
             <ChevronLeft className="w-4 h-4" />
             Zpět
           </a>

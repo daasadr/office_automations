@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { withBasePath } from "@/lib/utils";
 ---
 
 <BaseLayout 
@@ -12,7 +13,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     <div class="grid gap-6">
       <!-- Foundation Documents Section -->
       <a 
-        href="/gFF1cnio0udVeqRarLTy/settings/foundation-documents"
+        href={withBasePath("/settings/foundation-documents")}
         class="block p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:bg-accent transition-colors"
       >
         <div class="flex items-start justify-between">
@@ -42,7 +43,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 
       <!-- Notifications Section -->
       <a 
-        href="/gFF1cnio0udVeqRarLTy/settings/notifications"
+        href={withBasePath("/settings/notifications")}
         class="block p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:bg-accent transition-colors"
       >
         <div class="flex items-start justify-between">
@@ -71,7 +72,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 
       <!-- Install App Section -->
       <a 
-        href="/gFF1cnio0udVeqRarLTy/settings/install-app"
+        href={withBasePath("/settings/install-app")}
         class="block p-6 rounded-lg border bg-card text-card-foreground shadow-sm hover:bg-accent transition-colors"
       >
         <div class="flex items-start justify-between">

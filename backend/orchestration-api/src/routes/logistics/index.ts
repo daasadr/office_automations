@@ -3,6 +3,8 @@ import multer from "multer";
 import { logger } from "@orchestration-api/utils/logger";
 import { jobService } from "@orchestration-api/services/JobService";
 import { logisticsProcessingService } from "@orchestration-api/services/LogisticsProcessingService";
+import { pdfPageExtractor } from "@orchestration-api/services/PdfPageExtractor";
+import { directusDocumentService } from "@orchestration-api/lib/directus";
 import {
   requireDirectus,
   requireFile,
@@ -306,6 +308,142 @@ router.get(
     }
 
     res.json(document);
+  })
+);
+
+/**
+ * @openapi
+ * /logistics/document/{documentId}/page/{pageNumber}:
+ *   get:
+ *     tags:
+ *       - Logistics
+ *     summary: Extract and download a single page from a logistics document
+ *     description: Downloads a specific page from the original logistics PDF as a single-page PDF
+ *     operationId: getLogisticsDocumentPage
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Logistics document ID
+ *       - in: path
+ *         name: pageNumber
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number to extract (1-based)
+ *     responses:
+ *       200:
+ *         description: Single-page PDF file
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Document not found, page not found, or file reference missing
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/document/:documentId/page/:pageNumber",
+  requireDirectus,
+  asyncHandler(async (req, res) => {
+    const { documentId, pageNumber } = req.params;
+    const pageNum = Number.parseInt(pageNumber, 10);
+
+    logger.info("[Logistics] Page extraction request", {
+      documentId,
+      pageNumber: pageNum,
+    });
+
+    // Validate page number
+    if (Number.isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({
+        error: "Invalid page number",
+        pageNumber,
+      });
+    }
+
+    // Get the logistics document
+    const document = await logisticsProcessingService.getLogisticsDocument(documentId);
+
+    if (!document) {
+      return res.status(404).json({
+        error: "Document not found",
+        documentId,
+      });
+    }
+
+    // Check if document has a file reference
+    if (!document.file) {
+      logger.warn("[Logistics] Document has no file reference", { documentId });
+      return res.status(404).json({
+        error: "Document file not found",
+        documentId,
+      });
+    }
+
+    try {
+      // Download the original PDF from Directus
+      logger.debug("[Logistics] Downloading PDF from Directus", {
+        fileId: document.file,
+      });
+      const pdfBuffer = await directusDocumentService.downloadFile(document.file);
+
+      if (!pdfBuffer) {
+        logger.warn("[Logistics] Could not download file from Directus", {
+          fileId: document.file,
+        });
+        return res.status(404).json({
+          error: "Could not download document file",
+          documentId,
+        });
+      }
+
+      // Extract the requested page
+      const result = await pdfPageExtractor.extractPage({
+        pdfBuffer,
+        pageNumber: pageNum,
+      });
+
+      // Set appropriate headers
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="document-page-${pageNum}.pdf"`);
+      res.setHeader("Content-Length", result.pdfBuffer.length);
+
+      logger.info("[Logistics] Page extracted and sent", {
+        documentId,
+        pageNumber: pageNum,
+        size: result.pdfBuffer.length,
+      });
+
+      // Send the PDF
+      res.send(result.pdfBuffer);
+    } catch (error) {
+      logger.error("[Logistics] Error extracting page", {
+        documentId,
+        pageNumber: pageNum,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // Check if it's a page number validation error
+      if (error instanceof Error && error.message.includes("Invalid page number")) {
+        return res.status(404).json({
+          error: error.message,
+          documentId,
+          pageNumber: pageNum,
+        });
+      }
+
+      return res.status(500).json({
+        error: "Failed to extract page",
+        documentId,
+        pageNumber: pageNum,
+      });
+    }
   })
 );
 

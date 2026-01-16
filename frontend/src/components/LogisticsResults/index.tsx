@@ -121,7 +121,7 @@ export function LogisticsResults({ documentId }: LogisticsResultsProps) {
       {/* Compact Pairing Overview */}
       {document.transport_line_items && document.transport_line_items.length > 0 && (
         <div id="pairing-overview">
-          <CompactPairingOverview items={document.transport_line_items} />
+          <CompactPairingOverview items={document.transport_line_items} documentId={documentId} />
         </div>
       )}
 

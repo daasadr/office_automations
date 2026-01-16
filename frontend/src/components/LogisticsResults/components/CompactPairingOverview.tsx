@@ -1,9 +1,19 @@
-import { AlertTriangle, Building2, CheckCircle, Copy, MapPin, ShoppingBag } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle,
+  Copy,
+  FileText,
+  MapPin,
+  ShoppingBag,
+} from "lucide-react";
 import { useState } from "react";
+import { withBasePath } from "@/lib/utils";
 import type { TransportLineItem } from "../types";
 
 interface CompactPairingOverviewProps {
   items: TransportLineItem[];
+  documentId?: string;
 }
 
 // Helper function to translate match reason patterns to Czech
@@ -21,7 +31,21 @@ function translateMatchReason(reason?: string): string {
   return translated;
 }
 
-export function CompactPairingOverview({ items }: CompactPairingOverviewProps) {
+// Helper function to translate document type to Czech
+function translateDocumentType(type?: string): string {
+  if (!type) return "Dokument";
+
+  const translations: Record<string, string> = {
+    "Delivery Note": "Dodací list",
+    "Transport Log": "Přepravní deník",
+    Invoice: "Faktura",
+    Receipt: "Příjemka",
+  };
+
+  return translations[type] || type;
+}
+
+export function CompactPairingOverview({ items, documentId }: CompactPairingOverviewProps) {
   const [copiedItemId, setCopiedItemId] = useState<string | number | null>(null);
 
   if (!items || items.length === 0) {
@@ -88,6 +112,13 @@ export function CompactPairingOverview({ items }: CompactPairingOverviewProps) {
     } catch (err) {
       console.error("Failed to copy:", err);
     }
+  };
+
+  const handleDocumentClick = (pageIndex?: number) => {
+    if (!documentId || !pageIndex) return;
+
+    const url = withBasePath(`/api/logistics-document/${documentId}/page/${pageIndex}`);
+    window.open(url, "_blank");
   };
 
   return (
@@ -245,6 +276,38 @@ export function CompactPairingOverview({ items }: CompactPairingOverviewProps) {
                       </div>
                     )}
                   </div>
+
+                  {/* Document badges - clickable to view individual pages */}
+                  {item.associated_documents &&
+                    item.associated_documents.length > 0 &&
+                    documentId && (
+                      <div className="pt-2 flex flex-wrap gap-2">
+                        {item.associated_documents.map((doc, docIndex) => (
+                          <button
+                            key={`${doc.source_page_index ?? docIndex}-${doc.document_type ?? ""}`}
+                            type="button"
+                            onClick={() => handleDocumentClick(doc.source_page_index)}
+                            disabled={!doc.source_page_index}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm transition-colors ${
+                              doc.source_page_index
+                                ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                            }`}
+                            title={
+                              doc.source_page_index
+                                ? `Zobrazit stranu ${doc.source_page_index}`
+                                : "Strana není k dispozici"
+                            }
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>
+                              <strong>{translateDocumentType(doc.document_type)}</strong>
+                              {doc.source_page_index && ` (str. ${doc.source_page_index})`}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="px-4 py-3 border-t">

@@ -7,6 +7,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      AUTHENTIK_HOST: https://auth.${DOMAIN:-dev-dejtoai.local}
       AUTHENTIK_REDIS__HOST: keydb
       AUTHENTIK_REDIS__PORT: 6379
       AUTHENTIK_REDIS__PASSWORD: ${KEYDB_PASSWORD}
@@ -75,6 +76,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      AUTHENTIK_HOST: https://auth.${DOMAIN:-dev-dejtoai.local}
       AUTHENTIK_REDIS__HOST: keydb
       AUTHENTIK_REDIS__PORT: 6379
       AUTHENTIK_REDIS__PASSWORD: ${KEYDB_PASSWORD}

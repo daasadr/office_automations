@@ -8,15 +8,27 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "");
 const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const normalizedPath = currentPath.replace(basePath, "") || "/";
 
-// Show back button only if not on root page
-const showBackButton = normalizedPath !== "/";
+// Detect which workflow we're in
+const isKvalita = normalizedPath.startsWith("/kvalita");
+const isLogistika = normalizedPath.startsWith("/logistika");
+
+// Determine home URL - workflow index or root
+let homeUrl = withBasePath("/");
+if (isKvalita) {
+  homeUrl = withBasePath("/kvalita");
+} else if (isLogistika) {
+  homeUrl = withBasePath("/logistika");
+}
+
+// Show back button only if not on root page or workflow index
+const showBackButton = normalizedPath !== "/" && normalizedPath !== "/kvalita" && normalizedPath !== "/logistika";
 ---
 
 <header class="top-bar">
   <div class="top-bar__container container mx-auto px-2 py-2">
-    <!-- Home icon - returns to root page -->
+    <!-- Home icon - returns to workflow index or root page -->
     <a
-      href={withBasePath("/")}
+      href={homeUrl}
       class="top-bar__icon"
       aria-label="Zpět na úvodní stránku"
       title="Domů"
@@ -27,7 +39,7 @@ const showBackButton = normalizedPath !== "/";
 
     <!-- Settings icon -->
     <a
-      href={withBasePath("/settings")}
+      href={withBasePath("/kvalita/settings")}
       class="top-bar__icon"
       aria-label="Nastavení"
       title="Nastavení"

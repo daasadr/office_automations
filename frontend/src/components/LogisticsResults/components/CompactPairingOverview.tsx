@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Copy, ShoppingBag } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle, Copy, MapPin, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import type { TransportLineItem } from "../types";
 
@@ -195,11 +195,21 @@ export function CompactPairingOverview({ items }: CompactPairingOverviewProps) {
               {primaryDoc ? (
                 <div className="px-4 py-3 border-t space-y-2">
                   {/* Company name */}
-                  <div className="font-semibold text-base">{primaryDoc.recipient_name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex items-center gap-1 text-muted-foreground">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div className="font-semibold text-base">{primaryDoc.recipient_name}</div>
+                  </div>
 
                   {/* Address */}
-                  <div className="text-sm text-muted-foreground">
-                    {primaryDoc.destination_address}
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {primaryDoc.destination_address}
+                    </div>
                   </div>
 
                   {/* Our orders with orange badge OR red warning if missing */}
@@ -224,7 +234,7 @@ export function CompactPairingOverview({ items }: CompactPairingOverviewProps) {
                           <span>
                             {copiedItemId === (item.line_id || index)
                               ? "Zkopírováno!"
-                              : "Zkopírovat"}
+                              : "Zkopírovat objednávky"}
                           </span>
                         </button>
                       </>

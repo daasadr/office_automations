@@ -11,9 +11,9 @@
     "check": "astro check"
   },
   "dependencies": {
-    "@astrojs/check": "^0.5.10",
-    "@astrojs/node": "^8.2.5",
-    "@astrojs/react": "^3.1.0",
+    "@astrojs/check": "^0.9.6",
+    "@astrojs/node": "^9.5.1",
+    "@astrojs/react": "^4.4.2",
     "@directus/sdk": "^20.0.3",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -43,7 +43,7 @@
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/astro": "^10.20.0",
     "@vite-pwa/astro": "^1.1.1",
-    "astro": "^4.4.15",
+    "astro": "^5.16.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "iron-session": "^8.0.3",
@@ -59,7 +59,7 @@
     "typescript": "^5.4.2"
   },
   "devDependencies": {
-    "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/tailwind": "^6.0.2",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",

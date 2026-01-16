@@ -112,6 +112,9 @@ export default defineConfig({
         '@/layouts': path.resolve(__dirname, './src/layouts'),
       }
     },
+    ssr: {
+      noExternal: ['@sentry/astro']
+    },
     css: {
       preprocessorOptions: {
         scss: {

@@ -40,7 +40,7 @@ Processing Logic
      * S → "EPE pásy"
      * H → "Hardex"
      * T → "Tubex"
-     * If the order number doesn't start with S, H, or T, set category to "Unknown" or leave empty.
+     * If the order number doesn't start with S, H, Z or T, set category to "Unknown" or leave empty.
    - Handwriting Detection: Determine if the document is PRIMARILY handwritten (e.g., forms like ALONŽ/CMR with handwritten fields filled in). Set "is_handwritten" to true ONLY for documents that are primarily handwritten forms, NOT for printed invoices or delivery notes that merely contain some handwritten annotations or signatures. The document should have a significant portion of its key data fields filled in by hand.
 
 3. Perform Matching (The Core Task):
@@ -96,7 +96,7 @@ Use the following JSON schema strictly:
           "destination_address": "String",
           "reference_numbers": {
             "order_number_customer": "String",
-            "order_number_ours": "String (CRITICAL: Usually found on 'Dodací list' from Spur supplier, typically starts with S, H, or T)",
+            "order_number_ours": "String (CRITICAL: Usually found on 'Dodací list' from Spur supplier, typically starts with S, H, Z or T)",
             "order_number_category": "String (Derived from first letter of order_number_ours: 'EPE pásy' for S, 'Hardex' for H, 'Tubex' for T, or 'Unknown' if none match)",
             "delivery_number": "String"
           },
